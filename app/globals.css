@@ -1,0 +1,286 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+/*
+ * Design tokens — "NS Retail Web · Component system" (design.pdf p.13).
+ * One accent (Naguib Selim brown), warm neutrals, three reserved status colors.
+ * Green / amber / red are used for performance status only.
+ */
+@theme inline {
+  --font-sans: var(--font-inter), var(--font-arabic), ui-sans-serif, system-ui, sans-serif;
+  --font-heading: var(--font-sans);
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-soft: var(--destructive-soft);
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-line: var(--chart-line);
+
+  /* KPI card tones: tinted surface + strong ink, one per metric. */
+  --color-tone-sales: var(--tone-sales);
+  --color-tone-sales-soft: var(--tone-sales-soft);
+  --color-tone-qty: var(--tone-qty);
+  --color-tone-qty-soft: var(--tone-qty-soft);
+  --color-tone-inv: var(--tone-inv);
+  --color-tone-inv-soft: var(--tone-inv-soft);
+  --color-tone-atv: var(--tone-atv);
+  --color-tone-atv-soft: var(--tone-atv-soft);
+  --color-tone-ret: var(--tone-ret);
+  --color-tone-ret-soft: var(--tone-ret-soft);
+  --color-tone-cust: var(--tone-cust);
+  --color-tone-cust-soft: var(--tone-cust-soft);
+  --color-tone-disc: var(--tone-disc);
+  --color-tone-disc-soft: var(--tone-disc-soft);
+
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: var(--radius);
+  --radius-xl: 12px;
+  --radius-2xl: 16px;
+  --radius-3xl: 20px;
+}
+
+:root {
+  --radius: 0.5rem;
+
+  --background: #f6f5f3;
+  --foreground: #1c1917;
+  --card: #ffffff;
+  --card-foreground: #1c1917;
+  --popover: #ffffff;
+  --popover-foreground: #1c1917;
+  --primary: #744c27;
+  --primary-foreground: #ffffff;
+  --secondary: #f1efec;
+  --secondary-foreground: #1c1917;
+  --muted: #f1efec;
+  --muted-foreground: #5f5750;
+  --accent: #f4ece3;
+  --accent-foreground: #1c1917;
+  --border: #e4e0da;
+  --input: #d3ccc3;
+  --ring: #2f5db8;
+
+  --success: #136c34;
+  --success-soft: #e6f3ea;
+  --warning: #94530a;
+  --warning-soft: #fcf0dc;
+  --destructive: #b42318;
+  --destructive-soft: #fcebe9;
+
+  --chart-1: #744c27;
+  --chart-2: #c49a6c;
+  --chart-3: #5b7083;
+  --chart-line: #2f5db8;
+
+  --tone-sales: #744c27;
+  --tone-sales-soft: #d9b994;
+  --tone-qty: #2f5db8;
+  --tone-qty-soft: #a9c1ea;
+  --tone-inv: #6b3f8f;
+  --tone-inv-soft: #c9ade2;
+  --tone-atv: #4338a8;
+  --tone-atv-soft: #b6b0e6;
+  --tone-ret: #a3304a;
+  --tone-ret-soft: #e6a3b2;
+  --tone-cust: #19707a;
+  --tone-cust-soft: #9ccfd5;
+  --tone-disc: #4f5b66;
+  --tone-disc-soft: #bcc4ce;
+}
+
+.dark {
+  --background: #121110;
+  --foreground: #f3efea;
+  --card: #1b1917;
+  --card-foreground: #f3efea;
+  --popover: #1b1917;
+  --popover-foreground: #f3efea;
+  --primary: #d2a574;
+  --primary-foreground: #1c1917;
+  --secondary: #24211e;
+  --secondary-foreground: #f3efea;
+  --muted: #24211e;
+  --muted-foreground: #b0a79d;
+  --accent: #2f251c;
+  --accent-foreground: #f3efea;
+  --border: #322d29;
+  --input: #48413a;
+  --ring: #8fb0f5;
+
+  --success: #62cf8c;
+  --success-soft: #14291c;
+  --warning: #f2b552;
+  --warning-soft: #2e2412;
+  --destructive: #f58e83;
+  --destructive-soft: #361b18;
+
+  --chart-1: #d2a574;
+  --chart-2: #8e6a45;
+  --chart-3: #8fa3b5;
+  --chart-line: #8fb0f5;
+
+  --tone-sales: #d2a574;
+  --tone-sales-soft: #241c15;
+  --tone-qty: #8fb0f5;
+  --tone-qty-soft: #161c28;
+  --tone-inv: #c9a4e6;
+  --tone-inv-soft: #1f1726;
+  --tone-atv: #a9a3f0;
+  --tone-atv-soft: #1a1928;
+  --tone-ret: #f19aac;
+  --tone-ret-soft: #2a171b;
+  --tone-cust: #7fcfd8;
+  --tone-cust-soft: #132325;
+  --tone-disc: #b4bec8;
+  --tone-disc-soft: #1d2024;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    @apply font-sans;
+    /* All figures: tabular, Western digits 0–9 in both languages. */
+    font-variant-numeric: tabular-nums;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+  }
+  /* Arabic: Cairo first, Inter as fallback for Latin runs. */
+  html[lang="ar"] {
+    font-family: var(--font-arabic), var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  }
+  html[lang="ar"] p {
+    line-height: 1.5;
+  }
+  /* Coarse pointers (tablet, phone) get 44px controls. */
+  @media (pointer: coarse) {
+    [data-slot="button"],
+    [data-slot="input"],
+    [data-slot="select-trigger"],
+    [data-slot="toggle-group-item"] {
+      min-height: 44px;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+  /* Scroll reveals (components/motion/scroll-reveal.tsx): hidden until GSAP fades them in, only when
+     JS runs and motion is allowed, so no-JS, reduced-motion and print always show everything. */
+  @media (scripting: enabled) and (prefers-reduced-motion: no-preference) {
+    [data-reveal]:not([data-revealed]) {
+      visibility: hidden;
+    }
+  }
+  @media print {
+    [data-reveal] {
+      visibility: visible !important;
+      opacity: 1 !important;
+      transform: none !important;
+    }
+  }
+}
+
+/* Brand mark rendered as a mask so it takes the current text color in both themes. */
+.brand-mask {
+  background-color: currentColor;
+  mask-repeat: no-repeat;
+  mask-position: center;
+  mask-size: contain;
+}
+
+/* Report tables: dark brown header row in light mode (like Order Stages), muted in dark mode. */
+.fin-head { background-color: #3b2415; color: #fff; }
+.dark .fin-head { background-color: var(--muted); color: var(--foreground); }
+.fin-sticky { background-color: var(--card); }
+tr:hover > .fin-sticky { background-color: color-mix(in oklab, var(--muted) 50%, var(--card)); }
+
+/*
+ * Chart colours (dataviz method). Categorical slots in a FIXED order, validated for colour-blind
+ * separation on these surfaces (scripts/validate_palette.js: light #ffffff, dark #1b1917).
+ * Payment-method families always take the same slot (lib/finance/methods.ts).
+ * Aging uses one warm hue, light → dark as debt gets older (ordinal ramp).
+ */
+:root {
+  --series-1: #2a78d6;
+  --series-2: #eb6834;
+  --series-3: #1baf7a;
+  --series-4: #eda100;
+  --series-5: #e87ba4;
+  --series-6: #008300;
+  --series-7: #6250d6;
+  --series-8: #e34948;
+  --series-other: #a8a29e;
+  --series-sales: #744c27;
+  --series-collected: #2f5db8;
+  --aging-0: #c9a47a;
+  --aging-1: #b98d5e;
+  --aging-2: #a77647;
+  --aging-3: #925f35;
+  --aging-4: #7a4a27;
+  --aging-5: #61381c;
+  --aging-6: #442612;
+  --chart-grid: #ebe7e1;
+  --chart-axis: #8a8178;
+}
+.dark {
+  --series-1: #3987e5;
+  --series-2: #d95926;
+  --series-3: #199e70;
+  --series-4: #c98500;
+  --series-5: #d55181;
+  --series-6: #008300;
+  --series-7: #9085e9;
+  --series-8: #e66767;
+  --series-other: #78716c;
+  --series-sales: #d2a574;
+  --series-collected: #8fb0f5;
+  --aging-0: #6b4a2d;
+  --aging-1: #86603c;
+  --aging-2: #a1774c;
+  --aging-3: #b98e60;
+  --aging-4: #cfa675;
+  --aging-5: #e0bd8f;
+  --aging-6: #efd6b0;
+  --chart-grid: #2b2724;
+  --chart-axis: #8f867c;
+}
+
+@media print {
+  header, nav[data-report-nav], [data-no-print] { display: none !important; }
+  main { max-width: none !important; padding: 0 !important; }
+  .rounded-xl { break-inside: avoid; }
+}
