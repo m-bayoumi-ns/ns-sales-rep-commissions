@@ -38,14 +38,17 @@ export async function AppHeader({ userSlot }: { userSlot?: React.ReactNode }) {
           href="https://ns.bayoumi.dev/"
           aria-label={t("header.home")}
           title={t("header.home")}
-          className={buttonVariants({ variant: "ghost", size: "icon" })}
+          className={`web-only ${buttonVariants({ variant: "ghost", size: "icon" })}`}
         >
           <HomeIcon aria-hidden />
         </a>
         <div className="ms-auto flex items-center gap-1 sm:gap-3">
           {user ? <NotificationBell /> : null}
-          <LanguageSwitcher />
-          <ThemeToggle />
+          {/* In the Android app these move into the account menu as switches (AppPreferenceItems). */}
+          <div className="web-only flex items-center gap-1 sm:gap-3">
+            <LanguageSwitcher />
+            <ThemeToggle />
+          </div>
           {userSlot}
         </div>
       </div>

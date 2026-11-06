@@ -14,6 +14,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { AndroidAppMenuItem } from "@/components/layout/android-app";
+import { AppPreferenceItems } from "@/components/layout/app-preferences";
 import { signOut } from "@/lib/auth/actions";
 import { useRouter } from "@/i18n/navigation";
 
@@ -67,6 +68,7 @@ export function UserMenu({ user }: { user: HeaderUser }) {
           </DropdownMenuLabel>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
+        <AppPreferenceItems />
         <DropdownMenuItem onClick={() => router.push("/account")}>
           <UserCogIcon aria-hidden />
           {t("account")}

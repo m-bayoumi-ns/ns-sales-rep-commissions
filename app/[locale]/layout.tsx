@@ -47,6 +47,14 @@ export default async function LocaleLayout({ children }: LayoutProps<"/[locale]"
       className={`${inter.variable} ${cairo.variable}`}
       suppressHydrationWarning
     >
+      <head>
+        {/* Marks pages opened inside the Android app before first paint (see .web-only / .app-only in globals.css). */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: "if(navigator.userAgent.indexOf('NSCommissionsApp')>-1)document.documentElement.setAttribute('data-app','')",
+          }}
+        />
+      </head>
       <body className="min-h-dvh">
         <NextIntlClientProvider>
           <Providers direction={dir}>

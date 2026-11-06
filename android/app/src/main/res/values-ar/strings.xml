@@ -12,4 +12,8 @@
     <string name="download_failed">تعذّر حفظ الملف.</string>
     <string name="no_app_for_link">لا يوجد تطبيق يفتح هذا الرابط.</string>
     <string name="choose_file">اختر ملفًا</string>
+    <string name="channel_commission">تحديثات العمولة</string>
+    <string name="channel_commission_desc">زيادة أو نقص العمولة، الحوافز المستحقة أو الملغاة، وتغيير النسب.</string>
+    <string name="channel_security">تنبيهات الأمان</string>
+    <string name="channel_security_desc">تسجيل الدخول لحسابك من أجهزة أخرى.</string>
 </resources>

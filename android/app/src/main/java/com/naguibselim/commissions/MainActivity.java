@@ -59,6 +59,8 @@ public class MainActivity extends Activity {
 
     private static final int REQ_FILE = 41;
     private static final int REQ_STORAGE = 42;
+    private static final int REQ_NOTIFICATIONS = 43;
+    private static final long FEED_CHECK_GAP_MS = 2 * 60 * 1000;
     private static final long SPLASH_MAX_MS = 4000;
 
     private WebView web;
@@ -73,6 +75,7 @@ public class MainActivity extends Activity {
     private boolean mainFrameFailed = false;
     private long splashStartedAt;
     private long lastBackAt = 0;
+    private long lastFeedCheckAt = 0;
 
     private ValueCallback<Uri[]> fileCallback;
 
@@ -99,6 +102,8 @@ public class MainActivity extends Activity {
         Button retry = findViewById(R.id.retry);
 
         startUri = Uri.parse(BuildConfig.START_URL);
+        Notifier.ensureChannels(this);
+        FeedWorker.schedule(this);
 
         setUpWebView();
 
@@ -251,6 +256,7 @@ public class MainActivity extends Activity {
             }
             firstPageShown = true;
             CookieManager.getInstance().flush();
+            if (!mainFrameFailed && isSignedInPage(url)) onSignedInPage();
         }
 
         @Override
@@ -259,6 +265,29 @@ public class MainActivity extends Activity {
                 mainFrameFailed = true;
                 showError(!isOnline());
             }
+        }
+    }
+
+    private static boolean isSignedInPage(String url) {
+        if (url == null) return false;
+        String path = Uri.parse(url).getPath();
+        return path != null && !path.contains("/login") && !path.contains("/register") && !path.contains("/get-app");
+    }
+
+    /** After a signed-in page loads: ask once for notification permission, and check for news (at most every 2 min). */
+    private void onSignedInPage() {
+        if (Build.VERSION.SDK_INT >= 33
+                && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+            android.content.SharedPreferences prefs = getSharedPreferences("ns_app", MODE_PRIVATE);
+            if (!prefs.getBoolean("asked_notifications", false)) {
+                prefs.edit().putBoolean("asked_notifications", true).apply();
+                requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS}, REQ_NOTIFICATIONS);
+            }
+        }
+        long now = System.currentTimeMillis();
+        if (now - lastFeedCheckAt > FEED_CHECK_GAP_MS) {
+            lastFeedCheckAt = now;
+            FeedWorker.checkSoon(this);
         }
     }
 

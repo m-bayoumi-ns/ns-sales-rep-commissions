@@ -12,4 +12,8 @@
     <string name="download_failed">The file couldn\'t be saved.</string>
     <string name="no_app_for_link">No app can open this link.</string>
     <string name="choose_file">Choose a file</string>
+    <string name="channel_commission">Commission updates</string>
+    <string name="channel_commission_desc">Commission going up or down, bonuses earned or lost, and rate changes.</string>
+    <string name="channel_security">Security alerts</string>
+    <string name="channel_security_desc">Sign-ins to your account from other devices.</string>
 </resources>

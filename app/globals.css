@@ -284,3 +284,7 @@ tr:hover > .fin-sticky { background-color: color-mix(in oklab, var(--muted) 50%,
   main { max-width: none !important; padding: 0 !important; }
   .rounded-xl { break-inside: avoid; }
 }
+
+/* Android app (html[data-app], set by the inline script in the root layout): hide browser-only controls. */
+html[data-app] .web-only { display: none !important; }
+html:not([data-app]) .app-only { display: none !important; }

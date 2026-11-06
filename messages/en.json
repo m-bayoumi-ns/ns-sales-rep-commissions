@@ -18,7 +18,10 @@
     "home": "Home",
     "settings": "Settings",
     "account": "My account",
-    "accounts": "Seller accounts"
+    "accounts": "Seller accounts",
+    "darkMode": "Dark mode",
+    "arabic": "العربية",
+    "appearance": "Appearance"
   },
   "login": {
     "title": "Sign in to Customer Payments",
@@ -827,6 +830,52 @@
       "i2": "Choose “Add to Home Screen”, then Add.",
       "help": "Prefer the browser?",
       "openSite": "Open the website"
+    }
+  },
+  "appFeed": {
+    "login": {
+      "title": "New sign-in to your account",
+      "body": "Your account was signed in on {device} at {time}. If this wasn't you, change your password now."
+    },
+    "rates": {
+      "title": "Commission rates updated",
+      "body": "{count, plural, one {# change} other {# changes}} to your commission rules. Tap to review."
+    },
+    "total": {
+      "upTitle": "Your commission went up",
+      "downTitle": "Your commission went down",
+      "upBody": "+{change} EGP · now {total} EGP this month.",
+      "downBody": "−{change} EGP · now {total} EGP this month."
+    },
+    "regime": {
+      "title": "Your commission system changed",
+      "body": "Now: {regime} (target achieved {achievement}%)."
+    },
+    "regimes": {
+      "full": "full commission + bonuses",
+      "old": "old commission system",
+      "low": "below 50% · 0.1% only",
+      "noTarget": "no target set"
+    },
+    "adjustment": {
+      "earnedTitle": "Bonus earned",
+      "deductionTitle": "Deduction applied",
+      "lostTitle": "Bonus no longer earned",
+      "deductionGoneTitle": "Deduction removed",
+      "onBody": "{name}: {amount} EGP.",
+      "offBody": "{name} no longer applies this month.",
+      "changedTitle": "Bonus amount changed",
+      "changedBody": "{name}: {from} → {to} EGP."
+    },
+    "adjustments": {
+      "allTargets": "All-targets bonus",
+      "slowDeduction": "Slow-moving deduction",
+      "cash": "Cash sales bonus",
+      "collection": "Collections bonus",
+      "salesLadder": "Monthly sales bonus",
+      "collectionShare": "Collections adjustment",
+      "lowRate": "Below-50% rate",
+      "oldRate": "Old system rate"
     }
   }
 }

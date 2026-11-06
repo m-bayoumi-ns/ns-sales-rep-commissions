@@ -12,6 +12,7 @@ import { clearFailures, isLocked, recordFailure } from "./rate-limit";
 import { safeNextPath } from "./safe-next";
 import { directLoginEmail } from "@/lib/accounts/usernames";
 import { emailForSellerName } from "@/lib/accounts/lookup";
+import { describeDevice, recordLogin, sessionIdOf } from "@/lib/app/logins";
 
 export type SignInState = {
   status: "idle" | "invalid" | "locked" | "not_configured" | "error";
@@ -63,6 +64,10 @@ export async function signIn(_prev: SignInState, formData: FormData): Promise<Si
 
   clearFailures(limitKeys);
   after(() => logActivity({ action: "sign_in", userId: data.user.id, email, details: { ip } }));
+  // Lets the user's Android app warn them about a sign-in from another device.
+  const device = describeDevice((await headers()).get("user-agent"));
+  const sessionId = sessionIdOf(data.session?.access_token);
+  after(() => recordLogin(data.user.id, { at: new Date().toISOString(), sessionId, device }));
   redirect(safeNextPath(String(formData.get("next") ?? ""), locale));
 }
 
