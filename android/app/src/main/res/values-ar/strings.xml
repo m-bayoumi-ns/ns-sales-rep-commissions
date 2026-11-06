@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">عمولات NS</string>
+    <string name="offline_title">لا يوجد اتصال بالإنترنت</string>
+    <string name="offline_body">تأكد من اتصالك بالإنترنت ثم حاول مرة أخرى.</string>
+    <string name="error_title">تعذّر الوصول إلى الخادم</string>
+    <string name="error_body">لم يتم تحميل الصفحة. حاول مرة أخرى بعد قليل.</string>
+    <string name="retry">إعادة المحاولة</string>
+    <string name="press_back_again">اضغط رجوع مرة أخرى للخروج</string>
+    <string name="download_started">جارٍ التنزيل…</string>
+    <string name="download_saved">تم الحفظ في التنزيلات: %1$s</string>
+    <string name="download_failed">تعذّر حفظ الملف.</string>
+    <string name="no_app_for_link">لا يوجد تطبيق يفتح هذا الرابط.</string>
+    <string name="choose_file">اختر ملفًا</string>
+</resources>

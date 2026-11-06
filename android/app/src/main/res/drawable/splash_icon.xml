@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Splash icon: the NS mark centred in the 288dp splash icon area (visible circle ≈ 192dp). -->
+<inset xmlns:android="http://schemas.android.com/apk/res/android"
+    android:drawable="@drawable/splash_mark"
+    android:inset="64dp" />
