@@ -34,6 +34,7 @@ export function LoginForm({ next, reason }: { next?: string; reason?: string }) 
     if (state.fieldErrors?.email) emailRef.current?.focus();
     else if (state.fieldErrors?.password) passwordRef.current?.focus();
     else if (state.status === "invalid") passwordRef.current?.focus();
+    else if (state.status === "unknown") emailRef.current?.focus();
   }, [state]);
 
   function validate(event: React.FormEvent<HTMLFormElement>) {
@@ -52,6 +53,8 @@ export function LoginForm({ next, reason }: { next?: string; reason?: string }) 
 
   const banner = (() => {
     switch (state.status) {
+      case "unknown":
+        return { tone: "error", title: t("errors.unknownUser"), body: t("errors.unknownUserHint") };
       case "invalid":
         return { tone: "error", title: t("errors.invalidCredentials"), body: t("errors.invalidCredentialsHint") };
       case "locked":

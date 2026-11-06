@@ -14,7 +14,8 @@ export type ActivityAction =
   | "approve_account"
   | "disable_account"
   | "force_password_change"
-  | "notify";
+  | "notify"
+  | "username_changed";
 
 /**
  * Writes one row to public.activity_logs. Never throws: logging must not break a

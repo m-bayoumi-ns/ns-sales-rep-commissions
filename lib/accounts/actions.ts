@@ -14,7 +14,17 @@ import { clearFailures, isLocked, recordFailure } from "@/lib/auth/rate-limit";
 import { isDemoMode } from "@/lib/dev";
 import { isAdminConfigured, publicEnv } from "@/lib/env";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { type CreateResult, createSheetAccounts, registerSeller, saveAppSettings, setMustChangePassword, setSellerActive } from "./server";
+import {
+  type CreateResult,
+  createSheetAccounts,
+  loadAppSettings,
+  registerSeller,
+  saveAppSettings,
+  setMustChangePassword,
+  setSellerActive,
+  setSellerUsername,
+  type UsernameResult,
+} from "./server";
 
 const password = z.string().min(8).max(72);
 
@@ -134,7 +144,7 @@ export async function setForcePassword(userId: string, value: boolean): Promise<
 export async function setAutoApprove(value: boolean): Promise<AccountResult> {
   await requireAdmin();
   try {
-    await saveAppSettings({ autoApprove: value });
+    await saveAppSettings({ ...(await loadAppSettings()), autoApprove: value });
     revalidatePath("/", "layout");
     return { ok: true };
   } catch (error) {
@@ -154,5 +164,21 @@ export async function createAccountsFromSheet(names: string[]): Promise<{ ok: bo
   } catch (error) {
     console.error("[accounts] create from sheet failed:", error);
     return { ok: false, results: [] };
+  }
+}
+
+/** Administrator: change a rep's username (renames the account's sign-in, or reserves it for the account to be created). */
+export async function changeSellerUsername(repName: string, userId: string | null, username: string): Promise<UsernameResult> {
+  const admin = await requireAdmin();
+  try {
+    const result = await setSellerUsername({ repName: String(repName).slice(0, 200), userId: userId ? String(userId) : null, username: String(username) });
+    if (result.ok) {
+      after(() => logActivity({ action: "username_changed", userId: admin.id, email: admin.email, details: { repName, userId, username: result.username } }));
+      revalidatePath("/", "layout");
+    }
+    return result;
+  } catch (error) {
+    console.error("[accounts] username change failed:", error);
+    return { ok: false, reason: "error" };
   }
 }

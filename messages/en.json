@@ -43,7 +43,9 @@
       "notConfigured": "Sign-in isn't connected to Supabase yet. Add the project keys to .env.local.",
       "locked": "Too many sign-in attempts.",
       "lockedHint": "Sign-in is paused for 10 minutes. Try again later.",
-      "generic": "We couldn't sign you in. Please try again."
+      "generic": "We couldn't sign you in. Please try again.",
+      "unknownUser": "This user is not available in the system",
+      "unknownUserHint": "Check the username, or ask the administrator for your account."
     },
     "sessionExpired": "Your session expired.",
     "sessionExpiredHint": "Sign in again to return to Customer Payments with the same filters.",
@@ -739,7 +741,16 @@
       "someFailed": "{count, plural, one {# account could not be created} other {# accounts could not be created}}",
       "failed": "Accounts could not be created.",
       "loginTitle": "Sign-in details to give to the sellers",
-      "loginHint": "They sign in with the username (or the full email) and this password, then choose their own password."
+      "loginHint": "They sign in with the username (or the full email) and this password, then choose their own password.",
+      "edit": "Edit username",
+      "save": "Save",
+      "cancel": "Cancel",
+      "usernameSaved": "Username changed to {username}",
+      "usernameInvalid": "3–32 characters: English letters, numbers, . _ -",
+      "usernameTaken": "This username is already used",
+      "usernameFailed": "The username could not be changed",
+      "usernameReserved": "Will be used when the account is created",
+      "renameNote": "The rep signs in with the new username; the password stays the same."
     },
     "otherTitle": "Other seller accounts (not in the current targets sheet)"
   },

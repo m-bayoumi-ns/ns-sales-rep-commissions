@@ -18,10 +18,14 @@ import { createSupabaseAdminClient } from "@/lib/supabase/server";
 export const SELLER_PAGE = "sales-commissions";
 const APP_SETTINGS = "ns-sales-rep-commissions/app-settings.json";
 
-export type AppSettings = { autoApprove: boolean };
+export type AppSettings = {
+  autoApprove: boolean;
+  /** Usernames chosen by an administrator for sheet reps who have no account yet (normalized name → username). */
+  usernames?: Record<string, string>;
+};
 export async function loadAppSettings(): Promise<AppSettings> {
   const data = await readJson<Partial<AppSettings>>(APP_SETTINGS);
-  return { autoApprove: data?.autoApprove ?? false };
+  return { autoApprove: data?.autoApprove ?? false, usernames: data?.usernames ?? {} };
 }
 export async function saveAppSettings(settings: AppSettings) {
   await writeJson(APP_SETTINGS, settings);
@@ -210,9 +214,12 @@ export async function sheetRepAccounts(accounts: SellerAccount[]): Promise<{ mon
   const setup = await loadMonthSetup(latest.month);
   const byRep = new Map(accounts.filter((account) => account.rep).map((account) => [normalizeName(account.rep!), account]));
   const taken = new Set(accounts.map((account) => account.username).filter((name): name is string => name != null));
+  const chosen = (await loadAppSettings()).usernames ?? {};
+  for (const name of Object.values(chosen)) taken.add(name);
   const reps = setup.reps.map((rep) => {
     const account = byRep.get(normalizeName(rep.name)) ?? null;
-    return { name: rep.name, odooUserId: rep.odooUserId, account, username: account?.username ?? usernameFor(rep.name, rep.odooUserId, taken) };
+    const preset = chosen[normalizeName(rep.name)];
+    return { name: rep.name, odooUserId: rep.odooUserId, account, username: account?.username ?? preset ?? usernameFor(rep.name, rep.odooUserId, taken) };
   });
   return { month: latest.month, reps };
 }
@@ -275,4 +282,65 @@ export async function createSheetAccounts(names: string[]): Promise<CreateResult
     out.push({ name: rep.name, username: rep.username, status: "created" });
   }
   return out;
+}
+
+// ---------------------------------------------------------------- usernames
+export type UsernameResult = { ok: true; username: string } | { ok: false; reason: "invalid" | "taken" | "notSeller" | "error"; detail?: string };
+
+/** 3–32 characters: lowercase letters, digits, dot, dash, underscore; starts with a letter or digit. */
+export function cleanUsername(raw: string): string | null {
+  const value = raw.trim().toLowerCase();
+  return /^[a-z0-9][a-z0-9._-]{2,31}$/.test(value) ? value : null;
+}
+
+/** True when some account already signs in with this email (any account in `profiles`, not only sellers). */
+export async function accountEmailExists(email: string, exceptUserId?: string): Promise<boolean> {
+  if (isDemoMode()) return DEMO_ACCOUNTS.some((account) => account.email === email || loginEmail(account.username ?? "") === email);
+  // Case-insensitive exact match (escape the LIKE wildcards "_" and "%" that usernames may contain).
+  const pattern = email.replace(/[\\%_]/g, (char) => `\\${char}`);
+  const { data, error } = await createSupabaseAdminClient().from(PROFILE_TABLE).select("id").ilike("email", pattern).limit(2);
+  if (error) throw new Error(error.message);
+  return (data ?? []).some((row) => row.id !== exceptUserId);
+}
+
+/**
+ * Changes a rep's username. With an account: its sign-in email becomes <username>@reps.naguibselim.local (the password
+ * is unchanged). Without one yet: the username is remembered and used when the account is created.
+ */
+export async function setSellerUsername(input: { repName: string; userId: string | null; username: string }): Promise<UsernameResult> {
+  const username = cleanUsername(input.username);
+  if (!username) return { ok: false, reason: "invalid" };
+  const email = loginEmail(username);
+  const settings = await loadAppSettings();
+  const chosen = { ...(settings.usernames ?? {}) };
+  const key = normalizeName(input.repName);
+  // Not already used by another account, nor reserved for another rep.
+  if (Object.entries(chosen).some(([name, value]) => value === username && name !== key)) return { ok: false, reason: "taken" };
+  if (await accountEmailExists(email, input.userId ?? undefined)) return { ok: false, reason: "taken" };
+
+  if (!input.userId) {
+    chosen[key] = username;
+    await saveAppSettings({ ...settings, usernames: chosen });
+    return { ok: true, username };
+  }
+
+  const accounts = await listSellerAccounts();
+  const account = accounts.find((row) => row.id === input.userId);
+  if (!account) return { ok: false, reason: "notSeller" };
+  if (isDemoMode()) return { ok: true, username };
+  const admin = createSupabaseAdminClient();
+  const { data: current } = await admin.auth.admin.getUserById(account.id);
+  const { error } = await admin.auth.admin.updateUserById(account.id, {
+    email,
+    email_confirm: true,
+    user_metadata: { ...(current?.user?.user_metadata ?? {}), username },
+  });
+  if (error) return { ok: false, reason: /already|registered|exists/i.test(error.message) ? "taken" : "error", detail: error.message };
+  const { error: profileError } = await admin.from(PROFILE_TABLE).update({ email }).eq("id", account.id);
+  if (profileError) return { ok: false, reason: "error", detail: profileError.message };
+  if (chosen[key]) {
+    delete chosen[key];
+    await saveAppSettings({ ...settings, usernames: chosen });
+  }
+  return { ok: true, username };
 }

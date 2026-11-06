@@ -6,17 +6,18 @@ import { after } from "next/server";
 import { z } from "zod";
 import { isLocale, routing } from "@/i18n/routing";
 import { logActivity } from "@/lib/activity";
-import { isSupabaseConfigured } from "@/lib/env";
+import { isAdminConfigured, isSupabaseConfigured } from "@/lib/env";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { clearFailures, isLocked, recordFailure } from "./rate-limit";
 import { safeNextPath } from "./safe-next";
 import { directLoginEmail } from "@/lib/accounts/usernames";
 import { emailForSellerName } from "@/lib/accounts/lookup";
+import { accountEmailExists } from "@/lib/accounts/server";
 import { describeDevice, recordLogin, sessionIdOf } from "@/lib/app/logins";
 import { pushFeedFor } from "@/lib/app/push";
 
 export type SignInState = {
-  status: "idle" | "invalid" | "locked" | "not_configured" | "error";
+  status: "idle" | "invalid" | "unknown" | "locked" | "not_configured" | "error";
   fieldErrors?: { email?: true; password?: true };
   email?: string;
 };
@@ -46,10 +47,23 @@ export async function signIn(_prev: SignInState, formData: FormData): Promise<Si
   const { password } = parsed.data;
   // Email, username, or the seller's name as written in the target sheet.
   const email = directLoginEmail(parsed.data.email) ?? (await emailForSellerName(parsed.data.email));
-  if (!email) return { status: "invalid", email: rawEmail };
   const ip = (await headers()).get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
-  const limitKeys = [`email:${email}`, `ip:${ip}`];
+  const limitKeys = [`email:${email ?? rawEmail.trim().toLowerCase()}`, `ip:${ip}`];
   if (isLocked(limitKeys)) return { status: "locked", email: rawEmail };
+
+  // No account signs in with this username / email / name: say so plainly (counted like a failed attempt).
+  let exists = email != null;
+  if (email && isAdminConfigured()) {
+    try {
+      exists = await accountEmailExists(email);
+    } catch (error) {
+      console.error("[signIn] account lookup failed:", error);
+    }
+  }
+  if (!email || !exists) {
+    recordFailure(limitKeys);
+    return { status: "unknown", email: rawEmail };
+  }
 
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase.auth.signInWithPassword({ email, password });
