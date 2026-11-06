@@ -50,7 +50,8 @@ export type Adjustment = {
   current: number | null;
   threshold: number | null;
   /** Cash / collections bonus: the target achievement (%) also required, and where the rep is. */
-  gate?: { required: number; achievement: number | null; met: boolean };
+  /** `preset`: false when the minimum is not set in the month's settings and the 100 % default applies. */
+  gate?: { required: number; achievement: number | null; met: boolean; preset: boolean };
 };
 
 export type BucketResult = { key: string; qty: number; amount: number; commission: number; rate: number | null };
@@ -196,7 +197,7 @@ export function calculate(settings: CommissionSettings, targets: RepTargets, dat
   // Without a total target the achievement cannot be checked and only their own condition counts.
   const gateFor = (min: number | null) => {
     const required = min ?? 100;
-    return { required, achievement, met: totalTarget == null || (achievement != null && achievement >= required) };
+    return { required, achievement, met: totalTarget == null || (achievement != null && achievement >= required), preset: min != null };
   };
   const cashGate = gateFor(rules.cashMinAchievementPct);
   const cashOwn = cashShare != null && cashShare >= rules.cashSharePct;

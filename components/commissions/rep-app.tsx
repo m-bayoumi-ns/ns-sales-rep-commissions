@@ -801,7 +801,7 @@ function StatementAdjustment({ item, rules, replaced }: { item: Adjustment; rule
         : t("standing", { current: formatPercent(item.current), threshold: formatPercent(item.threshold) });
   // Cash / collections bonus: the target achievement it also needs.
   const gate = item.gate
-    ? t(item.gate.met ? "gateMet" : "gateNeeded", { required: formatPercent(item.gate.required), now: formatPercent(item.gate.achievement) })
+    ? `${t(item.gate.met ? "gateMet" : "gateNeeded", { required: formatPercent(item.gate.required), now: formatPercent(item.gate.achievement) })}${item.gate.preset ? "" : ` ${t("gateDefault")}`}`
     : null;
   return (
     <li className={cn("flex items-start gap-2 text-sm", !earned && "text-muted-foreground")}>

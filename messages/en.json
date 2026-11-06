@@ -205,7 +205,8 @@
       "standing": "Now {current} · needs {threshold}",
       "notUnderSystem": "Met, but not paid under the current system",
       "gateMet": "Target achievement {now} · needs {required} ✓",
-      "gateNeeded": "Also needs {required} of target · now {now}"
+      "gateNeeded": "Also needs {required} of target · now {now}",
+      "gateDefault": "(no minimum saved for this month → 100%)"
     },
     "next": {
       "title": "What would raise the commission",

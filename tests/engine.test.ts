@@ -203,7 +203,7 @@ describe("cash and collections bonus minimum achievement", () => {
     const result = calculate(withMin(null, null), targets, data, { monthClosed: true });
     expect(result.achievement).toBe(30);
     expect(bonus(result, "cash").amount).toBe(0);
-    expect(bonus(result, "cash").gate).toEqual({ required: 100, achievement: 30, met: false });
+    expect(bonus(result, "cash").gate).toEqual({ required: 100, achievement: 30, met: false, preset: false });
     expect(bonus(result, "collection").amount).toBe(0);
   });
   it("a modest minimum pays the bonuses even below the 50% / 70% levels", () => {
