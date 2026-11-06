@@ -1,0 +1,220 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">عمولات NS</string>
+
+    <!-- تسجيل الدخول -->
+    <string name="login_title">عمولات المندوبين</string>
+    <string name="login_subtitle">سجّل الدخول بنفس حساب الموقع.</string>
+    <string name="login_identifier">البريد أو اسم المستخدم</string>
+    <string name="login_identifier_hint">name@naguibselim.com أو nsr305</string>
+    <string name="login_password">كلمة المرور</string>
+    <string name="login_show">إظهار</string>
+    <string name="login_hide">إخفاء</string>
+    <string name="login_submit">تسجيل الدخول</string>
+    <string name="login_submitting">جارٍ تسجيل الدخول…</string>
+    <string name="login_new_seller">مندوب بدون حساب؟</string>
+    <string name="login_create_account">أنشئ حسابًا</string>
+    <string name="login_help">تتم إدارة الصلاحيات من قِبل المسؤول. نسيت كلمة المرور؟ تواصل مع الدعم الفني للحصول على كلمة مرور جديدة.</string>
+
+    <!-- الأخطاء -->
+    <string name="offline_title">لا يوجد اتصال بالإنترنت</string>
+    <string name="error_title">تعذّر تحميل العمولات</string>
+    <string name="err_offline">تحقق من اتصالك بالإنترنت ثم حاول مرة أخرى.</string>
+    <string name="err_invalid_credentials">البريد / اسم المستخدم أو كلمة المرور غير صحيحة.</string>
+    <string name="err_locked">محاولات تسجيل دخول كثيرة. تم إيقاف تسجيل الدخول لمدة 10 دقائق.</string>
+    <string name="err_no_access">حسابك ليس لديه صلاحية صفحة العمولات. تواصل مع المسؤول.</string>
+    <string name="err_inactive">حسابك غير مفعّل بعد. سيُفتح بعد موافقة المسؤول.</string>
+    <string name="err_must_change_password">طلب المسؤول تغيير كلمة المرور. غيّرها من الموقع ثم ارجع.</string>
+    <string name="err_not_connected">الخادم غير متصل بأودو بعد.</string>
+    <string name="err_load_failed">لم يرد أودو في الوقت المحدد. حاول مرة أخرى بعد قليل.</string>
+    <string name="err_generic">حدث خطأ. حاول مرة أخرى.</string>
+    <string name="retry">حاول مرة أخرى</string>
+    <string name="change_password">تغيير كلمة المرور</string>
+
+    <!-- الشريط العلوي والفلاتر -->
+    <string name="cm_title">عمولات المندوبين</string>
+    <string name="refresh">تحديث الآن</string>
+    <string name="more">المزيد</string>
+    <string name="open_website">فتح على الموقع</string>
+    <string name="my_account">حسابي</string>
+    <string name="sign_out">تسجيل الخروج</string>
+    <string name="month">الشهر</string>
+    <string name="seller">المندوب</string>
+    <string name="all_sellers">كل المندوبين (ملخص الفريق)</string>
+    <string name="live">مباشر</string>
+    <string name="month_closed">شهر مغلق · أرقام نهائية</string>
+    <string name="day_of">اليوم %1$d من %2$d</string>
+    <string name="loading">جارٍ قراءة الأرقام من أودو…</string>
+    <string name="loading_hint">قد يستغرق ذلك حتى دقيقة في بداية اليوم.</string>
+    <string name="updated_at">آخر تحديث %1$s · يتحدث كل 5 دقائق</string>
+
+    <!-- التنبيهات -->
+    <string name="notice_no_rates">لم تُحدد نسب العمولة لشهر %1$s بعد، لذلك تظهر العمولات صفرًا.</string>
+    <string name="notice_inherited">يستخدم هذا الشهر النسب والشروط المحفوظة لشهر %1$s حتى تُحفظ إعداداته.</string>
+    <string name="notice_no_sheet">لم يُعثر على ملف أهداف %1$s في التخزين (Wholesales_Target).</string>
+    <string name="notice_unlinked">غير مربوطين بمستخدم أودو: %1$s</string>
+    <string name="empty_title">لا يوجد مندوبون للعرض</string>
+    <string name="empty_body">لا يوجد مندوبون في قائمة %1$s.</string>
+    <string name="empty_not_listed">حسابك غير مربوط بمندوب في قائمة %1$s.</string>
+
+    <!-- ملخص الفريق -->
+    <string name="kpi_label">ملخص الفريق</string>
+    <string name="kpi_sales">مبيعات الفريق</string>
+    <string name="of_target">%1$s من %2$s</string>
+    <string name="of_target_to_date">%1$s من الهدف حتى اليوم %2$s</string>
+    <string name="kpi_no_target">لم تُحدد أهداف</string>
+    <string name="kpi_commission">العمولة</string>
+    <string name="kpi_final">نهائية للشهر</string>
+    <string name="kpi_so_far">المستحق حتى الآن</string>
+    <string name="kpi_collections">التحصيلات</string>
+    <string name="of_sales">%1$s من المبيعات</string>
+    <string name="kpi_on_track">على المسار</string>
+    <string name="kpi_on_track_sub">متوقع أن يحقق الهدف</string>
+    <string name="kpi_flagged">أقل من الحد الأدنى</string>
+    <string name="kpi_flagged_sub">أقل من %1$s في نهاية الشهر</string>
+    <string name="board_title">المندوبون</string>
+    <string name="board_description">مرتبون حسب نسبة التحقيق مقارنةً بالهدف حتى اليوم. الجزء الباهت من الشريط هو المتوقع في نهاية الشهر بمعدل اليوم. اضغط على المندوب لعرض الكشف كاملًا.</string>
+    <string name="not_linked">غير مربوط بمستخدم في أودو</string>
+    <string name="sales">المبيعات</string>
+    <string name="of_amount">من %1$s</string>
+    <string name="of_amount_to_date">من الهدف حتى اليوم %1$s</string>
+    <string name="no_target">بدون هدف</string>
+    <string name="commission">العمولة</string>
+    <string name="commission_so_far">العمولة حتى الآن</string>
+    <string name="collected_pct">حصّل %1$s من المبيعات</string>
+    <string name="per_day_needed">يحتاج %1$s يوميًا لتحقيق الهدف</string>
+
+    <!-- النظام -->
+    <string name="regime_full">عمولة كاملة + حوافز</string>
+    <string name="regime_old">نظام العمولة القديم</string>
+    <string name="regime_low" formatted="false">أقل من 50% · 0.1% فقط</string>
+    <string name="regime_no_target">لم يُحدد هدف</string>
+    <string name="regime_help_full">نسبة التحقيق %1$s%% أو أكثر من الهدف: تُطبق عمولة البنود مع كل الحوافز والخصومات.</string>
+    <string name="regime_help_old">نسبة التحقيق بين %1$s%% و%2$s%% من الهدف: يُطبق نظام العمولة القديم بدون حوافز أو خصومات. حقق %2$s%% لتفعيلها.</string>
+    <string name="regime_help_low">نسبة التحقيق أقل من %1$s%% من الهدف: العمولة %2$s من إجمالي المبيعات بدون حوافز.</string>
+    <string name="regime_help_no_target">لم يُحدد هدف إجمالي لهذا الشهر: تظهر عمولة البنود والحوافز لكن لا يمكن التحقق من شروط الهدف.</string>
+
+    <!-- الملاحظات -->
+    <string name="flag_below_minimum">أقل من الحد الأدنى الشهري</string>
+    <string name="flag_minimum_risk">معرض للانتهاء تحت الحد الأدنى</string>
+    <string name="flag_below_long">ملاحظة: مبيعات الشهر %1$s أقل من الحد الأدنى %2$s.</string>
+    <string name="flag_risk_long">تنبيه: بالمعدل الحالي سينتهي الشهر عند حوالي %1$s، أقل من الحد الأدنى %2$s.</string>
+
+    <!-- كشف العمولة -->
+    <string name="back_to_team">ملخص الفريق (كل المندوبين)</string>
+    <string name="statement">كشف العمولة</string>
+    <string name="commission_now">العمولة المستحقة حتى الآن</string>
+    <string name="commission_final">عمولة الشهر</string>
+    <string name="updates_live">تتحدث مع ترحيل الفواتير والمدفوعات</string>
+    <string name="targets_title">الأهداف</string>
+    <string name="targets_description">مقارنةً بالهدف المتناسب مع الأيام المنقضية؛ الجزء الباهت من الشريط هو المتوقع عند نهاية الشهر بمعدل اليوم.</string>
+    <string name="targets_closed">نسبة التحقيق النهائية للشهر.</string>
+    <string name="no_total_target">لم يُحدد هدف إجمالي لهذا المندوب هذا الشهر.</string>
+    <string name="total_target">الهدف الإجمالي</string>
+    <string name="target_to_date">الهدف حتى اليوم</string>
+    <string name="projected">المتوقع نهاية الشهر</string>
+    <string name="left_to_target">المتبقي للهدف</string>
+    <string name="target_reached">تحقق الهدف</string>
+    <string name="per_day">المطلوب يوميًا</string>
+    <string name="days_remaining">الأيام المتبقية</string>
+    <string name="cat_slow">الراكد</string>
+    <string name="cat_digital">الديجيتال</string>
+    <string name="range_name">الشريحة %1$s</string>
+    <string name="unit_m">م</string>
+
+    <!-- كيف تُحسب العمولة -->
+    <string name="build_title">كيف تُحسب العمولة</string>
+    <string name="build_description">عمولة البنود ثم كل شرط: المحقق منها يُحتسب، والباقي يوضح مدى قرب المندوب منه.</string>
+    <string name="build_base">عمولة البنود (شرائح السعر + المنتجات)</string>
+    <string name="build_total">العمولة</string>
+    <string name="build_low_rate">أقل من 50%%: %1$s من إجمالي المبيعات بدلًا مما سبق</string>
+    <string name="build_old_rate">النظام القديم: %1$s من إجمالي المبيعات</string>
+    <string name="build_old_note">النظام القديم (%1$s%%–%2$s%% من الهدف): تُصرف عمولة البنود بدون حوافز أو خصومات.</string>
+    <string name="build_all_targets">تحقيق كل الأهداف: ‎+%1$s%% من عمولة البنود</string>
+    <string name="build_slow_deduction">الراكد أقل من %1$s%% من هدفه: خصم %2$s%%</string>
+    <string name="build_cash">المبيعات النقدية ≥ %1$s%% من المبيعات</string>
+    <string name="build_collection">التحصيلات أكثر من %1$s%% من المبيعات</string>
+    <string name="build_collection_share">تعديل العمولة حسب نسبة التحصيل</string>
+    <string name="build_collection_rate">التحصيلات %1$s من المبيعات؛ تُصرف عمولة البنود بهذه النسبة</string>
+    <string name="build_sales_ladder">حافز المبيعات الشهرية</string>
+    <string name="build_ladder_next">مستحق · الحافز التالي عند %1$s</string>
+    <string name="build_met">مستحق</string>
+    <string name="build_not_met">لم يتحقق بعد</string>
+    <string name="build_no_data">لا توجد بيانات بعد</string>
+    <string name="build_standing">الآن %1$s · المطلوب %2$s</string>
+    <string name="build_not_under_system">تحقق، لكنه لا يُصرف في النظام الحالي</string>
+    <string name="build_gate_met">تحقيق الهدف %1$s · المطلوب %2$s ✓</string>
+    <string name="build_gate_needed">يحتاج أيضًا %1$s من الهدف · الآن %2$s</string>
+
+    <!-- الرسم -->
+    <string name="chart_title">المبيعات اليومية مقابل معدل الهدف</string>
+    <string name="chart_sales">المبيعات اليومية</string>
+    <string name="chart_cumulative">الإجمالي التراكمي</string>
+    <string name="chart_pace">معدل الهدف</string>
+    <string name="chart_best_day">أفضل يوم: %1$s · %2$s</string>
+
+    <!-- الشرائح -->
+    <string name="tiers_title">العمولة حسب شريحة السعر والفئة</string>
+    <string name="tiers_description">تستحق المنتجات المصنفة نسبة فئتها، أما بقية البنود فتستحق نسبة شريحة سعر الوحدة.</string>
+    <string name="tiers_from">%1$s فأكثر</string>
+    <string name="tiers_between">من %1$s إلى أقل من %2$s</string>
+    <string name="tiers_category_rate">نسبة الفئة</string>
+    <string name="tiers_none">خارج كل الشرائح</string>
+    <string name="tiers_none_sub">لا تنطبق نسبة</string>
+    <string name="tiers_bucket">الشريحة / الفئة</string>
+    <string name="tiers_sales">المبيعات</string>
+    <string name="tiers_rate">النسبة</string>
+    <string name="tiers_commission">العمولة</string>
+    <string name="tiers_total">الإجمالي</string>
+
+    <!-- التحصيلات -->
+    <string name="collections_title">التحصيلات والمديونية</string>
+    <string name="collections_description">المقبوضات المنسوبة للمندوب هذا الشهر، ومديونية عملائه اليوم.</string>
+    <string name="collections_total">المحصَّل</string>
+    <string name="receivables">مديونية العملاء</string>
+    <string name="receivables_sub">اليوم، إجمالي</string>
+    <string name="receivables_closed">تظهر للشهر الحالي فقط</string>
+    <string name="coll_payment">مدفوعات</string>
+    <string name="coll_cheque">شيكات محصلة</string>
+    <string name="coll_manual">مقبوضات خزينة</string>
+    <string name="coll_refund">مردودات</string>
+
+    <!-- المنتجات والفواتير والعملاء -->
+    <string name="products_title">المنتجات المباعة</string>
+    <string name="products_description">بعد الخصومات وإشعارات الدائن. القيمة والعمولة بالجنيه.</string>
+    <string name="products_none">لا توجد مبيعات هذا الشهر بعد.</string>
+    <string name="products_search">ابحث عن منتج أو كود أو لون</string>
+    <string name="show_more">عرض %1$d أخرى</string>
+    <string name="show_less">عرض أقل</string>
+    <string name="invoices_title">الفواتير وإشعارات الدائن</string>
+    <string name="invoices_description">صافي القيمة وعمولة البنود لكل فاتورة، الأحدث أولًا.</string>
+    <string name="credit_note">إشعار دائن</string>
+    <string name="customers_title">العملاء</string>
+    <string name="customers_note">صافي المبيعات وعمولة البنود لكل عميل. الشركات الشقيقة مستبعدة.</string>
+    <string name="customers_none">لا يوجد عملاء بعد.</string>
+
+    <plurals name="days_left">
+        <item quantity="zero">لا أيام متبقية</item>
+        <item quantity="one">يوم واحد متبقٍ</item>
+        <item quantity="two">يومان متبقيان</item>
+        <item quantity="few">%d أيام متبقية</item>
+        <item quantity="many">%d يومًا متبقيًا</item>
+        <item quantity="other">%d يوم متبقٍ</item>
+    </plurals>
+    <plurals name="invoices">
+        <item quantity="zero">لا فواتير</item>
+        <item quantity="one">فاتورة واحدة</item>
+        <item quantity="two">فاتورتان</item>
+        <item quantity="few">%d فواتير</item>
+        <item quantity="many">%d فاتورة</item>
+        <item quantity="other">%d فاتورة</item>
+    </plurals>
+    <plurals name="customers">
+        <item quantity="zero">لا عملاء</item>
+        <item quantity="one">عميل واحد</item>
+        <item quantity="two">عميلان</item>
+        <item quantity="few">%d عملاء</item>
+        <item quantity="many">%d عميلًا</item>
+        <item quantity="other">%d عميل</item>
+    </plurals>
+</resources>

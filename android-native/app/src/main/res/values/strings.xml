@@ -1,0 +1,208 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">NS Commissions</string>
+
+    <!-- Sign-in -->
+    <string name="login_title">Sales rep commissions</string>
+    <string name="login_subtitle">Sign in with the same account as the website.</string>
+    <string name="login_identifier">Email or username</string>
+    <string name="login_identifier_hint">name@naguibselim.com or nsr305</string>
+    <string name="login_password">Password</string>
+    <string name="login_show">Show</string>
+    <string name="login_hide">Hide</string>
+    <string name="login_submit">Sign in</string>
+    <string name="login_submitting">Signing in…</string>
+    <string name="login_new_seller">Sales rep without an account?</string>
+    <string name="login_create_account">Create an account</string>
+    <string name="login_help">Access is managed by the administrator. Forgot your password? Contact support for a new one.</string>
+
+    <!-- Errors -->
+    <string name="offline_title">You\'re offline</string>
+    <string name="error_title">Couldn\'t load the commissions</string>
+    <string name="err_offline">Check your internet connection, then try again.</string>
+    <string name="err_invalid_credentials">The email / username or password is incorrect.</string>
+    <string name="err_locked">Too many sign-in attempts. Sign-in is paused for 10 minutes.</string>
+    <string name="err_no_access">Your account does not have access to the commissions page. Ask the administrator.</string>
+    <string name="err_inactive">Your account is not active yet. It will open once the administrator approves it.</string>
+    <string name="err_must_change_password">The administrator asked you to choose a new password. Change it on the website, then come back.</string>
+    <string name="err_not_connected">The server is not connected to Odoo yet.</string>
+    <string name="err_load_failed">Odoo did not answer in time. Please try again in a moment.</string>
+    <string name="err_generic">Something went wrong. Please try again.</string>
+    <string name="retry">Try again</string>
+    <string name="change_password">Change password</string>
+
+    <!-- Top bar and filters -->
+    <string name="cm_title">Sales rep commissions</string>
+    <string name="refresh">Refresh now</string>
+    <string name="more">More</string>
+    <string name="open_website">Open on the website</string>
+    <string name="my_account">My account</string>
+    <string name="sign_out">Sign out</string>
+    <string name="month">Month</string>
+    <string name="seller">Sales rep</string>
+    <string name="all_sellers">All sellers (team summary)</string>
+    <string name="live">Live</string>
+    <string name="month_closed">Month closed · final figures</string>
+    <string name="day_of">Day %1$d of %2$d</string>
+    <string name="loading">Reading the figures from Odoo…</string>
+    <string name="loading_hint">This can take up to a minute at the start of the day.</string>
+    <string name="updated_at">Updated at %1$s · refreshes every 5 minutes</string>
+
+    <!-- Notices -->
+    <string name="notice_no_rates">Commission rates for %1$s are not set yet, so commissions show as zero.</string>
+    <string name="notice_inherited">This month uses the rates and rules saved for %1$s until its own settings are saved.</string>
+    <string name="notice_no_sheet">The target sheet for %1$s was not found in storage (Wholesales_Target).</string>
+    <string name="notice_unlinked">Not linked to an Odoo user: %1$s</string>
+    <string name="empty_title">No sales reps to show</string>
+    <string name="empty_body">No sales reps are listed for %1$s.</string>
+    <string name="empty_not_listed">Your account is not linked to a sales rep in %1$s\'s list.</string>
+
+    <!-- Team summary -->
+    <string name="kpi_label">Team summary</string>
+    <string name="kpi_sales">Team sales</string>
+    <string name="of_target">%1$s of %2$s</string>
+    <string name="of_target_to_date">%1$s of %2$s target to date</string>
+    <string name="kpi_no_target">No targets set</string>
+    <string name="kpi_commission">Commission</string>
+    <string name="kpi_final">Final for the month</string>
+    <string name="kpi_so_far">Earned so far</string>
+    <string name="kpi_collections">Collections</string>
+    <string name="of_sales">%1$s of sales</string>
+    <string name="kpi_on_track">On track</string>
+    <string name="kpi_on_track_sub">Projected to reach target</string>
+    <string name="kpi_flagged">Below minimum</string>
+    <string name="kpi_flagged_sub">Under %1$s at month end</string>
+    <string name="board_title">Sales reps</string>
+    <string name="board_description">Ranked by achievement against the target to date. The faint part of the bar is the month-end projection at today\'s pace. Tap a rep for the full statement.</string>
+    <string name="not_linked">Not linked to an Odoo user</string>
+    <string name="sales">Sales</string>
+    <string name="of_amount">of %1$s</string>
+    <string name="of_amount_to_date">of %1$s target to date</string>
+    <string name="no_target">No target</string>
+    <string name="commission">Commission</string>
+    <string name="commission_so_far">Commission so far</string>
+    <string name="collected_pct">Collected %1$s of sales</string>
+    <string name="per_day_needed">Needs %1$s a day to reach target</string>
+
+    <!-- Regime -->
+    <string name="regime_full">Full commission + bonuses</string>
+    <string name="regime_old">Old commission system</string>
+    <string name="regime_low" formatted="false">Below 50% · 0.1% only</string>
+    <string name="regime_no_target">No target set</string>
+    <string name="regime_help_full">Achievement is at or above %1$s%% of target: the line commission applies with every bonus and deduction.</string>
+    <string name="regime_help_old">Achievement is between %1$s%% and %2$s%% of target: the old commission system applies — no bonuses or deductions. Reach %2$s%% to unlock them.</string>
+    <string name="regime_help_low">Achievement is below %1$s%% of target: the commission is %2$s of total sales, with no bonuses.</string>
+    <string name="regime_help_no_target">No total target is set for this month: the line commission and the bonuses are shown, but target conditions cannot be checked.</string>
+
+    <!-- Flags -->
+    <string name="flag_below_minimum">Below the monthly minimum</string>
+    <string name="flag_minimum_risk">At risk of ending below the minimum</string>
+    <string name="flag_below_long">Flag: month-end sales of %1$s are below the minimum of %2$s.</string>
+    <string name="flag_risk_long">Note: at the current pace the month would end at about %1$s, below the minimum of %2$s.</string>
+
+    <!-- Statement -->
+    <string name="back_to_team">Team summary (all sellers)</string>
+    <string name="statement">Commission statement</string>
+    <string name="commission_now">Commission earned so far</string>
+    <string name="commission_final">Commission for the month</string>
+    <string name="updates_live">Updates as invoices and payments are posted</string>
+    <string name="targets_title">Targets</string>
+    <string name="targets_description">Compared with the target prorated to days elapsed; the faint part of the bar is where today\'s pace ends the month.</string>
+    <string name="targets_closed">Final achievement for the month.</string>
+    <string name="no_total_target">No total target is set for this rep this month.</string>
+    <string name="total_target">Total target</string>
+    <string name="target_to_date">Target to date</string>
+    <string name="projected">Projected month end</string>
+    <string name="left_to_target">Left to target</string>
+    <string name="target_reached">Target reached</string>
+    <string name="per_day">Needed per day</string>
+    <string name="days_remaining">Days remaining</string>
+    <string name="cat_slow">Slow-moving</string>
+    <string name="cat_digital">Digital</string>
+    <string name="range_name">Range %1$s</string>
+    <string name="unit_m">m</string>
+
+    <!-- How the commission is built -->
+    <string name="build_title">How the commission is built</string>
+    <string name="build_description">Line commission, then each condition: earned ones count, the others show how close the rep is.</string>
+    <string name="build_base">Line commission (price ranges + products)</string>
+    <string name="build_total">Commission</string>
+    <string name="build_low_rate">Below 50%%: %1$s of total sales replaces the above</string>
+    <string name="build_old_rate">Old system: %1$s of total sales</string>
+    <string name="build_old_note">Old system (%1$s%%–%2$s%% of target): the line commission is paid without bonuses or deductions.</string>
+    <string name="build_all_targets">All targets met: +%1$s%% of the line commission</string>
+    <string name="build_slow_deduction">Slow-moving under %1$s%% of target: −%2$s%%</string>
+    <string name="build_cash">Cash sales ≥ %1$s%% of sales</string>
+    <string name="build_collection">Collections above %1$s%% of sales</string>
+    <string name="build_collection_share">Commission adjusted by collections</string>
+    <string name="build_collection_rate">Collections are %1$s of sales; the line commission is paid at that rate</string>
+    <string name="build_sales_ladder">Monthly sales bonus</string>
+    <string name="build_ladder_next">Earned · next bonus at %1$s</string>
+    <string name="build_met">Earned</string>
+    <string name="build_not_met">Not reached yet</string>
+    <string name="build_no_data">No data yet</string>
+    <string name="build_standing">Now %1$s · needs %2$s</string>
+    <string name="build_not_under_system">Met, but not paid under the current system</string>
+    <string name="build_gate_met">Target achievement %1$s · needs %2$s ✓</string>
+    <string name="build_gate_needed">Also needs %1$s of target · now %2$s</string>
+
+    <!-- Chart -->
+    <string name="chart_title">Daily sales against the target pace</string>
+    <string name="chart_sales">Daily sales</string>
+    <string name="chart_cumulative">Running total</string>
+    <string name="chart_pace">Target pace</string>
+    <string name="chart_best_day">Best day: %1$s · %2$s</string>
+
+    <!-- Price ranges -->
+    <string name="tiers_title">Commission by price range and category</string>
+    <string name="tiers_description">Classified products earn their category rate. All other invoice lines earn the rate for their unit-price range.</string>
+    <string name="tiers_from">%1$s and above</string>
+    <string name="tiers_between">%1$s to under %2$s</string>
+    <string name="tiers_category_rate">Category rate</string>
+    <string name="tiers_none">Outside every range</string>
+    <string name="tiers_none_sub">No rate applies</string>
+    <string name="tiers_bucket">Range / category</string>
+    <string name="tiers_sales">Sales</string>
+    <string name="tiers_rate">Rate</string>
+    <string name="tiers_commission">Commission</string>
+    <string name="tiers_total">Total</string>
+
+    <!-- Collections -->
+    <string name="collections_title">Collections and receivables</string>
+    <string name="collections_description">Receipts credited to the rep this month, and what the rep\'s customers owe today.</string>
+    <string name="collections_total">Collected</string>
+    <string name="receivables">Customers owe</string>
+    <string name="receivables_sub">Today, gross</string>
+    <string name="receivables_closed">Shown for the open month only</string>
+    <string name="coll_payment">Payments</string>
+    <string name="coll_cheque">Cheques collected</string>
+    <string name="coll_manual">Treasury receipts</string>
+    <string name="coll_refund">Refunds</string>
+
+    <!-- Products, invoices, customers -->
+    <string name="products_title">Products sold</string>
+    <string name="products_description">Net of discounts and credit notes. Value and commission in EGP.</string>
+    <string name="products_none">No sales this month yet.</string>
+    <string name="products_search">Search product, code or colour</string>
+    <string name="show_more">Show %1$d more</string>
+    <string name="show_less">Show fewer</string>
+    <string name="invoices_title">Invoices and credit notes</string>
+    <string name="invoices_description">Net amount and line commission per invoice, newest first.</string>
+    <string name="credit_note">Credit note</string>
+    <string name="customers_title">Customers</string>
+    <string name="customers_note">Net sales and line commission per customer. Group (sister) companies are excluded.</string>
+    <string name="customers_none">No customers yet.</string>
+
+    <plurals name="days_left">
+        <item quantity="one">%d day left</item>
+        <item quantity="other">%d days left</item>
+    </plurals>
+    <plurals name="invoices">
+        <item quantity="one">%d invoice</item>
+        <item quantity="other">%d invoices</item>
+    </plurals>
+    <plurals name="customers">
+        <item quantity="one">%d customer</item>
+        <item quantity="other">%d customers</item>
+    </plurals>
+</resources>
