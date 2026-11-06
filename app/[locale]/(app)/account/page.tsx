@@ -6,6 +6,8 @@ import { Suspense } from "react";
 import { requireUser } from "@/lib/auth/dal";
 import { isAdmin, isSeller } from "@/lib/auth/permissions";
 import { AndroidAppCard } from "@/components/layout/android-app";
+import { ANDROID_APPS } from "@/lib/android-app";
+import { chosenAndroidVariant } from "@/lib/app/download";
 import { PhoneNotifications } from "@/components/layout/phone-notifications";
 import { PasswordForm } from "./password-form";
 
@@ -26,6 +28,7 @@ export default function AccountPage({ searchParams }: PageProps<"/[locale]/accou
 async function Account({ searchParams }: { searchParams: PageProps<"/[locale]/account">["searchParams"] }) {
   await connection();
   const user = await requireUser();
+  const androidVariant = await chosenAndroidVariant();
   const t = await getTranslations("account");
   await searchParams;
   const role = isAdmin(user) ? t("roleAdmin") : isSeller(user) ? t("roleSeller") : t("roleManager");
@@ -62,7 +65,7 @@ async function Account({ searchParams }: { searchParams: PageProps<"/[locale]/ac
           <PasswordForm />
         </div>
       </section>
-      {user.mustChangePassword ? null : <AndroidAppCard />}
+      {user.mustChangePassword ? null : <AndroidAppCard release={ANDROID_APPS[androidVariant].release} />}
       {user.mustChangePassword ? null : (
         <Suspense fallback={<div className="h-48 animate-pulse rounded-3xl border bg-card" />}>
           <PhoneNotifications user={user} />

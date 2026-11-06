@@ -6,7 +6,7 @@ import { useCallback, useEffect, useLayoutEffect, useState, useSyncExternalStore
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
 import { hasAppInstalled } from "@/lib/app/actions";
-import { ANDROID_APK_URL, ANDROID_RELEASE as release, sizeMb } from "@/lib/android-app";
+import { ANDROID_APK_URL, sizeMb, type AndroidRelease } from "@/lib/android-app";
 import { cn } from "@/lib/utils";
 
 export type Device = "app" | "android" | "ios" | "desktop" | "unknown";
@@ -43,6 +43,14 @@ export function isStandalone() {
 /** Android app or installed web app: the app layout (no Home / language / theme buttons in the header). */
 function isAppShell() {
   return navigator.userAgent.includes("NSCommissionsApp") || isStandalone();
+}
+
+function AndroidIcon({ className }: { className?: string }) {
+  return (
+    <svg aria-hidden className={className} viewBox="0 0 24 24" fill="currentColor">
+      <path d="M7.2 5.7 5.8 3.3a.6.6 0 0 1 1-.6l1.5 2.5a8.1 8.1 0 0 1 7.4 0l1.5-2.5a.6.6 0 0 1 1 .6l-1.4 2.4A7.2 7.2 0 0 1 20 12H4a7.2 7.2 0 0 1 3.2-6.3ZM8 8.2a.8.8 0 1 0 0-1.6.8.8 0 0 0 0 1.6Zm8 0a.8.8 0 1 0 0-1.6.8.8 0 0 0 0 1.6ZM4 13h16v5a2 2 0 0 1-2 2h-1v2a1 1 0 0 1-2 0v-2H9v2a1 1 0 0 1-2 0v-2H6a2 2 0 0 1-2-2v-5Zm-3 1a1 1 0 0 1 2 0v4a1 1 0 0 1-2 0v-4Zm20 0a1 1 0 0 1 2 0v4a1 1 0 0 1-2 0v-4Z" />
+    </svg>
+  );
 }
 
 /** The visitor's device, read once on the client ("unknown" while rendering on the server). */
@@ -242,7 +250,7 @@ export function AndroidDownloadButton({ className }: { className?: string }) {
         className,
       )}
     >
-      <DownloadIcon aria-hidden className="size-5" />
+      <AndroidIcon className="size-5 shrink-0" />
       <span className="flex flex-col items-start leading-tight">
         <span className="text-[11px] opacity-80">{t("page.androidSmall")}</span>
         <span className="text-sm font-semibold">{t("page.androidBig")}</span>
@@ -265,23 +273,17 @@ export function OpenInstalledAppLink() {
   );
 }
 
-/** iPhone button: jumps to the "Add to Home Screen" steps (the iPhone version is the installable web app). */
+/** Indicates that an iOS app is not currently available. */
 export function IosSoonButton({ className }: { className?: string }) {
   const t = useTranslations("androidApp.page");
   return (
-    <a
-      href="#iphone"
-      className={cn(
-        "inline-flex h-12 items-center gap-3 rounded-xl border bg-card px-5 text-foreground shadow-sm transition hover:bg-muted",
-        className,
-      )}
-    >
+    <button type="button" disabled className={cn("inline-flex h-12 cursor-not-allowed items-center gap-3 rounded-xl border bg-muted/50 px-5 text-muted-foreground opacity-80", className)}>
       <AppleIcon aria-hidden className="size-5" />
       <span className="flex flex-col items-start leading-tight">
         <span className="text-[11px] text-muted-foreground">{t("iosSmall")}</span>
         <span className="text-sm font-semibold">{t("iosBig")}</span>
       </span>
-    </a>
+    </button>
   );
 }
 
@@ -311,7 +313,7 @@ export function AndroidAppMenuItem() {
 }
 
 /** Small card on My account linking to the app page. */
-export function AndroidAppCard() {
+export function AndroidAppCard({ release }: { release: AndroidRelease }) {
   const t = useTranslations("androidApp");
   const device = useDevice();
   return (

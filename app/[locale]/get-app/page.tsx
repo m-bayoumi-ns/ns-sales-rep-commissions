@@ -1,13 +1,16 @@
 import { BellRingIcon, ChartLineIcon, ShareIcon, ShieldCheckIcon, SquarePlusIcon, WalletIcon } from "lucide-react";
 import type { Metadata } from "next";
+import { connection } from "next/server";
 import { useTranslations } from "next-intl";
 import { getTranslations } from "next-intl/server";
+import { Suspense } from "react";
 import { AndroidDownloadButton, DeviceNote, IosSoonButton, OpenInstalledAppLink } from "@/components/layout/android-app";
 import { BrandLogo } from "@/components/layout/brand-logo";
 import { LanguageSwitcher } from "@/components/layout/language-switcher";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
 import { Link } from "@/i18n/navigation";
-import { ANDROID_RELEASE, sizeMb } from "@/lib/android-app";
+import { ANDROID_APPS, sizeMb } from "@/lib/android-app";
+import { chosenAndroidVariant } from "@/lib/app/download";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("androidApp.page");
@@ -59,13 +62,13 @@ export default function GetAppPage() {
               </div>
             </div>
             <p className="max-w-lg text-base leading-relaxed text-muted-foreground md:text-lg">{p("lead")}</p>
-            <div className="flex flex-wrap gap-3">
-              <AndroidDownloadButton />
-              <IosSoonButton />
+            <div className="flex w-full max-w-[420px] flex-nowrap gap-2">
+              <AndroidDownloadButton className="min-w-0 flex-1 justify-center gap-2 px-2" />
+              <IosSoonButton className="min-w-0 flex-1 justify-center gap-2 px-2" />
             </div>
-            <p className="text-xs text-muted-foreground">
-              {p("version", { version: ANDROID_RELEASE.version, size: sizeMb(ANDROID_RELEASE.bytes) })}
-            </p>
+            <Suspense fallback={<p className="h-4 text-xs text-muted-foreground" />}>
+              <AndroidVersion />
+            </Suspense>
             <DeviceNote />
             <OpenInstalledAppLink />
           </div>
@@ -187,4 +190,11 @@ export default function GetAppPage() {
       <footer className="relative z-10 border-t py-6 text-center text-xs text-muted-foreground">{t("app.footer")}</footer>
     </div>
   );
+}
+
+async function AndroidVersion() {
+  await connection();
+  const [t, variant] = await Promise.all([getTranslations("androidApp.page"), chosenAndroidVariant()]);
+  const release = ANDROID_APPS[variant].release;
+  return <p className="text-xs text-muted-foreground">{t("version", { version: release.version, size: sizeMb(release.bytes) })}</p>;
 }

@@ -15,7 +15,8 @@ export type ActivityAction =
   | "disable_account"
   | "force_password_change"
   | "notify"
-  | "username_changed";
+  | "username_changed"
+  | "android_download_changed";
 
 /**
  * Writes one row to public.activity_logs. Never throws: logging must not break a

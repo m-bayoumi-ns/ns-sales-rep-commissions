@@ -1,5 +1,6 @@
 import "server-only";
 import { isDemoMode } from "@/lib/dev";
+import { ANDROID_VARIANTS, type AndroidVariant, DEFAULT_ANDROID_VARIANT } from "@/lib/android-app";
 import { PROFILE_TABLE } from "@/lib/auth/profile";
 import { addMonths, currentMonth } from "@/lib/finance/core";
 import { findSheetName, normalizeName } from "@/lib/commissions/names";
@@ -22,10 +23,16 @@ export type AppSettings = {
   autoApprove: boolean;
   /** Usernames chosen by an administrator for sheet reps who have no account yet (normalized name → username). */
   usernames?: Record<string, string>;
+  /** Which Android app the website's download button serves (Settings → Android app download). */
+  androidDownload?: AndroidVariant;
 };
 export async function loadAppSettings(): Promise<AppSettings> {
   const data = await readJson<Partial<AppSettings>>(APP_SETTINGS);
-  return { autoApprove: data?.autoApprove ?? false, usernames: data?.usernames ?? {} };
+  return {
+    autoApprove: data?.autoApprove ?? false,
+    usernames: data?.usernames ?? {},
+    androidDownload: ANDROID_VARIANTS.includes(data?.androidDownload as AndroidVariant) ? data!.androidDownload : DEFAULT_ANDROID_VARIANT,
+  };
 }
 export async function saveAppSettings(settings: AppSettings) {
   await writeJson(APP_SETTINGS, settings);
