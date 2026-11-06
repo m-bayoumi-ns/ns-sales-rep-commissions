@@ -62,6 +62,7 @@ fun LoginScreen(viewModel: AppViewModel) {
     var password by remember { mutableStateOf("") }
     var showPassword by rememberSaveable { mutableStateOf(false) }
     val uri = LocalUriHandler.current
+    val registerUrl = "${BuildConfig.API_BASE_URL}/${langSegment()}/register"
     val canSubmit = identifier.trim().length >= 2 && password.isNotEmpty() && !state.busy
     val submit = { if (canSubmit) viewModel.signIn(identifier, password) }
 
@@ -136,7 +137,7 @@ fun LoginScreen(viewModel: AppViewModel) {
 
                 Spacer(Modifier.height(16.dp))
                 Text(stringResource(R.string.login_new_seller), color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
-                TextButton(onClick = { uri.openUri("${BuildConfig.API_BASE_URL}/${langSegment()}/register") }) {
+                TextButton(onClick = { uri.openUri(registerUrl) }) {
                     Text(stringResource(R.string.login_create_account), fontWeight = FontWeight.SemiBold)
                 }
                 Text(
