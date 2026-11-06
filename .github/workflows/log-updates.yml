@@ -1,0 +1,35 @@
+name: Log External Commits
+
+on:
+  push:
+    branches:
+      - main # لو البرانش الأساسي عندك اسمه master، غير دي لـ master
+
+jobs:
+  update-log:
+    runs-on: ubuntu-latest
+    if: github.actor != 'm-bayoumi-ns' && github.actor != 'github-actions[bot]'
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Update auto-depoly.txt
+        run: |
+          # تظبيط التوقيت المحلي (عمان/القاهرة)
+          export TZ="Asia/Amman"
+          CURRENT_DATE=$(date "+%Y-%m-%d %I:%M:%S %p")
+          
+          # إضافة سطر جديد في الملف باسم الشخص والوقت
+          echo "تم التعديل بواسطة: ${{ github.actor }} في وقت: $CURRENT_DATE" >> auto-depoly.txt
+          
+      - name: Commit and push changes
+        run: |
+          # إعداد حساب البوت اللي هيسجل التعديل
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          
+          # رفع التعديلات على الجيت هب
+          git add auto-depoly.txt
+          git commit -m "Auto-update: سجل تعديلات ${{ github.actor }}"
+          git push
