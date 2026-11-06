@@ -10,6 +10,7 @@ import { isSupabaseConfigured } from "@/lib/env";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { clearFailures, isLocked, recordFailure } from "./rate-limit";
 import { safeNextPath } from "./safe-next";
+import { loginEmail } from "@/lib/accounts/usernames";
 
 export type SignInState = {
   status: "idle" | "invalid" | "locked" | "not_configured" | "error";
@@ -18,7 +19,8 @@ export type SignInState = {
 };
 
 const credentials = z.object({
-  email: z.email().max(254).transform((value) => value.trim().toLowerCase()),
+  // A work email, or a seller username (e.g. "nsr305") created from the target sheet.
+  email: z.string().trim().min(2).max(254).transform(loginEmail).pipe(z.email()),
   password: z.string().min(1).max(200),
 });
 

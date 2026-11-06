@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { type SignInState, signIn } from "@/lib/auth/actions";
 
 const schema = z.object({
-  email: z.email(),
+  email: z.string().trim().min(2),
   password: z.string().min(1),
 });
 
@@ -89,11 +89,12 @@ export function LoginForm({ next, reason }: { next?: string; reason?: string }) 
           ref={emailRef}
           id="email"
           name="email"
-          type="email"
+          type="text"
           dir="ltr"
           required
           autoComplete="username"
-          inputMode="email"
+          autoCapitalize="none"
+          spellCheck={false}
           defaultValue={state.email}
           key={state.email ?? "email"}
           placeholder={t("emailPlaceholder")}

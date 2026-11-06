@@ -14,7 +14,7 @@ import { clearFailures, isLocked, recordFailure } from "@/lib/auth/rate-limit";
 import { isDemoMode } from "@/lib/dev";
 import { isAdminConfigured, publicEnv } from "@/lib/env";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { registerSeller, saveAppSettings, setMustChangePassword, setSellerActive } from "./server";
+import { type CreateResult, createSheetAccounts, registerSeller, saveAppSettings, setMustChangePassword, setSellerActive } from "./server";
 
 const password = z.string().min(8).max(72);
 
@@ -139,5 +139,19 @@ export async function setAutoApprove(value: boolean): Promise<AccountResult> {
   } catch (error) {
     console.error("[accounts] auto-approve failed:", error);
     return { ok: false };
+  }
+}
+
+/** Creates accounts (username + default password) for reps of the latest target sheet; empty list = every rep without one. */
+export async function createAccountsFromSheet(names: string[]): Promise<{ ok: boolean; results: CreateResult[] }> {
+  const admin = await requireAdmin();
+  try {
+    const results = await createSheetAccounts(z.array(z.string().max(200)).max(500).parse(names));
+    after(() => logActivity({ action: "approve_account", userId: admin.id, email: admin.email, details: { created: results.filter((row) => row.status === "created").map((row) => row.username) } }));
+    revalidatePath("/", "layout");
+    return { ok: true, results };
+  } catch (error) {
+    console.error("[accounts] create from sheet failed:", error);
+    return { ok: false, results: [] };
   }
 }

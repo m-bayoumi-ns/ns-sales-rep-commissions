@@ -31,7 +31,14 @@ async function rpc<T>(service: "common" | "object", method: string, args: unknow
     cache: "no-store",
   });
   if (!response.ok) throw new OdooError(`Odoo HTTP ${response.status}`);
-  const body = (await response.json()) as { result?: T; error?: { message?: string; data?: { message?: string } } };
+  // An empty or cut-off reply (proxy timeout, Odoo restarting) must not surface as a bare JSON error.
+  const text = await response.text();
+  let body: { result?: T; error?: { message?: string; data?: { message?: string } } };
+  try {
+    body = JSON.parse(text);
+  } catch {
+    throw new OdooError(text.trim() ? "Odoo returned an invalid response" : "Odoo returned an empty response — try again in a moment");
+  }
   if (body.error) throw new OdooError(body.error.data?.message || body.error.message || "Odoo error");
   return body.result as T;
 }

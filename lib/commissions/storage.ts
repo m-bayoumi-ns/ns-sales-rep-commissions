@@ -86,7 +86,15 @@ async function readSettingsFile(month: string): Promise<CommissionSettings | nul
   const value = (async () => {
     const buffer = await download(settingsPath(month));
     if (!buffer) return null;
-    const parsed = settingsSchema.safeParse({ ...JSON.parse(buffer.toString("utf8")), month });
+    let raw: unknown;
+    try {
+      raw = JSON.parse(buffer.toString("utf8"));
+    } catch {
+      // An empty or broken file counts as "no settings saved" (the month falls back to an earlier month / defaults).
+      console.error(`[storage] ${settingsPath(month)} is empty or not valid JSON`);
+      return null;
+    }
+    const parsed = settingsSchema.safeParse({ ...(raw as object), month });
     if (!parsed.success) {
       console.error(`[storage] ${settingsPath(month)} is not valid:`, parsed.error.message);
       return null;

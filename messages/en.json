@@ -24,8 +24,8 @@
     "title": "Sign in to Customer Payments",
     "titlePrefix": "Sign in to",
     "subtitle": "Customer payments report for Naguib Selim.",
-    "email": "Work email",
-    "emailPlaceholder": "name@naguibselim.com",
+    "email": "Email or username",
+    "emailPlaceholder": "name@naguibselim.com or nsr305",
     "password": "Password",
     "forgotPassword": "Forgot password?",
     "showPassword": "Show password",
@@ -33,7 +33,7 @@
     "submitting": "Signing in…",
     "help": "Access is managed by your administrator. Need an account? Contact IT support.",
     "errors": {
-      "emailInvalid": "Enter a valid email address, e.g. name@naguibselim.com",
+      "emailInvalid": "Enter your email or username.",
       "passwordRequired": "Enter your password.",
       "invalidCredentials": "Incorrect email or password.",
       "invalidCredentialsHint": "Check both and try again. After 5 attempts, sign-in pauses for 10 minutes.",
@@ -712,7 +712,24 @@
     "forceOn": "They must change the password at next sign-in",
     "forceOff": "Password change no longer required",
     "empty": "No seller accounts yet. Sales reps can create one from the sign-in page.",
-    "hint": "\"Force new password\" switches itself off once the seller has changed the password; switch it on again to ask for another change."
+    "hint": "\"Force new password\" switches itself off once the seller has changed the password; switch it on again to ask for another change.",
+    "usernameLabel": "Username",
+    "sheet": {
+      "title": "Sales reps in the {month} targets sheet",
+      "description": "Create accounts for them with a username and the default password {password}. They must choose their own password at first sign-in.",
+      "createAll": "Create accounts for all ({count})",
+      "allDone": "Everyone has an account",
+      "create": "Create",
+      "username": "Username",
+      "hasAccount": "Has account",
+      "waiting": "Waiting approval",
+      "confirm": "Create {count} accounts with the default password {password}? Each seller must change it at first sign-in.",
+      "created": "{count, plural, one {# account created} other {# accounts created}}",
+      "someFailed": "{count, plural, one {# account could not be created} other {# accounts could not be created}}",
+      "failed": "Accounts could not be created.",
+      "loginTitle": "Sign-in details to give to the sellers",
+      "loginHint": "They sign in with the username (or the full email) and this password, then choose their own password."
+    }
   },
   "notify": {
     "label": "Notifications",

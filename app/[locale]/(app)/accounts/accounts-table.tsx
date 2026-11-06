@@ -112,7 +112,7 @@ export function AccountsTable({ accounts, autoApprove, sheetMonth, sheetCount }:
                   ) : null}
                 </span>
                 <bdi dir="ltr" className="truncate text-start text-xs text-muted-foreground">
-                  {row.email}
+                  {row.username ? `${t("usernameLabel")}: ${row.username}` : row.email}
                 </bdi>
                 <span className="text-[11px] text-muted-foreground">{row.lastSignIn ? t("lastSignIn", { date: formatDateTime(new Date(row.lastSignIn), locale) }) : t("neverSignedIn")}</span>
               </div>

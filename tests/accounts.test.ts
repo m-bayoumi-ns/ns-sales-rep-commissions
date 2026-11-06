@@ -32,3 +32,20 @@ describe("rate changes for notifications", () => {
     expect(kinds).toEqual(["tier", "categoryRate", "productAdded", "rule"]);
   });
 });
+
+import { loginEmail, usernameFor, usernameOf } from "@/lib/accounts/usernames";
+
+describe("seller usernames", () => {
+  it("uses the employee code, else the Odoo user id, and stays unique", () => {
+    const taken = new Set<string>();
+    expect(usernameFor("NSR305_أحمد عادل شحاته", 5651, taken)).toBe("nsr305");
+    expect(usernameFor("أحمد مصطفى غريب", 5655, taken)).toBe("rep5655");
+    expect(usernameFor("NSR305 duplicate", null, taken)).toBe("nsr305-2");
+  });
+  it("maps usernames to sign-in emails and back", () => {
+    expect(loginEmail("NSR305")).toBe("nsr305@reps.naguibselim.local");
+    expect(loginEmail("Name@NaguibSelim.com")).toBe("name@naguibselim.com");
+    expect(usernameOf("nsr305@reps.naguibselim.local")).toBe("nsr305");
+    expect(usernameOf("name@naguibselim.com")).toBeNull();
+  });
+});
