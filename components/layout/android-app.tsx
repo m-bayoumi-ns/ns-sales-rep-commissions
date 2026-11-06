@@ -5,6 +5,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useEffect, useLayoutEffect, useState, useSyncExternalStore } from "react";
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
+import { hasAppInstalled } from "@/lib/app/actions";
 import { ANDROID_APK_URL, ANDROID_RELEASE as release, sizeMb } from "@/lib/android-app";
 import { cn } from "@/lib/utils";
 
@@ -58,20 +59,25 @@ const APP_PACKAGE = "com.naguibselim.commissions";
 const APP_HOST = "ns-sales-rep-commissions.vercel.app";
 
 /**
- * Chrome on Android: is the NS Commissions app installed on this phone? null = can't tell (other browsers,
- * or an app older than 1.0.10, which doesn't declare its link to the site yet).
+ * Android browser: is the NS Commissions app installed? Chrome's related-apps check first, then the account's
+ * phones (a phone of this user has the app). null while checking.
  */
 export function useAppInstalled(device: Device): boolean | null {
   const [installed, setInstalled] = useState<boolean | null>(null);
   useEffect(() => {
     if (device !== "android") return;
     const nav = navigator as Navigator & { getInstalledRelatedApps?: () => Promise<{ id?: string; platform?: string }[]> };
-    if (!nav.getInstalledRelatedApps) return;
     let alive = true;
-    nav
-      .getInstalledRelatedApps()
-      .then((apps) => alive && setInstalled(apps.some((app) => app.id === APP_PACKAGE)))
-      .catch(() => alive && setInstalled(null));
+    // 1. Chrome's own check (works when Chrome can verify the app); 2. else: has this account a phone with the app?
+    const fromChrome = nav.getInstalledRelatedApps
+      ? nav
+          .getInstalledRelatedApps()
+          .then((apps) => apps.some((app) => app.id === APP_PACKAGE))
+          .catch(() => false)
+      : Promise.resolve(false);
+    fromChrome
+      .then((found) => found || hasAppInstalled().catch(() => false))
+      .then((found) => alive && setInstalled(found));
     return () => {
       alive = false;
     };
@@ -117,6 +123,8 @@ export function GetAppBanner() {
 
   if (closed || snoozed || pathname.startsWith("/get-app")) return null;
   if (device !== "android" && device !== "ios") return null;
+  // Wait for the install check, so the button doesn't flip from "Download" to "Open".
+  if (device === "android" && installed === null) return null;
 
   const close = () => {
     try {
