@@ -25,6 +25,8 @@ export default async function proxy(request: NextRequest) {
   const locale = isLocale(segment) ? segment : routing.defaultLocale;
   // Public pages: sign-in and seller self-registration.
   const isLoginPage = rest[0] === "login" || rest[0] === "register";
+  // Open to everyone, signed in or not: the mobile app download page.
+  const isOpenPage = rest[0] === "get-app";
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -49,7 +51,7 @@ export default async function proxy(request: NextRequest) {
     signedIn = Boolean(data?.claims?.sub);
   }
 
-  if (!signedIn && !isLoginPage) {
+  if (!signedIn && !isLoginPage && !isOpenPage) {
     const login = new URL(`/${locale}/login`, request.url);
     login.searchParams.set("next", request.nextUrl.pathname + request.nextUrl.search);
     // A Supabase auth cookie that no longer verifies = the session expired.

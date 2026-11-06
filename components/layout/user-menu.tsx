@@ -13,6 +13,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { AndroidAppMenuItem } from "@/components/layout/android-app";
 import { signOut } from "@/lib/auth/actions";
 import { useRouter } from "@/i18n/navigation";
 
@@ -82,7 +83,8 @@ export function UserMenu({ user }: { user: HeaderUser }) {
             {t("accounts")}
           </DropdownMenuItem>
         ) : null}
-        {user.isAdmin ? <DropdownMenuSeparator /> : null}
+        <AndroidAppMenuItem />
+        <DropdownMenuSeparator />
         <DropdownMenuItem disabled={signingOut} onClick={() => startSignOut(() => signOut(locale))}>
           <LogOutIcon aria-hidden className="rtl:-scale-x-100" />
           {t("signOut")}

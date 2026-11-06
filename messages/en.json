@@ -773,5 +773,60 @@
         "minimumSales": "Monthly minimum (EGP)"
       }
     }
+  },
+  "androidApp": {
+    "menu": "Mobile app",
+    "title": "NS Commissions app",
+    "meta": "Android · version {version} · {size} MB",
+    "view": "View",
+    "installed": "Installed",
+    "banner": {
+      "label": "Get the mobile app",
+      "title": "NS Commissions app",
+      "bodyAndroid": "Your commission on your phone — faster and always signed in.",
+      "bodyIos": "Android app available · iPhone coming soon",
+      "open": "View",
+      "notNow": "Not now"
+    },
+    "page": {
+      "metaTitle": "Mobile app",
+      "eyebrow": "Mobile app",
+      "title": "NS Commissions",
+      "lead": "Your sales, collections and commission in your pocket. Open it in a second, stay signed in, and get notified the moment your commission rates change.",
+      "androidSmall": "Download for",
+      "androidBig": "Android",
+      "iosSmall": "iPhone",
+      "iosBig": "Coming soon",
+      "version": "Android version {version} · {size} MB · Android 7 or newer",
+      "noteApp": "You're already using the app.",
+      "noteAndroid": "Your phone is ready — tap Android to download.",
+      "noteIos": "The iPhone version is on its way. Meanwhile you can add the site to your home screen (see below).",
+      "noteDesktop": "Open this page on your Android phone to download the app.",
+      "mockCommission": "Commission this month",
+      "mockTarget": "78% of target",
+      "featuresTitle": "Why use the app",
+      "f1Title": "Your commission at a glance",
+      "f1Body": "Today's commission, target progress and bonuses the moment you open it.",
+      "f2Title": "Sales & collections",
+      "f2Body": "Every invoice, customer and day — the same live numbers as the website.",
+      "f3Title": "Instant notifications",
+      "f3Body": "Know right away when commission rates or rules change.",
+      "f4Title": "Secure & signed in",
+      "f4Body": "Your own account, your own data only, and no signing in every time.",
+      "androidTitle": "Install on Android",
+      "s1": "Tap “Download for Android” on your phone.",
+      "s2": "Open the downloaded file (from the notification or the Downloads folder).",
+      "s3": "If Android asks, allow installing apps from this source, then tap Install.",
+      "s4": "Open NS Commissions and sign in with your usual username and password.",
+      "androidNote": "New versions install over the old one — your sign-in is kept.",
+      "iosTitle": "iPhone",
+      "soon": "Coming soon",
+      "iosBody": "The iPhone version of NS Commissions is in preparation and will be available here soon.",
+      "iosMeanwhile": "Meanwhile, add it to your home screen:",
+      "i1": "Open this site in Safari and tap Share.",
+      "i2": "Choose “Add to Home Screen”, then Add.",
+      "help": "Prefer the browser?",
+      "openSite": "Open the website"
+    }
   }
 }

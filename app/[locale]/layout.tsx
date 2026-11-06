@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { locale as rootLocale } from "next/root-params";
 import { NextIntlClientProvider } from "next-intl";
 import { getTranslations } from "next-intl/server";
+import { GetAppBanner } from "@/components/layout/android-app";
 import { Providers } from "@/components/providers";
 import { directionOf, isLocale, routing } from "@/i18n/routing";
 import "../globals.css";
@@ -48,7 +49,10 @@ export default async function LocaleLayout({ children }: LayoutProps<"/[locale]"
     >
       <body className="min-h-dvh">
         <NextIntlClientProvider>
-          <Providers direction={dir}>{children}</Providers>
+          <Providers direction={dir}>
+            {children}
+            <GetAppBanner />
+          </Providers>
         </NextIntlClientProvider>
       </body>
     </html>
