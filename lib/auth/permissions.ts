@@ -38,6 +38,11 @@ export function hasAnyBranch(user: AppUser): boolean {
   return scope.all || scope.branches.length > 0;
 }
 
+/** A sales rep's own account: sees only their own commission and their account page. */
+export function isSeller(user: AppUser): boolean {
+  return user.permissionType !== "super_admin" && user.permissionType !== "all_branches" && user.branchFilterType === "sales_rep";
+}
+
 export function isAdmin(user: AppUser): boolean {
   return user.active && user.permissionType === "super_admin";
 }

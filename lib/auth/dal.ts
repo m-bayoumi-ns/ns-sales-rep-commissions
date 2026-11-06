@@ -45,6 +45,17 @@ export async function requireUser(): Promise<AppUser> {
   return user!;
 }
 
+/** requireUser, plus: a user who must change their password is sent to the account page first. */
+export async function requireReadyUser(): Promise<AppUser> {
+  const user = await requireUser();
+  if (user.mustChangePassword) {
+    const segment = await rootLocale();
+    const locale = isLocale(segment) ? segment : routing.defaultLocale;
+    redirect({ href: { pathname: "/account", query: { force: "1" } }, locale });
+  }
+  return user;
+}
+
 /** Local development only (lib/dev.ts). */
 const DEMO_USER: AppUser = {
   id: "00000000-0000-0000-0000-000000000000",
@@ -57,4 +68,5 @@ const DEMO_USER: AppUser = {
   salesReps: [],
   allowedPages: [],
   active: true,
+  mustChangePassword: false,
 };

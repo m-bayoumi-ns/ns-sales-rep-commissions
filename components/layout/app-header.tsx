@@ -6,6 +6,7 @@ import { getCurrentUser } from "@/lib/auth/dal";
 import { isAdmin } from "@/lib/auth/permissions";
 import { BrandLogo } from "./brand-logo";
 import { LanguageSwitcher } from "./language-switcher";
+import { NotificationBell } from "./notification-bell";
 import { ReportNav } from "./report-nav";
 import { ThemeToggle } from "./theme-toggle";
 
@@ -45,6 +46,7 @@ export async function AppHeader({ userSlot }: { userSlot?: React.ReactNode }) {
         </a>
         <ReportNav admin={user ? isAdmin(user) : false} />
         <div className="ms-auto flex items-center gap-1 sm:gap-3">
+          {user ? <NotificationBell /> : null}
           <LanguageSwitcher />
           <ThemeToggle />
           {userSlot}

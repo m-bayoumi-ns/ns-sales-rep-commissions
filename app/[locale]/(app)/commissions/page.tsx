@@ -16,7 +16,7 @@ import { ScrollReveal } from "@/components/motion/scroll-reveal";
 import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import { logActivity } from "@/lib/activity";
-import { requireUser } from "@/lib/auth/dal";
+import { requireReadyUser } from "@/lib/auth/dal";
 import { canAccessPage, isAdmin } from "@/lib/auth/permissions";
 import { hasRates } from "@/lib/commissions/schema";
 import { ALL_REPS, getCommissionsView, repOptions, resolveMonth } from "@/lib/commissions/view";
@@ -54,7 +54,7 @@ function Loading() {
 }
 
 async function Commissions({ searchParams }: { searchParams: PageProps<"/[locale]/commissions">["searchParams"] }) {
-  const user = await requireUser();
+  const user = await requireReadyUser();
   const [t, tc] = await Promise.all([getTranslations("cm"), getTranslations("common")]);
   const locale = (await getLocale()) as Locale;
 
@@ -98,7 +98,7 @@ async function Commissions({ searchParams }: { searchParams: PageProps<"/[locale
   return (
     <ScrollReveal className="flex flex-col gap-5">
       <div className="mx-auto flex w-full max-w-3xl flex-wrap items-center gap-2">
-        {options.length ? <RepPicker reps={options} value={showDetail ? view.detail!.rep.key : ALL_REPS} month={month} allowAll={options.length > 1} /> : null}
+        {options.length > 1 ? <RepPicker reps={options} value={showDetail ? view.detail!.rep.key : ALL_REPS} month={month} allowAll={options.length > 1} /> : null}
         <MonthBar months={view.months} month={month} live={!view.clock.closed} keepRep={showDetail ? view.detail!.rep.key : ALL_REPS} />
       </div>
       {notices.map((notice) => (

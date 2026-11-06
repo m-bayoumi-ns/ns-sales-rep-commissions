@@ -23,7 +23,8 @@ export default async function proxy(request: NextRequest) {
 
   const [, segment, ...rest] = request.nextUrl.pathname.split("/");
   const locale = isLocale(segment) ? segment : routing.defaultLocale;
-  const isLoginPage = rest[0] === "login";
+  // Public pages: sign-in and seller self-registration.
+  const isLoginPage = rest[0] === "login" || rest[0] === "register";
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;

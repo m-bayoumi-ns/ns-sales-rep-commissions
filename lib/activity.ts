@@ -3,7 +3,18 @@ import { isDemoMode } from "@/lib/dev";
 import { isAdminConfigured } from "@/lib/env";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
 
-export type ActivityAction = "sign_in" | "sign_in_failed" | "sign_out" | "view_page" | "export";
+export type ActivityAction =
+  | "sign_in"
+  | "sign_in_failed"
+  | "sign_out"
+  | "view_page"
+  | "export"
+  | "register"
+  | "change_password"
+  | "approve_account"
+  | "disable_account"
+  | "force_password_change"
+  | "notify";
 
 /**
  * Writes one row to public.activity_logs. Never throws: logging must not break a

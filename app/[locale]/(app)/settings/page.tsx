@@ -5,11 +5,12 @@ import { getTranslations } from "next-intl/server";
 import { Suspense } from "react";
 import { MonthBar } from "@/components/commissions/month-bar";
 import { PageHeading, StateCard } from "@/components/finance/report-ui";
-import { requireUser } from "@/lib/auth/dal";
+import { requireReadyUser } from "@/lib/auth/dal";
 import { isAdmin } from "@/lib/auth/permissions";
 import { availableMonths, loadMonthSetup, resolveMonth } from "@/lib/commissions/view";
 import { isOdooConfigured } from "@/lib/env";
 import { addMonths, currentMonth } from "@/lib/finance/core";
+import { listSellerAccounts } from "@/lib/accounts/server";
 import { SettingsForm } from "./settings-form";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -26,7 +27,7 @@ export default function SettingsPage({ searchParams }: PageProps<"/[locale]/sett
 }
 
 async function SettingsContent({ searchParams }: { searchParams: PageProps<"/[locale]/settings">["searchParams"] }) {
-  const user = await requireUser();
+  const user = await requireReadyUser();
   if (!isAdmin(user)) notFound();
   const t = await getTranslations("settings");
   if (!isOdooConfigured()) return <StateCard title={t("notConnected")} body={t("notConnectedBody")} />;
@@ -37,7 +38,13 @@ async function SettingsContent({ searchParams }: { searchParams: PageProps<"/[lo
   const next = addMonths(currentMonth(), 1);
   const wanted = Array.isArray(raw) ? raw[0] : raw;
   const month = wanted === next ? next : resolveMonth(wanted);
-  const setup = await loadMonthSetup(month);
+  const [setup, accounts] = await Promise.all([
+    loadMonthSetup(month),
+    listSellerAccounts().catch((error) => {
+      console.error("[settings] seller accounts unavailable:", error);
+      return [];
+    }),
+  ]);
 
   return (
     <div className="flex flex-col gap-5">
@@ -52,6 +59,7 @@ async function SettingsContent({ searchParams }: { searchParams: PageProps<"/[lo
         sheet={{ found: setup.sheet.found, path: setup.sheet.path, columns: setup.sheet.columns, count: setup.sheet.reps.length }}
         reps={setup.reps}
         candidates={setup.candidates.map(({ id, name }) => ({ id, name }))}
+        accounts={accounts.filter((account) => account.active).map(({ id, name, email }) => ({ id, name, email }))}
       />
     </div>
   );

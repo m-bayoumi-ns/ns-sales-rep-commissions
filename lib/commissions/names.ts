@@ -54,3 +54,14 @@ export function matchRep<T extends { id: number; name: string }>(name: string, u
   }
   return bestScore >= Math.min(2, mine.length) && !tie ? best : null;
 }
+
+/**
+ * Registration: the target-sheet name that matches what the person typed, or null.
+ * The typed name must be the same name (codes like "NSR305_" and spelling variants of أ/ا, ة/ه, ى/ي are ignored),
+ * so a near match does not open someone else's commission.
+ */
+export function findSheetName(typed: string, names: string[]): string | null {
+  const wanted = normalizeName(typed);
+  if (!wanted) return null;
+  return names.find((name) => normalizeName(name) === wanted) ?? null;
+}

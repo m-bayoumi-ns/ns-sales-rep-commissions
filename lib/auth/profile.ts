@@ -65,5 +65,7 @@ export async function loadAppUser(supabase: SupabaseClient, claims: JwtPayload):
     salesReps: fields?.sales_reps ?? [],
     allowedPages: fields?.allowed_pages ?? [],
     active: fields?.is_active ?? true,
+    // Kept in the Auth user's app_metadata (only the service role can write it).
+    mustChangePassword: Boolean((claims.app_metadata as { must_change_password?: unknown } | undefined)?.must_change_password),
   };
 }

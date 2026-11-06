@@ -6,6 +6,7 @@ import { Link, usePathname } from "@/i18n/navigation";
 const PAGES = [
   { href: "/commissions", key: "commissions", admin: false },
   { href: "/settings", key: "settings", admin: true },
+  { href: "/accounts", key: "accounts", admin: true },
 ] as const;
 
 /** Links between the site's pages; the current one is marked. Settings is for administrators only. */

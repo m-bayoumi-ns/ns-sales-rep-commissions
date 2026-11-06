@@ -1,7 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import { Skeleton } from "@/components/ui/skeleton";
 import { requireUser } from "@/lib/auth/dal";
-import { branchScope, isAdmin } from "@/lib/auth/permissions";
+import { branchScope, isAdmin, isSeller } from "@/lib/auth/permissions";
 import { UserMenu } from "./user-menu";
 
 /** Reads the session, so it always renders inside <Suspense>. Sends only display fields to the browser. */
@@ -11,6 +11,10 @@ export async function HeaderUser() {
   const scope = branchScope(user);
 
   const role = user.jobTitle ?? t(user.permissionType);
+  // A sales rep: "Sales representative · <rep name>".
+  if (isSeller(user)) {
+    return <UserMenu user={{ name: user.name, email: user.email, scope: `${t("seller")} · ${user.salesReps[0] ?? "—"}`, isAdmin: false }} />;
+  }
   const where = scope.all
     ? t("allBranches")
     : scope.branches.length === 1

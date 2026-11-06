@@ -59,3 +59,22 @@ npm test
 `.env` holds the same values as ns-payment-methods. On Vercel use the same variables and add the new URL in
 Supabase → Authentication → URL configuration. Local demo mode (`NS_DEMO_DATA=1` in `.env.development.local`)
 skips the login and keeps settings / target files in a local `.data` folder instead of Supabase.
+
+## Seller accounts
+- **Register** (`/register`, linked from the sign-in page): name + email + password. The name must match a name in the
+  latest target sheet (`Wholesales_Target/target_YYYY_MM.xlsx`, this month or up to 3 months back); otherwise the page
+  says *"User not recognised by the system"*. One account per sales rep.
+- New accounts are written to the shared `profiles` table as `specific_branches` + `branch_filter_type = sales_rep` +
+  `sales_reps = [sheet name]` + `allowed_pages = ["sales-commissions"]`, so a seller sees **only their own commission**
+  (no team list, settings or accounts pages). They start inactive unless "Approve new accounts automatically" is on.
+- **My account** (`/account`): change password (current password required).
+- **Accounts** (`/accounts`, administrators): approve / disable seller accounts and switch on *Force new password*.
+  The flag lives in the Auth user's `app_metadata.must_change_password`; at the next sign-in every page sends the
+  seller to `/account` until the password is changed, then the flag switches itself off.
+
+## Rate-change notifications
+Saving the settings compares the rates and rules with the previous version. When something changed (or a message is
+written) and "Notify" is set to all sellers or chosen accounts, a notification is stored in
+`ns-sales-rep-commissions/notifications.json` and an empty ping is broadcast on the Supabase Realtime channel
+`ns-commissions-notify`. Every open page listening on it fetches its own notifications at once (the bell in the header,
+plus a toast); pages also re-check every 30 seconds. Read markers are in `notifications-read.json`.

@@ -85,6 +85,10 @@ export const rulesSchema = z.object({
     { from: 2_250_000, to: 5_500_000, amount: 2500 },
     { from: 5_000_000, to: null, amount: 5000 },
   ]),
+  /** Statement: which buckets (price ranges A/B/C, slow, digital) can be opened to list the products sold in them. */
+  statementDetails: z
+    .object({ A: z.boolean().default(true), B: z.boolean().default(true), C: z.boolean().default(true), slow: z.boolean().default(true), digital: z.boolean().default(true) })
+    .default({ A: true, B: true, C: true, slow: true, digital: true }),
   /** How the price-range targets are measured: quantity (meters / units) or sales value (EGP). */
   rangeUnit: z.enum(TARGET_UNITS).default("amount"),
   categoryUnits: z

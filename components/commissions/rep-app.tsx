@@ -4,6 +4,7 @@ import {
   BadgeCheckIcon,
   BanknoteIcon,
   CalendarClockIcon,
+  ChevronDownIcon,
   ChevronLeftIcon,
   CircleDashedIcon,
   CircleMinusIcon,
@@ -372,88 +373,164 @@ function useTips(detail: RepDetail, settings: CommissionSettings): Tip[] {
 
 // ---------------------------------------------------------------- tab 2: sales
 const SHOWN = 20;
+type SalesView = "products" | "invoices" | "customers";
 
 function Sales({ detail, clock }: { detail: RepDetail; clock: MonthClock }) {
   const t = useTranslations("app2");
   const tc = useTranslations("cm");
+  const locale = useLocale() as Locale;
+  const [view, setView] = useState<SalesView>("products");
   const [query, setQuery] = useState("");
   const [all, setAll] = useState(false);
-  const rows = useMemo(() => {
-    const text = query.trim().toLowerCase();
-    return text ? detail.products.filter((row) => `${row.productName} ${row.code ?? ""} ${row.color ?? ""}`.toLowerCase().includes(text)) : detail.products;
-  }, [detail.products, query]);
-  const shown = all ? rows : rows.slice(0, SHOWN);
+  const text = query.trim().toLowerCase();
+  const match = (value: string) => !text || value.toLowerCase().includes(text);
+  const products = useMemo(() => detail.products.filter((row) => match(`${row.productName} ${row.code ?? ""} ${row.color ?? ""} ${row.invoices.join(" ")}`)), [detail.products, text]); // eslint-disable-line react-hooks/exhaustive-deps
+  const invoices = useMemo(() => detail.invoiceRows.filter((row) => match(`${row.name} ${row.customer}`)), [detail.invoiceRows, text]); // eslint-disable-line react-hooks/exhaustive-deps
+  const customers = useMemo(() => detail.customerRows.filter((row) => match(row.name)), [detail.customerRows, text]); // eslint-disable-line react-hooks/exhaustive-deps
+  const count = { products: products.length, invoices: invoices.length, customers: customers.length }[view];
   const bucketLabel = (bucket: string) => (bucket === "slow" || bucket === "digital" ? t(`cat.${bucket}`) : bucket === "none" ? t("noRange") : t("range", { key: bucket }));
+  const cut = <T,>(list: T[]) => (all ? list : list.slice(0, SHOWN));
+  const dayLabel = (day: string) => new Intl.DateTimeFormat(locale === "ar" ? "ar-EG-u-nu-latn" : "en-GB", { day: "numeric", month: "short", timeZone: "UTC" }).format(new Date(`${day}T00:00:00Z`));
+  const totalCommission = detail.invoiceRows.reduce((sum, row) => sum + row.commission, 0);
 
   return (
     <>
       <DailyChart points={detail.daily} target={detail.rep.result.totalTarget} closedOrToday={clock.asOf} title={tc("chart.title")} caption={tc("chart.caption")} />
-      <section className="flex flex-col gap-2">
+      <section className="flex flex-col gap-3">
+        <div role="tablist" aria-label={t("salesViews")} className="grid grid-cols-3 gap-1 rounded-xl bg-muted p-1">
+          {(["products", "invoices", "customers"] as SalesView[]).map((key) => (
+            <button
+              key={key}
+              type="button"
+              role="tab"
+              aria-selected={view === key}
+              onClick={() => {
+                setView(key);
+                setAll(false);
+              }}
+              className={cn("rounded-lg px-2 py-1.5 text-xs font-semibold sm:text-sm", view === key ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}
+            >
+              {t(`view.${key}`)}
+            </button>
+          ))}
+        </div>
         <div className="flex flex-wrap items-center justify-between gap-2 px-1">
-          <h3 className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">{t("productsSold", { count: detail.products.length })}</h3>
+          <h3 className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+            {t(`viewTitle.${view}`, { count })}
+          </h3>
           <label className="relative w-full sm:w-64">
-            <span className="sr-only">{t("search")}</span>
+            <span className="sr-only">{t(`searchView.${view}`)}</span>
             <SearchIcon aria-hidden className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <input
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder={t("search")}
+              placeholder={t(`searchView.${view}`)}
               className="h-9 w-full rounded-full border border-input bg-card ps-9 pe-3 text-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30"
             />
           </label>
         </div>
-        {shown.length ? (
-          <ul className="divide-y overflow-hidden rounded-2xl border bg-card">
-            {shown.map((row) => (
-              <li key={row.key} className="flex items-center gap-3 px-4 py-3">
-                <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-accent text-primary">
-                  <PackageIcon aria-hidden className="size-4" />
-                </span>
-                <div className="flex min-w-0 flex-1 flex-col">
-                  <bdi className="truncate text-sm font-medium">
-                    {row.productName}
-                    {row.color ? <span className="text-muted-foreground"> · {row.color}</span> : null}
-                  </bdi>
-                  <span dir="ltr" className="text-start text-xs text-muted-foreground tabular-nums">
-                    {formatNumber(row.qty)} {row.uom ?? ""} × {row.avgPrice == null ? "—" : formatNumber(row.avgPrice)} = {formatNumber(row.amount)}
-                  </span>
-                </div>
-                <div className="flex shrink-0 flex-col items-end">
-                  <span dir="ltr" className="text-sm font-semibold text-success tabular-nums">
-                    +{formatNumber(row.commission)}
-                  </span>
-                  <span className="text-[11px] text-muted-foreground">
-                    {bucketLabel(row.bucket)} · <span dir="ltr">{formatRate(row.rate)}</span>
-                  </span>
-                </div>
-              </li>
-            ))}
-          </ul>
-        ) : (
+
+        {count === 0 ? (
           <p className="rounded-2xl border border-dashed py-8 text-center text-sm text-muted-foreground">{t("noSales")}</p>
+        ) : (
+          <ul className="divide-y overflow-hidden rounded-2xl border bg-card">
+            {view === "products"
+              ? cut(products).map((row) => (
+                  <li key={row.key} className="flex items-center gap-3 px-4 py-3">
+                    <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-accent text-primary">
+                      <PackageIcon aria-hidden className="size-4" />
+                    </span>
+                    <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                      <bdi className="truncate text-left text-sm font-medium rtl:text-right">
+                        {row.productName}
+                        {row.color ? <span className="text-muted-foreground"> · {row.color}</span> : null}
+                      </bdi>
+                      <span dir="ltr" className="text-start text-xs text-muted-foreground tabular-nums">
+                        {formatNumber(row.qty)} {row.uom ?? ""} × {row.avgPrice == null ? "—" : formatNumber(row.avgPrice)} = {formatNumber(row.amount)}
+                      </span>
+                      <InvoiceTags names={row.invoices} />
+                    </div>
+                    <div className="flex shrink-0 flex-col items-end">
+                      <span dir="ltr" className="text-sm font-semibold text-success tabular-nums">
+                        +{formatNumber(row.commission)}
+                      </span>
+                      <span className="text-[11px] text-muted-foreground">
+                        {bucketLabel(row.bucket)} · <span dir="ltr">{formatRate(row.rate)}</span>
+                      </span>
+                    </div>
+                  </li>
+                ))
+              : view === "invoices"
+                ? cut(invoices).map((row) => (
+                    <li key={row.moveId} className="flex items-center gap-3 px-4 py-3">
+                      <span className={cn("flex size-9 shrink-0 items-center justify-center rounded-xl", row.refund ? "bg-destructive-soft text-destructive" : "bg-accent text-primary")}>
+                        <ReceiptTextIcon aria-hidden className="size-4" />
+                      </span>
+                      <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                        <span className="flex items-center gap-2">
+                          <span dir="ltr" className="text-sm font-semibold tabular-nums">{row.name}</span>
+                          {row.refund ? <span className="rounded-full bg-destructive-soft px-1.5 py-0.5 text-[10px] font-semibold text-destructive">{t("refundTag")}</span> : null}
+                        </span>
+                        <bdi className="truncate text-left text-xs text-muted-foreground rtl:text-right">{row.customer}</bdi>
+                        <span className="text-[11px] text-muted-foreground">
+                          {dayLabel(row.day)} · {t("linesN", { count: row.lines })} · <span dir="ltr" className="tabular-nums">{formatNumber(row.amount)}</span>
+                        </span>
+                      </div>
+                      <span dir="ltr" className={cn("shrink-0 text-sm font-semibold tabular-nums", row.commission < 0 ? "text-destructive" : "text-success")}>
+                        {row.commission >= 0 ? "+" : ""}
+                        {formatNumber(row.commission)}
+                      </span>
+                    </li>
+                  ))
+                : cut(customers).map((row, index) => (
+                    <li key={`${row.name}-${index}`} className="flex items-center gap-3 px-4 py-3">
+                      <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-accent text-xs font-bold text-primary tabular-nums">{index + 1}</span>
+                      <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                        <bdi className="truncate text-left text-sm font-medium rtl:text-right">{row.name}</bdi>
+                        <span className="text-[11px] text-muted-foreground">
+                          {t("invoicesN", { count: row.invoices })} · <span dir="ltr" className="tabular-nums">{formatNumber(row.amount)}</span>
+                        </span>
+                      </div>
+                      <span dir="ltr" className={cn("shrink-0 text-sm font-semibold tabular-nums", row.commission < 0 ? "text-destructive" : "text-success")}>
+                        {row.commission >= 0 ? "+" : ""}
+                        {formatNumber(row.commission)}
+                      </span>
+                    </li>
+                  ))}
+          </ul>
         )}
-        {rows.length > SHOWN ? (
+        {count > SHOWN ? (
           <button type="button" onClick={() => setAll((value) => !value)} className="self-center rounded-full px-4 py-1.5 text-sm font-medium text-primary hover:bg-muted">
-            {all ? t("less") : t("more", { count: rows.length - SHOWN })}
+            {all ? t("less") : t("more", { count: count - SHOWN })}
           </button>
         ) : null}
+        <p className="px-1 text-xs text-muted-foreground">
+          {t("lineCommissionNote", { total: formatNumber(totalCommission) })} {t("sisterNote")}
+        </p>
       </section>
-      <Group title={t("topCustomers")} footer={t("sisterNote")}>
-        {detail.customers.length ? (
-          detail.customers.map((customer, index) => (
-            <Row
-              key={index}
-              icon={<span className="text-xs font-bold tabular-nums">{index + 1}</span>}
-              label={<bdi>{customer.name}</bdi>}
-              sub={t("invoicesN", { count: customer.invoices })}
-              value={formatNumber(customer.amount)}
-            />
-          ))
-        ) : (
-          <li className="px-4 py-6 text-center text-sm text-muted-foreground">{t("noSales")}</li>
-        )}
-      </Group>
     </>
+  );
+}
+
+/** Invoice numbers a product was sold on: the first three, then "+N". */
+function InvoiceTags({ names }: { names: string[] }) {
+  const t = useTranslations("app2");
+  const [open, setOpen] = useState(false);
+  if (!names.length) return null;
+  const shown = open ? names : names.slice(0, 3);
+  return (
+    <span className="flex flex-wrap items-center gap-1" aria-label={t("invoiceNumbers")}>
+      {shown.map((name) => (
+        <span key={name} dir="ltr" className="rounded-md bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground tabular-nums">
+          {name}
+        </span>
+      ))}
+      {names.length > 3 ? (
+        <button type="button" onClick={() => setOpen((value) => !value)} className="rounded-md px-1 text-[10px] font-semibold text-primary hover:underline">
+          {open ? t("less") : `+${names.length - 3}`}
+        </button>
+      ) : null}
+    </span>
   );
 }
 
@@ -508,6 +585,8 @@ function Statement({ detail, settings }: { detail: RepDetail; settings: Commissi
     ...r.tiers.map((bucket, index) => ({ key: bucket.key, label: t("range", { key: bucket.key }), sub: settings.tiers[index].to == null ? t("priceFrom", { from: formatNumber(settings.tiers[index].from) }) : t("priceBetween", { from: formatNumber(settings.tiers[index].from), to: formatNumber(settings.tiers[index].to) }), amount: bucket.amount, rate: formatRate(bucket.rate), commission: bucket.commission })),
     ...(["slow", "digital"] as const).map((key) => ({ key, label: t(`cat.${key}`), sub: t("ownRates"), amount: r.categories[key].amount, rate: formatRate(settings.categoryRates[key]), commission: r.categories[key].commission })),
   ].filter((line) => line.amount !== 0 || line.commission !== 0);
+  const [openKey, setOpenKey] = useState<string | null>(null);
+  const canOpen = (key: string) => rules.statementDetails[key as keyof typeof rules.statementDetails] !== false && detail.products.some((row) => row.bucket === key);
   const adjustments = r.adjustments.filter((item) => item.key !== "lowRate" && item.key !== "oldRate" && item.key !== "collectionShare");
   const collectionShare = r.adjustments.find((item) => item.key === "collectionShare");
 
@@ -522,18 +601,37 @@ function Statement({ detail, settings }: { detail: RepDetail; settings: Commissi
       </div>
 
       <ul className="flex flex-col gap-2 border-b border-dashed py-3">
-        {lines.map((line) => (
-          <li key={line.key} className={cn("flex items-baseline gap-2 text-sm", replaced && "opacity-50")}>
-            <span className="flex min-w-0 flex-col">
-              <span className="font-medium">{line.label}</span>
-              <span dir="ltr" className="text-start text-[11px] text-muted-foreground tabular-nums">
-                {formatNumber(line.amount)} {line.rate ? `× ${line.rate}` : ""} · {line.sub}
+        {lines.map((line) => {
+          const openable = canOpen(line.key);
+          const open = openable && openKey === line.key;
+          const body = (
+            <>
+              <span className="flex min-w-0 flex-col text-start">
+                <span className="flex items-center gap-1 font-medium">
+                  {line.label}
+                  {openable ? <ChevronDownIcon aria-hidden className={cn("size-3.5 text-muted-foreground transition-transform", open && "rotate-180")} /> : null}
+                </span>
+                <span dir="ltr" className="text-start text-[11px] text-muted-foreground tabular-nums">
+                  {formatNumber(line.amount)} {line.rate ? `× ${line.rate}` : ""} · {line.sub}
+                </span>
               </span>
-            </span>
-            <span aria-hidden className="mb-1 flex-1 border-b border-dotted" />
-            <span dir="ltr" className="font-semibold tabular-nums">{formatNumber(line.commission)}</span>
-          </li>
-        ))}
+              <span aria-hidden className="mb-1 flex-1 self-end border-b border-dotted" />
+              <span dir="ltr" className="font-semibold tabular-nums">{formatNumber(line.commission)}</span>
+            </>
+          );
+          return (
+            <li key={line.key} className={cn("flex flex-col text-sm", replaced && "opacity-50")}>
+              {openable ? (
+                <button type="button" aria-expanded={open} onClick={() => setOpenKey(open ? null : line.key)} className="-mx-2 flex items-baseline gap-2 rounded-lg px-2 py-1 hover:bg-muted">
+                  {body}
+                </button>
+              ) : (
+                <div className="flex items-baseline gap-2 py-1">{body}</div>
+              )}
+              {open ? <BucketProducts rows={detail.products.filter((row) => row.bucket === line.key)} /> : null}
+            </li>
+          );
+        })}
         <li className={cn("flex items-baseline gap-2 pt-1 text-sm font-semibold", replaced && "opacity-50")}>
           <span>{t("lineCommission")}</span>
           <span aria-hidden className="mb-1 flex-1 border-b border-dotted" />
@@ -569,6 +667,32 @@ function Statement({ detail, settings }: { detail: RepDetail; settings: Commissi
         </span>
       </div>
       {r.regime === "old" && rules.oldSystemMode === "base" ? <p className="mt-3 text-xs text-muted-foreground">{tb("oldNote", { low: rules.lowAchievementPct, old: rules.oldSystemUntilPct })}</p> : null}
+    </div>
+  );
+}
+
+/** Products sold in one price range / category: price after discount and quantity. */
+function BucketProducts({ rows }: { rows: RepDetail["products"] }) {
+  const t = useTranslations("app2");
+  return (
+    <div className="mt-1 mb-2 overflow-hidden rounded-xl border bg-muted/40">
+      <div className="grid grid-cols-[minmax(0,1fr)_auto_auto] gap-3 border-b px-3 py-1.5 text-[11px] font-semibold text-muted-foreground">
+        <span>{t("product")}</span>
+        <span className="w-20 text-end">{t("price")}</span>
+        <span className="w-20 text-end">{t("qtyM")}</span>
+      </div>
+      <ul className="max-h-72 divide-y overflow-y-auto">
+        {rows.map((row) => (
+          <li key={row.key} className="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-3 px-3 py-1.5 text-xs">
+            <bdi className="truncate">
+              {row.productName}
+              {row.color ? <span className="text-muted-foreground"> · {row.color}</span> : null}
+            </bdi>
+            <span dir="ltr" className="w-20 text-end tabular-nums">{row.avgPrice == null ? "—" : formatNumber(row.avgPrice)}</span>
+            <span dir="ltr" className="w-20 text-end font-medium tabular-nums">{formatNumber(row.qty)}</span>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

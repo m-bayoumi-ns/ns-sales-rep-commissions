@@ -16,7 +16,8 @@
     "skipToContent": "Skip to content",
     "switchLanguageShort": "ع",
     "home": "Home",
-    "settings": "Settings"
+    "settings": "Settings",
+    "account": "My account"
   },
   "login": {
     "title": "Sign in to Customer Payments",
@@ -42,14 +43,17 @@
     },
     "sessionExpired": "Your session expired.",
     "sessionExpiredHint": "Sign in again to return to Customer Payments with the same filters.",
-    "forgotPasswordHelp": "Passwords are reset by your administrator. Contact IT support to get a new one."
+    "forgotPasswordHelp": "Passwords are reset by your administrator. Contact IT support to get a new one.",
+    "newSeller": "Sales rep without an account?",
+    "createAccount": "Create one"
   },
   "roles": {
     "super_admin": "Administrator",
     "all_branches": "Sales manager",
     "specific_branches": "Area manager",
     "allBranches": "All branches",
-    "branchCount": "{count, plural, =0 {No branches} one {# branch} other {# branches}}"
+    "branchCount": "{count, plural, =0 {No branches} one {# branch} other {# branches}}",
+    "seller": "Sales rep"
   },
   "noAccess": {
     "title": "You don't have access to {page}",
@@ -329,7 +333,8 @@
   "nav": {
     "label": "Pages",
     "commissions": "Commissions",
-    "settings": "Settings"
+    "settings": "Settings",
+    "accounts": "Accounts"
   },
   "settings": {
     "title": "Commission settings",
@@ -436,7 +441,10 @@
       "noLimit": "No limit",
       "ladderBonus": "Bonus",
       "remove": "Remove",
-      "ladderAdd": "Add step"
+      "ladderAdd": "Add step",
+      "detailsTitle": "Statement: products under each category",
+      "detailsHint": "Ticked categories can be opened in the seller's Statement to list the products sold, their prices and quantities (meters).",
+      "rangeKey": "Range {key}"
     },
     "reps": {
       "title": "4 · Sales reps and targets",
@@ -460,6 +468,23 @@
       "rangeUnit": "Price-range targets measured in",
       "unitAmount": "Sales value (EGP)",
       "unitQty": "Quantity (meters / units)"
+    },
+    "notify": {
+      "title": "5 · Notify sellers about rate changes",
+      "description": "When you save, the sellers you choose get a live notification listing what changed.",
+      "changes": "{count, plural, one {# change} other {# changes}} to rates or rules since the last save",
+      "noChanges": "No rate changes yet — a notification is sent only when something changes (or you write a message).",
+      "mode": {
+        "all": "All sellers ({count})",
+        "users": "Selected sellers",
+        "none": "Don't notify"
+      },
+      "noAccounts": "No active seller accounts yet.",
+      "note": "Message (optional)",
+      "notePlaceholder": "e.g. Range B rate raised from the 10th",
+      "hint": "Sellers see it at once in the bell at the top of the page, even if the page is already open.",
+      "sentAll": "all sellers notified",
+      "sentSome": "{count, plural, one {# seller notified} other {# sellers notified}}"
     }
   },
   "app2": {
@@ -563,6 +588,150 @@
     "teamSales": "Sales {sales} of {target}",
     "teamSalesToDate": "Sales {sales} of target to date {target}",
     "flagged": "Below the minimum",
-    "notLinked": "not linked"
+    "notLinked": "not linked",
+    "salesViews": "Sales views",
+    "view": {
+      "products": "By product",
+      "invoices": "By invoice",
+      "customers": "By customer"
+    },
+    "viewTitle": {
+      "products": "Products sold ({count})",
+      "invoices": "Invoices ({count})",
+      "customers": "Customers ({count})"
+    },
+    "searchView": {
+      "products": "Search product, colour or invoice",
+      "invoices": "Search invoice number or customer",
+      "customers": "Search customer"
+    },
+    "refundTag": "Credit note",
+    "linesN": "{count, plural, one {# line} other {# lines}}",
+    "lineCommissionNote": "Amounts are line commission ({total} in total), before the collections adjustment and bonuses.",
+    "invoiceNumbers": "Invoice numbers",
+    "product": "Product",
+    "price": "Price",
+    "qtyM": "Qty (m)"
+  },
+  "register": {
+    "title": "Create your seller account",
+    "subtitle": "For sales reps listed in this month's targets. You will see your own commission only.",
+    "name": "Your name (as in the targets sheet)",
+    "nameHint": "Write it exactly as in the \"Sales Rep\" column, e.g. NSR305_أحمد عادل شحاته.",
+    "email": "Email",
+    "password": "Password",
+    "passwordHint": "At least 8 characters.",
+    "confirm": "Confirm password",
+    "show": "Show passwords",
+    "submit": "Create account",
+    "submitting": "Creating…",
+    "haveAccount": "Already have an account?",
+    "toLogin": "Sign in",
+    "pendingTitle": "Account created",
+    "pendingBody": "An administrator will activate it shortly. You can sign in once it is approved.",
+    "unknownTitle": "User not recognised by the system",
+    "unknownBody": "This name is not in the latest sales targets sheet. Check the spelling, or ask your manager to add you.",
+    "errors": {
+      "invalid": "Check the fields: name, a valid email and a password of at least 8 characters.",
+      "mismatch": "The two passwords do not match.",
+      "exists": "An account already exists for this sales rep. Sign in, or ask an administrator.",
+      "emailTaken": "This email is already registered. Sign in instead.",
+      "noSheet": "Registration is closed: no targets sheet has been uploaded yet.",
+      "locked": "Too many attempts. Try again in 10 minutes.",
+      "error": "The account could not be created. Try again later.",
+      "unknown": "User not recognised by the system",
+      "idle": "",
+      "pending": ""
+    }
+  },
+  "account": {
+    "title": "My account",
+    "forced": "An administrator asked you to choose a new password before continuing.",
+    "roleAdmin": "Administrator",
+    "roleSeller": "Sales rep",
+    "roleManager": "Manager",
+    "linkedRep": "Linked sales rep:",
+    "changePassword": "Change password",
+    "saved": "Password changed.",
+    "savedForced": "Password changed — opening your commission…",
+    "current": "Current password",
+    "new": "New password",
+    "hint": "At least 8 characters.",
+    "confirm": "Confirm new password",
+    "save": "Change password",
+    "errors": {
+      "invalid": "Enter your current password and a new one of at least 8 characters.",
+      "mismatch": "The new passwords do not match.",
+      "same": "Choose a password different from the current one.",
+      "wrongCurrent": "The current password is not correct.",
+      "error": "The password could not be changed. Try again.",
+      "idle": "",
+      "saved": ""
+    }
+  },
+  "accounts": {
+    "title": "Seller accounts",
+    "eyebrow": "Administration",
+    "description": "Sales reps who registered. Approve or disable accounts, and require a new password at next sign-in.",
+    "errorTitle": "Accounts could not be loaded",
+    "errorBody": "Check the Supabase connection and try again.",
+    "failed": "The change could not be saved.",
+    "autoApprove": "Approve new accounts automatically",
+    "autoApproveHint": "Off: new sellers wait for your approval before they can sign in.",
+    "whoCanRegister": "Who can register",
+    "sheetInfo": "Names in the {month} targets sheet ({count} reps).",
+    "noSheet": "No targets sheet found — registration is closed.",
+    "pendingCount": "{count, plural, one {# account waits} other {# accounts wait}} for approval.",
+    "active": "Active",
+    "pending": "Waiting approval",
+    "mustChange": "Must change password",
+    "lastSignIn": "Last sign-in {date}",
+    "neverSignedIn": "Never signed in",
+    "activeSwitch": "Active",
+    "forceSwitch": "Force new password",
+    "approved": "Account activated",
+    "disabled": "Account disabled",
+    "forceOn": "They must change the password at next sign-in",
+    "forceOff": "Password change no longer required",
+    "empty": "No seller accounts yet. Sales reps can create one from the sign-in page.",
+    "hint": "\"Force new password\" switches itself off once the seller has changed the password; switch it on again to ask for another change."
+  },
+  "notify": {
+    "label": "Notifications",
+    "labelUnread": "Notifications, {count} unread",
+    "title": "Notifications",
+    "subtitle": "Commission rate changes",
+    "empty": "No notifications.",
+    "itemTitle": "Commission rates updated · {month}",
+    "toastTitle": "Commission rates updated · {month}",
+    "toastBody": "{count, plural, one {# change} other {# changes}} — open the bell for details.",
+    "more": "+{count} more",
+    "by": "By {name}",
+    "toSome": "{count, plural, one {to # seller} other {to # sellers}}",
+    "change": {
+      "tier": "Range {key}",
+      "category": {
+        "slow": "Slow-moving rate",
+        "digital": "Digital rate"
+      },
+      "added": "Added to {category}",
+      "removed": "Removed from {category}",
+      "ladder": "Sales bonuses",
+      "rule": {
+        "allTargetsBonusPct": "All-targets bonus %",
+        "slowMinPct": "Slow-moving minimum %",
+        "slowDeductionPct": "Slow-moving deduction %",
+        "cashSharePct": "Cash-sales share for bonus %",
+        "cashBonus": "Cash bonus (EGP)",
+        "collectionPct": "Collections threshold %",
+        "collectionBonus": "Collections bonus (EGP)",
+        "lowAchievementPct": "Low-achievement level %",
+        "lowRate": "Low-achievement rate %",
+        "oldSystemUntilPct": "Old system up to %",
+        "oldSystemMode": "Old system pays",
+        "oldRate": "Old system rate %",
+        "minimumSales": "Monthly minimum (EGP)"
+      }
+    }
   }
 }

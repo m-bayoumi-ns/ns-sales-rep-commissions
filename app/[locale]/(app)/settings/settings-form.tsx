@@ -1,11 +1,12 @@
 "use client";
 
-import { CheckCircle2Icon, CopyIcon, InfoIcon, Loader2Icon, PackageSearchIcon, PlusIcon, SaveIcon, Trash2Icon, TriangleAlertIcon } from "lucide-react";
+import { BellRingIcon, CheckCircle2Icon, CopyIcon, InfoIcon, Loader2Icon, PackageSearchIcon, PlusIcon, SaveIcon, Trash2Icon, TriangleAlertIcon } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
+import { rateChanges } from "@/lib/commissions/changes";
 import { matchRep } from "@/lib/commissions/names";
 import type { ProductSearchResult } from "@/lib/commissions/odoo";
 import { CATEGORIES, type Category, type CommissionSettings, type ProductRule, type RepSetting, type Rules } from "@/lib/commissions/schema";
@@ -22,6 +23,8 @@ type Props = {
   sheet: { found: boolean; path: string; count: number; columns: { rep: string | null; total: string | null; slow: string | null; digital: string | null } };
   reps: RepEntry[];
   candidates: { id: number; name: string }[];
+  /** Active seller accounts that can be notified. */
+  accounts: { id: string; name: string; email: string }[];
 };
 
 const inputClass =
@@ -88,7 +91,7 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
   );
 }
 
-export function SettingsForm({ month, initial, source, inheritedFrom, sheet, reps: monthReps, candidates }: Props) {
+export function SettingsForm({ month, initial, source, inheritedFrom, sheet, reps: monthReps, candidates, accounts }: Props) {
   const t = useTranslations("settings");
   const locale = useLocale() as Locale;
   const router = useRouter();
@@ -101,6 +104,8 @@ export function SettingsForm({ month, initial, source, inheritedFrom, sheet, rep
   const [dirty, setDirty] = useState(source !== "saved");
   const [status, setStatus] = useState<{ kind: "saved" | "error"; text: string } | null>(null);
   const [saving, startSaving] = useTransition();
+  const [notify, setNotify] = useState<NotifyState>({ mode: "all", userIds: [], note: "" });
+  const changes = useMemo(() => rateChanges(initial, settings), [initial, settings]);
 
   const update = (change: (current: CommissionSettings) => CommissionSettings) => {
     setSettings(change);
@@ -124,13 +129,17 @@ export function SettingsForm({ month, initial, source, inheritedFrom, sheet, rep
         rules: { ...settings.rules, salesBonuses: settings.rules.salesBonuses.filter((step) => step.amount > 0) },
       };
       try {
-        const result = await saveCommissionSettings(clean);
+        const result = await saveCommissionSettings(clean, { mode: notify.mode, userIds: notify.userIds, note: notify.note || undefined });
         if (!result.ok) {
           setStatus({ kind: "error", text: `${t(`status.${result.reason}`)}${result.detail ? ` (${result.detail})` : ""}` });
           return;
         }
         setDirty(false);
-        setStatus({ kind: "saved", text: t("status.saved", { date: formatDateTime(new Date(result.savedAt), locale) }) });
+        setStatus({
+          kind: "saved",
+          text: `${t("status.saved", { date: formatDateTime(new Date(result.savedAt), locale) })}${result.notified ? ` · ${result.notified < 0 ? t("notify.sentAll") : t("notify.sentSome", { count: result.notified })}` : ""}`,
+        });
+        setNotify((current) => ({ ...current, note: "" }));
         router.refresh();
       } catch (error) {
         console.error("[settings] save failed:", error);
@@ -162,6 +171,7 @@ export function SettingsForm({ month, initial, source, inheritedFrom, sheet, rep
       <ProductsCard settings={settings} update={update} />
       <RulesCard rules={settings.rules} setRule={setRule} />
       <RepsCard settings={settings} update={update} sheet={sheet} monthName={monthName} candidates={candidates} monthReps={monthReps} />
+      <NotifyCard notify={notify} setNotify={setNotify} accounts={accounts} changes={changes.length} />
 
       <div className="fixed inset-x-0 bottom-0 z-30 border-t bg-card/95 backdrop-blur supports-backdrop-filter:bg-card/80">
         <div className="mx-auto flex max-w-[1440px] flex-wrap items-center gap-3 px-4 py-3 md:px-6 lg:px-8">
@@ -182,6 +192,61 @@ export function SettingsForm({ month, initial, source, inheritedFrom, sheet, rep
         </div>
       </div>
     </div>
+  );
+}
+
+type NotifyState = { mode: "none" | "all" | "users"; userIds: string[]; note: string };
+
+// ---------------------------------------------------------------- 5. notify sellers
+function NotifyCard({ notify, setNotify, accounts, changes }: { notify: NotifyState; setNotify: (change: (current: NotifyState) => NotifyState) => void; accounts: Props["accounts"]; changes: number }) {
+  const t = useTranslations("settings.notify");
+  const toggle = (id: string) => setNotify((current) => ({ ...current, userIds: current.userIds.includes(id) ? current.userIds.filter((item) => item !== id) : [...current.userIds, id] }));
+  return (
+    <Card title={t("title")} description={t("description")}>
+      <p className={cn("flex items-center gap-2 text-sm", changes ? "text-foreground" : "text-muted-foreground")}>
+        <BellRingIcon aria-hidden className={cn("size-4", changes ? "text-primary" : "")} />
+        {changes ? t("changes", { count: changes }) : t("noChanges")}
+      </p>
+      <div role="radiogroup" className="flex flex-wrap gap-2">
+        {(["all", "users", "none"] as const).map((mode) => (
+          <label key={mode} className={cn("flex cursor-pointer items-center gap-2 rounded-full border px-3 py-1.5 text-sm", notify.mode === mode ? "border-primary bg-accent font-medium" : "text-muted-foreground")}>
+            <input type="radio" name="notify-mode" className="accent-[var(--primary)]" checked={notify.mode === mode} onChange={() => setNotify((current) => ({ ...current, mode }))} />
+            {t(`mode.${mode}`, { count: accounts.length })}
+          </label>
+        ))}
+      </div>
+      {notify.mode === "users" ? (
+        accounts.length ? (
+          <div className="grid max-h-64 gap-1 overflow-y-auto rounded-lg border p-2 sm:grid-cols-2">
+            {accounts.map((account) => (
+              <label key={account.id} className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted">
+                <input type="checkbox" className="size-4 accent-[var(--primary)]" checked={notify.userIds.includes(account.id)} onChange={() => toggle(account.id)} />
+                <span className="flex min-w-0 flex-col">
+                  <bdi className="truncate">{account.name}</bdi>
+                  <bdi dir="ltr" className="truncate text-start text-[11px] text-muted-foreground">{account.email}</bdi>
+                </span>
+              </label>
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground">{t("noAccounts")}</p>
+        )
+      ) : null}
+      {notify.mode !== "none" ? (
+        <label className="flex flex-col gap-1.5">
+          <span className="text-xs font-medium">{t("note")}</span>
+          <textarea
+            value={notify.note}
+            maxLength={500}
+            rows={2}
+            onChange={(event) => setNotify((current) => ({ ...current, note: event.target.value }))}
+            placeholder={t("notePlaceholder")}
+            className="w-full rounded-lg border border-input bg-card px-2.5 py-2 text-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30"
+          />
+        </label>
+      ) : null}
+      <p className="text-xs text-muted-foreground">{t("hint")}</p>
+    </Card>
   );
 }
 
@@ -524,6 +589,22 @@ function RulesCard({ rules, setRule }: { rules: Rules; setRule: <K extends keyof
           </div>
         </fieldset>
       </div>
+
+      <fieldset className="flex flex-col gap-3 rounded-lg border p-3">
+        <legend className="px-1 text-sm font-semibold">{t("detailsTitle")}</legend>
+        <p className="text-xs text-muted-foreground">{t("detailsHint")}</p>
+        <div className="flex flex-wrap gap-2">
+          {(["A", "B", "C", "slow", "digital"] as const).map((key) => {
+            const on = rules.statementDetails[key];
+            return (
+              <label key={key} className={cn("flex cursor-pointer items-center gap-2 rounded-full border px-3 py-1.5 text-sm", on ? "border-primary bg-accent font-medium" : "text-muted-foreground")}>
+                <input type="checkbox" className="size-4 accent-[var(--primary)]" checked={on} onChange={(event) => setRule("statementDetails", { ...rules.statementDetails, [key]: event.target.checked })} />
+                {key === "slow" || key === "digital" ? t(`cat.${key}`) : t("rangeKey", { key })}
+              </label>
+            );
+          })}
+        </div>
+      </fieldset>
 
       <fieldset className="flex flex-col gap-3 rounded-lg border p-3">
         <legend className="px-1 text-sm font-semibold">{t("ladderTitle")}</legend>

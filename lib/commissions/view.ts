@@ -115,13 +115,21 @@ export type ProductRow = {
   bucket: string;
   rate: number;
   commission: number;
+  /** Invoice / credit-note numbers the product appears on. */
+  invoices: string[];
 };
+
+export type InvoiceRow = { moveId: number; name: string; day: string; customer: string; refund: boolean; qty: number; amount: number; commission: number; lines: number };
+export type CustomerRow = { name: string; invoices: number; qty: number; amount: number; commission: number };
 
 export type RepDetail = {
   rep: RepSummary;
   products: ProductRow[];
   daily: { day: string; sales: number; collections: number; cash: number }[];
   customers: { name: string; amount: number; invoices: number }[];
+  /** Line commission (before collections and bonuses) by invoice and by customer. */
+  invoiceRows: InvoiceRow[];
+  customerRows: CustomerRow[];
   collections: { payment: number; refund: number; cheque: number; manual: number };
 };
 
@@ -195,12 +203,34 @@ export async function getCommissionsView(user: AppUser, month: string, repKey: s
     for (const line of own) {
       const { bucket, rate } = bucketOf(settings, line);
       const keyOf = `${line.productId}|${bucket}`;
-      const row = products.get(keyOf) ?? { key: keyOf, productName: line.productName, code: line.code, color: line.color, uom: line.uom, qty: 0, amount: 0, avgPrice: null, bucket, rate, commission: 0 };
+      const row = products.get(keyOf) ?? { key: keyOf, productName: line.productName, code: line.code, color: line.color, uom: line.uom, qty: 0, amount: 0, avgPrice: null, bucket, rate, commission: 0, invoices: [] };
       row.qty += line.qty;
       row.amount += line.amount;
       row.commission += (line.amount * rate) / 100;
+      if (!row.invoices.includes(line.moveName)) row.invoices.push(line.moveName);
       products.set(keyOf, row);
     }
+    const invoiceMap = new Map<number, InvoiceRow>();
+    const customerMap = new Map<string, CustomerRow & { moves: Set<number> }>();
+    for (const line of own) {
+      const { rate } = bucketOf(settings, line);
+      const commission = (line.amount * rate) / 100;
+      const invoice = invoiceMap.get(line.moveId) ?? { moveId: line.moveId, name: line.moveName, day: line.day, customer: line.partnerName, refund: line.refund, qty: 0, amount: 0, commission: 0, lines: 0 };
+      invoice.qty += line.qty;
+      invoice.amount += line.amount;
+      invoice.commission += commission;
+      invoice.lines += 1;
+      invoiceMap.set(line.moveId, invoice);
+      const customerKey = String(line.partnerId ?? line.partnerName);
+      const customer = customerMap.get(customerKey) ?? { name: line.partnerName, invoices: 0, qty: 0, amount: 0, commission: 0, moves: new Set<number>() };
+      customer.qty += line.qty;
+      customer.amount += line.amount;
+      customer.commission += commission;
+      if (!line.refund) customer.moves.add(line.moveId);
+      customerMap.set(customerKey, customer);
+    }
+    const invoiceRows = [...invoiceMap.values()].sort((a, b) => b.day.localeCompare(a.day) || b.name.localeCompare(a.name));
+    const customerRows = [...customerMap.values()].map(({ moves, ...row }) => ({ ...row, invoices: moves.size })).sort((a, b) => b.amount - a.amount);
     const productRows = [...products.values()].map((row) => ({ ...row, avgPrice: row.qty ? row.amount / row.qty : null })).sort((a, b) => b.amount - a.amount);
 
     const [start] = monthBounds(month);
@@ -221,7 +251,7 @@ export async function getCommissionsView(user: AppUser, month: string, repKey: s
       .sort((a, b) => b.amount - a.amount)
       .slice(0, 10);
     const sum = (source: string) => collected.filter((row) => row.source === source).reduce((total, row) => total + row.amount, 0);
-    detail = { rep: selected, products: productRows, daily, customers, collections: { payment: sum("payment"), refund: sum("refund"), cheque: sum("cheque"), manual: sum("manual") } };
+    detail = { rep: selected, products: productRows, daily, customers, invoiceRows, customerRows, collections: { payment: sum("payment"), refund: sum("refund"), cheque: sum("cheque"), manual: sum("manual") } };
   }
 
   return {

@@ -23,6 +23,8 @@ export type AppUser = {
   /** Legacy page names or slugs. Empty = every standard page (same as the old app). */
   allowedPages: string[];
   active: boolean;
+  /** Set by an administrator: the user must choose a new password before anything else. */
+  mustChangePassword: boolean;
 };
 
 /** Which branches a user may see. `all: true` means no branch restriction. */

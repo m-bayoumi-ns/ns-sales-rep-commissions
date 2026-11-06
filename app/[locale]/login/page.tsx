@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { useTranslations } from "next-intl";
 import { getTranslations } from "next-intl/server";
 import { BrandLogo } from "@/components/layout/brand-logo";
+import { Link } from "@/i18n/navigation";
 import { LanguageSwitcher } from "@/components/layout/language-switcher";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
 import { Suspense } from "react";
@@ -48,6 +49,12 @@ export default function LoginPage() {
               <LoginFormWithParams />
             </Suspense>
           </div>
+          <p className="mt-5 text-center text-sm text-muted-foreground">
+            {t("login.newSeller")}{" "}
+            <Link href="/register" className="font-semibold text-primary hover:underline">
+              {t("login.createAccount")}
+            </Link>
+          </p>
           <p className="mt-6 text-center text-xs text-muted-foreground">{t("login.help")}</p>
         </div>
       </main>

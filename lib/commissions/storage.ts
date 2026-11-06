@@ -54,6 +54,22 @@ async function upload(objectPath: string, body: string) {
   if (error) throw new Error(`Upload failed: ${error.message}`);
 }
 
+/** Small JSON files in the same bucket (app settings, notifications). null when missing or unreadable. */
+export async function readJson<T>(objectPath: string): Promise<T | null> {
+  const buffer = await download(objectPath);
+  if (!buffer) return null;
+  try {
+    return JSON.parse(buffer.toString("utf8")) as T;
+  } catch (error) {
+    console.error(`[storage] ${objectPath} is not valid JSON:`, error);
+    return null;
+  }
+}
+
+export async function writeJson(objectPath: string, data: unknown) {
+  await upload(objectPath, JSON.stringify(data, null, 2));
+}
+
 // ---------------------------------------------------------------- settings
 export type StoredSettings = {
   settings: CommissionSettings;
