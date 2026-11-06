@@ -20,4 +20,6 @@
     <string name="notif_off_body">الإشعارات مقفولة لتطبيق عمولات NS، فمش هيوصلك لما عمولتك أو الحوافز تتغير، أو لما حد يسجّل دخول لحسابك من مكان تاني.</string>
     <string name="notif_off_open">تفعيل</string>
     <string name="notif_off_later">لاحقًا</string>
+    <string name="test_title">إشعار تجريبي</string>
+    <string name="test_body">إشعارات عمولات NS بتوصل للموبايل ده.</string>
 </resources>

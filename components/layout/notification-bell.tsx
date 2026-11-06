@@ -51,7 +51,11 @@ export function NotificationBell() {
     let unsubscribe = () => {};
     try {
       const supabase = createSupabaseBrowserClient();
-      const channel = supabase.channel(CHANNEL).on("broadcast", { event: "ping" }, () => void load()).subscribe();
+      const channel = supabase.channel(CHANNEL).on("broadcast", { event: "ping" }, () => {
+        void load();
+        // Inside the Android app: also let the app fetch its phone notifications right away.
+        window.NSApp?.checkNow?.();
+      }).subscribe();
       unsubscribe = () => void supabase.removeChannel(channel);
     } catch (error) {
       console.warn("[notify] realtime unavailable, polling only:", error);

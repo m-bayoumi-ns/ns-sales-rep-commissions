@@ -59,6 +59,21 @@ public class FeedWorker extends Worker {
                         .setInitialDelay(5, TimeUnit.SECONDS).build());
     }
 
+    /** Immediate check (realtime ping from the site, or "Check now" in the app). */
+    static void checkNow(Context context) {
+        Constraints online = new Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build();
+        WorkManager.getInstance(context).enqueueUniqueWork(NOW, ExistingWorkPolicy.REPLACE,
+                new OneTimeWorkRequest.Builder(FeedWorker.class).setConstraints(online).build());
+    }
+
+    /** Last check time and result, shown on the My account page inside the app. */
+    static void saveStatus(Context context, String status) {
+        context.getSharedPreferences("ns_app", Context.MODE_PRIVATE).edit()
+                .putLong("last_check_at", System.currentTimeMillis())
+                .putString("last_status", status)
+                .apply();
+    }
+
     static String installId(Context context) {
         SharedPreferences prefs = context.getSharedPreferences("ns_app", Context.MODE_PRIVATE);
         String id = prefs.getString("install_id", null);
@@ -78,7 +93,10 @@ public class FeedWorker extends Worker {
         try {
             CookieManager cookies = CookieManager.getInstance();
             String cookie = cookies.getCookie(base);
-            if (cookie == null || !cookie.contains("auth-token")) return Result.success(); // Not signed in.
+            if (cookie == null || !cookie.contains("auth-token")) { // Not signed in.
+                saveStatus(context, "signed-out");
+                return Result.success();
+            }
 
             String lang = Locale.getDefault().getLanguage().equals("ar") ? "ar" : "en";
             conn = (HttpURLConnection) new URL(base + "api/app/feed?locale=" + lang).openConnection();
@@ -101,10 +119,17 @@ public class FeedWorker extends Worker {
             }
             cookies.flush();
 
-            if (status == 401 || status == 400) return Result.success();
-            if (status != 200) return Result.retry();
+            if (status == 401 || status == 400) {
+                saveStatus(context, "http-" + status);
+                return Result.success();
+            }
+            if (status != 200) {
+                saveStatus(context, "http-" + status);
+                return Result.retry();
+            }
 
             JSONArray items = new JSONObject(read(conn.getInputStream())).optJSONArray("items");
+            saveStatus(context, "ok-" + (items == null ? 0 : items.length()));
             if (items == null) return Result.success();
             Notifier.ensureChannels(context);
             for (int i = 0; i < items.length(); i++) {
@@ -118,6 +143,7 @@ public class FeedWorker extends Worker {
             }
             return Result.success();
         } catch (Exception e) {
+            saveStatus(context, "error-" + e.getClass().getSimpleName());
             return Result.retry();
         } finally {
             if (conn != null) conn.disconnect();

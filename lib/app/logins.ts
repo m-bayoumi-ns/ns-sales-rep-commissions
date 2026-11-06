@@ -1,4 +1,5 @@
 import "server-only";
+import { ping } from "@/lib/commissions/notifications";
 import { readJson, writeJson } from "@/lib/commissions/storage";
 
 /**
@@ -62,6 +63,8 @@ export async function recordLogin(userId: string, event: LoginEvent) {
   try {
     const current = (await readJson<{ items?: LoginEvent[] }>(fileOf(userId)))?.items ?? [];
     await writeJson(fileOf(userId), { items: [event, ...current].slice(0, KEEP) });
+    // Open copies of the app hear this on the realtime channel and check for news at once.
+    await ping();
   } catch (error) {
     console.error("[logins] could not record sign-in:", error);
   }

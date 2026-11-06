@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import { Cairo, Inter } from "next/font/google";
 import { notFound } from "next/navigation";
+import Script from "next/script";
 import { locale as rootLocale } from "next/root-params";
 import { NextIntlClientProvider } from "next-intl";
 import { getTranslations } from "next-intl/server";
-import { GetAppBanner } from "@/components/layout/android-app";
+import { AppModeMarker, GetAppBanner } from "@/components/layout/android-app";
 import { Providers } from "@/components/providers";
 import { directionOf, isLocale, routing } from "@/i18n/routing";
 import "../globals.css";
@@ -47,19 +48,16 @@ export default async function LocaleLayout({ children }: LayoutProps<"/[locale]"
       className={`${inter.variable} ${cairo.variable}`}
       suppressHydrationWarning
     >
-      <head>
-        {/* Marks pages opened inside the Android app before first paint (see .web-only / .app-only in globals.css). */}
-        <script
-          dangerouslySetInnerHTML={{
-            __html: "if(navigator.userAgent.indexOf('NSCommissionsApp')>-1)document.documentElement.setAttribute('data-app','')",
-          }}
-        />
-      </head>
       <body className="min-h-dvh">
         <NextIntlClientProvider>
           <Providers direction={dir}>
             {children}
             <GetAppBanner />
+            <AppModeMarker />
+            {/* Marks pages opened inside the Android app before first paint (see .web-only / .app-only in globals.css). */}
+            <Script id="ns-app-mode" strategy="beforeInteractive">
+              {"if(navigator.userAgent.indexOf('NSCommissionsApp')>-1)document.documentElement.setAttribute('data-app','')"}
+            </Script>
           </Providers>
         </NextIntlClientProvider>
       </body>

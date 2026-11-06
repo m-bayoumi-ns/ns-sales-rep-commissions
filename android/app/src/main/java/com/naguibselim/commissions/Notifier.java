@@ -54,6 +54,8 @@ final class Notifier {
 
     /** Posts one notification unless this id was already shown on this phone. */
     static void post(Context context, String id, String channel, String title, String body, String path) {
+        // Blocked: keep the id so it can still be shown once notifications are allowed.
+        if (!NotificationManagerCompat.from(context).areNotificationsEnabled()) return;
         SharedPreferences prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
         List<String> posted = new ArrayList<>(Arrays.asList(prefs.getString(KEY_POSTED, "").split("\n")));
         if (posted.contains(id)) return;

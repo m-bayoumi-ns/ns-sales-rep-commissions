@@ -20,4 +20,6 @@
     <string name="notif_off_body">Notifications are off for NS Commissions, so you won\'t hear when your commission or bonuses change, or when your account is signed in elsewhere.</string>
     <string name="notif_off_open">Turn on</string>
     <string name="notif_off_later">Later</string>
+    <string name="test_title">Test notification</string>
+    <string name="test_body">Notifications from NS Commissions reach this phone.</string>
 </resources>

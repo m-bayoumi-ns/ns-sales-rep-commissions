@@ -636,7 +636,10 @@
     "priceNet": "Price after discount",
     "commissionCol": "Commission",
     "total": "Total",
-    "refundsN": "{count, plural, one {# credit note} other {# credit notes}}"
+    "refundsN": "{count, plural, one {# credit note} other {# credit notes}}",
+    "dayQty": "Meters",
+    "daySales": "Sales",
+    "egp": "EGP"
   },
   "register": {
     "title": "Create your seller account",
@@ -830,6 +833,23 @@
       "i2": "Choose “Add to Home Screen”, then Add.",
       "help": "Prefer the browser?",
       "openSite": "Open the website"
+    },
+    "notify": {
+      "on": "Notifications are on",
+      "off": "Notifications are blocked on this phone",
+      "lastCheck": "Last check {time}",
+      "noCheck": "No check yet",
+      "resultOk": "working",
+      "resultSignedOut": "signed out",
+      "resultError": "problem ({code})",
+      "resultNever": "waiting for the first check",
+      "test": "Send test notification",
+      "turnOn": "Turn on notifications",
+      "checkNow": "Check now",
+      "testSent": "Sent — it should appear at the top of the screen.",
+      "testBlocked": "Notifications are blocked — opening settings.",
+      "checking": "Checking… new notifications arrive within a few seconds.",
+      "update": "Update the app to the latest version to get notifications."
     }
   },
   "appFeed": {

@@ -454,6 +454,46 @@ public class MainActivity extends Activity {
             runOnUiThread(() -> swipe.setEnabled(allowed));
         }
 
+        /** The site heard a realtime "something changed" ping: check for news right away. */
+        @JavascriptInterface
+        public void checkNow() {
+            FeedWorker.checkNow(getApplicationContext());
+        }
+
+        /** Shows a sample notification, to confirm notifications reach this phone. */
+        @JavascriptInterface
+        public boolean testNotification() {
+            Notifier.ensureChannels(MainActivity.this);
+            if (!androidx.core.app.NotificationManagerCompat.from(MainActivity.this).areNotificationsEnabled()) {
+                runOnUiThread(MainActivity.this::openNotificationSettings);
+                return false;
+            }
+            Notifier.post(MainActivity.this, "test-" + System.currentTimeMillis(), Notifier.CHANNEL_COMMISSION,
+                    getString(R.string.test_title), getString(R.string.test_body), "/account");
+            return true;
+        }
+
+        @JavascriptInterface
+        public void openNotificationSettings() {
+            runOnUiThread(MainActivity.this::openNotificationSettings);
+        }
+
+        /** {"enabled":true,"lastCheckAt":1730900000000,"lastStatus":"ok-0","version":"1.0.9"} */
+        @JavascriptInterface
+        public String status() {
+            android.content.SharedPreferences prefs = getSharedPreferences("ns_app", MODE_PRIVATE);
+            try {
+                return new org.json.JSONObject()
+                        .put("enabled", androidx.core.app.NotificationManagerCompat.from(MainActivity.this).areNotificationsEnabled())
+                        .put("lastCheckAt", prefs.getLong("last_check_at", 0))
+                        .put("lastStatus", prefs.getString("last_status", ""))
+                        .put("version", BuildConfig.VERSION_NAME)
+                        .toString();
+            } catch (org.json.JSONException e) {
+                return "{}";
+            }
+        }
+
         @JavascriptInterface
         public void saveFile(String dataUrl, String name, String mime) {
             int comma = dataUrl == null ? -1 : dataUrl.indexOf(',');

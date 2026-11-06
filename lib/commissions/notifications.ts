@@ -64,7 +64,7 @@ export async function markRead(userId: string) {
 }
 
 /** Empty broadcast on the Realtime channel: "something new — fetch yours". Never throws. */
-async function ping() {
+export async function ping() {
   if (isDemoMode() || !isAdminConfigured()) return;
   try {
     const env = adminEnv();

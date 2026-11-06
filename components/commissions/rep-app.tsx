@@ -14,6 +14,7 @@ import {
   LightbulbIcon,
   PackageIcon,
   ReceiptTextIcon,
+  RulerIcon,
   SearchIcon,
   SparklesIcon,
   TargetIcon,
@@ -513,8 +514,9 @@ function Sales({ detail, clock }: { detail: RepDetail; clock: MonthClock }) {
                             {t("invoicesN", { count: row.invoices })}
                             {row.refunds ? ` · ${t("refundsN", { count: row.refunds })}` : ""} · {t("customersN", { count: row.customers.size })}
                           </span>
-                          <span dir="ltr" className="text-start text-[11px] text-muted-foreground tabular-nums">
-                            {formatNumber(row.qty)} {t("m")} · {formatNumber(row.amount)}
+                          <span className="flex flex-wrap items-center gap-x-3 gap-y-1 pt-0.5 text-xs">
+                            <DayFigure icon={RulerIcon} label={t("dayQty")} value={formatNumber(row.qty)} unit={t("m")} />
+                            <DayFigure icon={BanknoteIcon} label={t("daySales")} value={formatNumber(row.amount)} unit={t("egp")} />
                           </span>
                         </div>
                         <span dir="ltr" className={cn("shrink-0 text-sm font-semibold tabular-nums", row.commission < 0 ? "text-destructive" : "text-success")}>
@@ -550,6 +552,18 @@ function Sales({ detail, clock }: { detail: RepDetail; clock: MonthClock }) {
         </p>
       </section>
     </>
+  );
+}
+
+/** One labelled figure in a day row, e.g. "Meters 1,797 m" / "المبيعات 226,205 ج.م" (number kept left-to-right). */
+function DayFigure({ icon: Icon, label, value, unit }: { icon: typeof RulerIcon; label: string; value: string; unit: string }) {
+  return (
+    <span className="inline-flex items-center gap-1 rounded-md bg-muted px-1.5 py-0.5 text-muted-foreground">
+      <Icon aria-hidden className="size-3.5 shrink-0" />
+      <span>{label}</span>
+      <bdi className="font-semibold text-foreground tabular-nums">{value}</bdi>
+      <span>{unit}</span>
+    </span>
   );
 }
 
