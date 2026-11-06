@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">NS Commissions</string>
+    <string name="offline_title">You\'re offline</string>
+    <string name="offline_body">Check your internet connection, then try again.</string>
+    <string name="error_title">Couldn\'t reach the server</string>
+    <string name="error_body">The page didn\'t load. Please try again in a moment.</string>
+    <string name="retry">Try again</string>
+    <string name="press_back_again">Press back again to exit</string>
+    <string name="download_started">Downloading…</string>
+    <string name="download_saved">Saved to Downloads: %1$s</string>
+    <string name="download_failed">The file couldn\'t be saved.</string>
+    <string name="no_app_for_link">No app can open this link.</string>
+    <string name="choose_file">Choose a file</string>
+</resources>
