@@ -10,7 +10,8 @@ import { isSupabaseConfigured } from "@/lib/env";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { clearFailures, isLocked, recordFailure } from "./rate-limit";
 import { safeNextPath } from "./safe-next";
-import { loginEmail } from "@/lib/accounts/usernames";
+import { directLoginEmail } from "@/lib/accounts/usernames";
+import { emailForSellerName } from "@/lib/accounts/lookup";
 
 export type SignInState = {
   status: "idle" | "invalid" | "locked" | "not_configured" | "error";
@@ -20,7 +21,7 @@ export type SignInState = {
 
 const credentials = z.object({
   // A work email, or a seller username (e.g. "nsr305") created from the target sheet.
-  email: z.string().trim().min(2).max(254).transform(loginEmail).pipe(z.email()),
+  email: z.string().trim().min(2).max(254),
   password: z.string().min(1).max(200),
 });
 
@@ -40,7 +41,10 @@ export async function signIn(_prev: SignInState, formData: FormData): Promise<Si
   }
   if (!isSupabaseConfigured()) return { status: "not_configured", email: rawEmail };
 
-  const { email, password } = parsed.data;
+  const { password } = parsed.data;
+  // Email, username, or the seller's name as written in the target sheet.
+  const email = directLoginEmail(parsed.data.email) ?? (await emailForSellerName(parsed.data.email));
+  if (!email) return { status: "invalid", email: rawEmail };
   const ip = (await headers()).get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
   const limitKeys = [`email:${email}`, `ip:${ip}`];
   if (isLocked(limitKeys)) return { status: "locked", email: rawEmail };

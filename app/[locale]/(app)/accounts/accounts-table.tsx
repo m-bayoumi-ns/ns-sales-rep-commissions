@@ -11,7 +11,7 @@ import type { SellerAccount } from "@/lib/accounts/server";
 import { formatDateTime, formatMonth } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
-function Switch({ checked, onChange, label, disabled }: { checked: boolean; onChange: (value: boolean) => void; label: string; disabled?: boolean }) {
+export function Switch({ checked, onChange, label, disabled }: { checked: boolean; onChange: (value: boolean) => void; label: string; disabled?: boolean }) {
   return (
     <button
       type="button"
@@ -86,6 +86,7 @@ export function AccountsTable({ accounts, autoApprove, sheetMonth, sheetCount }:
         </p>
       ) : null}
 
+      <h2 className="px-1 pt-2 text-sm font-semibold">{t("otherTitle")}</h2>
       {rows.length ? (
         <ul className="divide-y overflow-hidden rounded-3xl border bg-card shadow-sm">
           {rows.map((row) => (

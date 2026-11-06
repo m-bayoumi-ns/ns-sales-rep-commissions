@@ -49,3 +49,17 @@ describe("seller usernames", () => {
     expect(usernameOf("name@naguibselim.com")).toBeNull();
   });
 });
+
+import { directLoginEmail } from "@/lib/accounts/usernames";
+
+describe("sign-in identifier", () => {
+  it("accepts the full sheet name with its code", () => {
+    expect(directLoginEmail("NSR305_أحمد عادل شحاته")).toBe("nsr305@reps.naguibselim.local");
+    expect(directLoginEmail("  nsr305 ")).toBe("nsr305@reps.naguibselim.local");
+    expect(directLoginEmail("rep5655")).toBe("rep5655@reps.naguibselim.local");
+    expect(directLoginEmail("Ahmed.Essam@nstextile-eg.com")).toBe("ahmed.essam@nstextile-eg.com");
+  });
+  it("leaves plain names to the server lookup", () => {
+    expect(directLoginEmail("أحمد مصطفى غريب")).toBeNull();
+  });
+});

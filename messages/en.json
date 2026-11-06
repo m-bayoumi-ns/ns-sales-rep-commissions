@@ -711,7 +711,7 @@
     "disabled": "Account disabled",
     "forceOn": "They must change the password at next sign-in",
     "forceOff": "Password change no longer required",
-    "empty": "No seller accounts yet. Sales reps can create one from the sign-in page.",
+    "empty": "No other accounts. Sellers in the targets sheet are managed in the list above.",
     "hint": "\"Force new password\" switches itself off once the seller has changed the password; switch it on again to ask for another change.",
     "usernameLabel": "Username",
     "sheet": {
@@ -729,7 +729,8 @@
       "failed": "Accounts could not be created.",
       "loginTitle": "Sign-in details to give to the sellers",
       "loginHint": "They sign in with the username (or the full email) and this password, then choose their own password."
-    }
+    },
+    "otherTitle": "Other seller accounts (not in the current targets sheet)"
   },
   "notify": {
     "label": "Notifications",

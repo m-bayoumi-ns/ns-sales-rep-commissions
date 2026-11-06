@@ -5,10 +5,22 @@
  */
 export const SELLER_EMAIL_DOMAIN = "reps.naguibselim.local";
 
-/** What the person typed on the sign-in page → the email Supabase knows. */
-export function loginEmail(identifier: string): string {
+/**
+ * What the person typed on the sign-in page → the email Supabase knows, when it can be worked out directly:
+ * an email; a username ("nsr305", "rep5655"); or the full sheet name starting with the code ("NSR305_أحمد …" → nsr305).
+ * Returns null for a plain name without a code (the server then looks the name up).
+ */
+export function directLoginEmail(identifier: string): string | null {
   const value = identifier.trim().toLowerCase();
-  return value.includes("@") ? value : `${value}@${SELLER_EMAIL_DOMAIN}`;
+  if (value.includes("@")) return value;
+  if (/^[a-z0-9][a-z0-9._-]*$/.test(value)) return `${value}@${SELLER_EMAIL_DOMAIN}`;
+  const code = value.match(/^([a-z]{2,5}\d+)/)?.[1];
+  return code ? `${code}@${SELLER_EMAIL_DOMAIN}` : null;
+}
+
+/** Username / email → sign-in email (plain names fall back to the typed text, which then fails sign-in). */
+export function loginEmail(identifier: string): string {
+  return directLoginEmail(identifier) ?? `${identifier.trim().toLowerCase()}@${SELLER_EMAIL_DOMAIN}`;
 }
 
 /** The username behind a generated email, or null for a real email. */

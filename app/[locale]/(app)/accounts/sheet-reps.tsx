@@ -7,7 +7,8 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
-import { createAccountsFromSheet } from "@/lib/accounts/actions";
+import { createAccountsFromSheet, setAccountActive, setForcePassword } from "@/lib/accounts/actions";
+import { Switch } from "./accounts-table";
 import type { CreateResult, SheetRepAccount } from "@/lib/accounts/server";
 import { formatMonth } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -24,6 +25,21 @@ export function SheetReps({ month, reps, defaultPassword }: { month: string; rep
   const [busy, setBusy] = useState<string | null>(null);
   const [results, setResults] = useState<CreateResult[] | null>(null);
   const missing = reps.filter((rep) => !rep.account);
+  const tAcc = useTranslations("accounts");
+  // Optimistic switch state per account id.
+  const [overrides, setOverrides] = useState<Record<string, { active?: boolean; mustChangePassword?: boolean }>>({});
+  const toggle = (id: string, patch: { active?: boolean; mustChangePassword?: boolean }, action: () => Promise<{ ok: boolean }>, message: string) => {
+    setOverrides((current) => ({ ...current, [id]: { ...current[id], ...patch } }));
+    start(async () => {
+      const result = await action();
+      if (result.ok) toast.success(message);
+      else {
+        toast.error(tAcc("failed"));
+        setOverrides((current) => ({ ...current, [id]: {} }));
+      }
+      router.refresh();
+    });
+  };
 
   const create = (names: string[], key: string) => {
     if (key === "all" && !window.confirm(t("confirm", { count: missing.length, password: defaultPassword }))) return;
@@ -72,10 +88,32 @@ export function SheetReps({ month, reps, defaultPassword }: { month: string; rep
               </span>
             </div>
             {rep.account ? (
-              <span className={cn("inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold", rep.account.active ? "bg-success-soft text-success" : "bg-warning-soft text-warning")}>
-                <CheckCircle2Icon aria-hidden className="size-3" />
-                {rep.account.active ? t("hasAccount") : t("waiting")}
-              </span>
+              (() => {
+                const account = rep.account;
+                const active = overrides[account.id]?.active ?? account.active;
+                const force = overrides[account.id]?.mustChangePassword ?? account.mustChangePassword;
+                return (
+                  <div className="flex items-center gap-4">
+                    <span className={cn("hidden items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold sm:inline-flex", active ? "bg-success-soft text-success" : "bg-warning-soft text-warning")}>
+                      <CheckCircle2Icon aria-hidden className="size-3" />
+                      {active ? t("hasAccount") : t("waiting")}
+                    </span>
+                    <label className="flex flex-col items-center gap-1 text-[11px] text-muted-foreground">
+                      <Switch checked={active} label={tAcc("activeSwitch")} disabled={pending} onChange={(value) => toggle(account.id, { active: value }, () => setAccountActive(account.id, value), tAcc(value ? "approved" : "disabled"))} />
+                      {tAcc("activeSwitch")}
+                    </label>
+                    <label className="flex flex-col items-center gap-1 text-[11px] text-muted-foreground">
+                      <Switch
+                        checked={force}
+                        label={tAcc("forceSwitch")}
+                        disabled={pending}
+                        onChange={(value) => toggle(account.id, { mustChangePassword: value }, () => setForcePassword(account.id, value), tAcc(value ? "forceOn" : "forceOff"))}
+                      />
+                      {tAcc("forceSwitch")}
+                    </label>
+                  </div>
+                );
+              })()
             ) : (
               <Button type="button" size="sm" variant="outline" disabled={pending} onClick={() => create([rep.name], rep.name)}>
                 {busy === rep.name ? <Loader2Icon aria-hidden className="animate-spin" /> : <UserPlusIcon aria-hidden />}

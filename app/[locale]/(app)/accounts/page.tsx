@@ -41,7 +41,7 @@ async function Accounts() {
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-5">
       <PageHeading title={t("title")} eyebrow={t("eyebrow")} subtitle={t("description")} />
       {data.sheet ? <SheetReps month={data.sheet.month} reps={data.sheet.reps} defaultPassword={DEFAULT_PASSWORD} /> : null}
-      <AccountsTable accounts={data.accounts} autoApprove={data.settings.autoApprove} sheetMonth={data.sheet?.month ?? null} sheetCount={data.sheet?.reps.length ?? 0} />
+      <AccountsTable accounts={data.accounts.filter((account) => !data.sheet?.reps.some((rep) => rep.account?.id === account.id))} autoApprove={data.settings.autoApprove} sheetMonth={data.sheet?.month ?? null} sheetCount={data.sheet?.reps.length ?? 0} />
     </div>
   );
 }
