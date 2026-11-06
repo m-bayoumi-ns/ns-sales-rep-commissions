@@ -212,6 +212,13 @@ data class RepDetail(
     val collections: CollectionSplit = CollectionSplit(),
 )
 
+/** GET /api/app/feed: what to show as phone notifications (lib/app/feed.ts). */
+@Serializable
+data class FeedItem(val id: String, val channel: String = "commission", val title: String, val body: String = "", val path: String = "/commissions")
+
+@Serializable
+data class FeedResponse(val items: List<FeedItem> = emptyList())
+
 /** POST /api/app/session and /api/app/session/refresh. */
 @Serializable
 data class SessionTokens(val accessToken: String, val refreshToken: String, val expiresAt: Long)

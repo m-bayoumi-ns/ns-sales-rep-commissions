@@ -12,6 +12,8 @@ import com.naguibselim.commissionsapp.ui.AppViewModel
 import com.naguibselim.commissionsapp.ui.CommissionsScreen
 import com.naguibselim.commissionsapp.ui.LoginScreen
 import com.naguibselim.commissionsapp.ui.NsTheme
+import com.naguibselim.commissionsapp.notify.FeedWorker
+import com.naguibselim.commissionsapp.notify.Notifier
 
 class MainActivity : ComponentActivity() {
     private val viewModel: AppViewModel by viewModels()
@@ -20,6 +22,7 @@ class MainActivity : ComponentActivity() {
         installSplashScreen()
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        Notifier.createChannels(this)
         setContent {
             NsTheme {
                 val signedIn by viewModel.signedIn.collectAsStateWithLifecycle()
@@ -31,5 +34,9 @@ class MainActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
         viewModel.refreshIfStale()
+        if (viewModel.signedIn.value) {
+            FeedWorker.schedule(this)
+            FeedWorker.checkSoon(this)
+        }
     }
 }

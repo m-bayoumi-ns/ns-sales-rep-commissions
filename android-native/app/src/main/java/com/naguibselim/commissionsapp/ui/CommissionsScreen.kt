@@ -1,5 +1,11 @@
 package com.naguibselim.commissionsapp.ui
 
+import android.Manifest
+import android.content.Intent
+import android.os.Build
+import android.provider.Settings
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -50,6 +56,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -65,6 +72,7 @@ import com.naguibselim.commissionsapp.BuildConfig
 import com.naguibselim.commissionsapp.R
 import com.naguibselim.commissionsapp.data.CommissionsResponse
 import com.naguibselim.commissionsapp.data.RepSummary
+import com.naguibselim.commissionsapp.notify.Notifier
 import com.naguibselim.commissionsapp.util.Format
 import kotlinx.coroutines.delay
 import java.time.Instant
@@ -80,11 +88,33 @@ fun CommissionsScreen(viewModel: AppViewModel) {
     val uri = LocalUriHandler.current
     val website = "${BuildConfig.API_BASE_URL}/${langSegment()}"
     val lifecycle = LocalLifecycleOwner.current.lifecycle
+    val context = LocalContext.current
+
+    // Notifications: ask once on Android 13+, then show a banner while they are off.
+    var notificationsOn by remember { mutableStateOf(Notifier.canNotify(context)) }
+    val askPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
+        notificationsOn = Notifier.canNotify(context)
+    }
+    LaunchedEffect(Unit) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && !Notifier.canNotify(context)) {
+            askPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
+        }
+    }
+    val openNotificationSettings = {
+        val intent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
+        } else {
+            Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, android.net.Uri.fromParts("package", context.packageName, null))
+        }
+        context.startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+    }
 
     // First load, then every 5 minutes while the screen is visible (the website does the same).
     LaunchedEffect(Unit) { if (state.data == null && !state.loading) viewModel.load() }
     LaunchedEffect(lifecycle) {
         lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
+            // Back from the system settings: pick up the new state.
+            notificationsOn = Notifier.canNotify(context)
             while (true) {
                 delay(5 * 60 * 1000L)
                 viewModel.refresh()
@@ -158,6 +188,7 @@ fun CommissionsScreen(viewModel: AppViewModel) {
                                 onRep = viewModel::selectRep,
                             )
                         }
+                        if (!notificationsOn) item(key = "notifications-off") { NotificationsOffCard(onTurnOn = openNotificationSettings) }
                         if (state.loading) item(key = "loading") { LinearLoading() }
                         state.problem?.let { problem -> item(key = "problem") { NoticeBanner(problemText(problem), warn = true) } }
                         noticeItems(data, format)
@@ -180,6 +211,26 @@ fun CommissionsScreen(viewModel: AppViewModel) {
                         item(key = "updated") { UpdatedLine(data, format) }
                     }
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun NotificationsOffCard(onTurnOn: () -> Unit) {
+    val status = LocalStatus.current
+    Card(
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = status.warningSoft),
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Row(Modifier.padding(start = 14.dp, end = 6.dp, top = 10.dp, bottom = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
+                Text(stringResource(R.string.notif_off_title), fontWeight = FontWeight.SemiBold, color = status.warning)
+                Text(stringResource(R.string.notif_off_body), style = MaterialTheme.typography.bodySmall, color = status.warning)
+            }
+            androidx.compose.material3.TextButton(onClick = onTurnOn) {
+                Text(stringResource(R.string.notif_off_open), fontWeight = FontWeight.Bold, color = status.warning)
             }
         }
     }

@@ -32,12 +32,19 @@ class SessionStore(context: Context) {
         get() = prefs.getString(KEY_IDENTIFIER, "") ?: ""
         set(value) = prefs.edit().putString(KEY_IDENTIFIER, value).apply()
 
+    /** Random id of this installation; the server keeps what it last told each phone under it. */
+    val installId: String
+        get() = prefs.getString(KEY_INSTALL, null) ?: java.util.UUID.randomUUID().toString().also {
+            prefs.edit().putString(KEY_INSTALL, it).apply()
+        }
+
     private companion object {
         const val FILE = "ns_session"
         const val KEY_ACCESS = "access"
         const val KEY_REFRESH = "refresh"
         const val KEY_EXPIRES = "expires_at"
         const val KEY_IDENTIFIER = "identifier"
+        const val KEY_INSTALL = "install_id"
 
         fun open(context: Context): SharedPreferences = try {
             create(context)

@@ -193,6 +193,15 @@
     <string name="customers_note">صافي المبيعات وعمولة البنود لكل عميل. الشركات الشقيقة مستبعدة.</string>
     <string name="customers_none">لا يوجد عملاء بعد.</string>
 
+    <!-- الإشعارات -->
+    <string name="channel_commission">تحديثات العمولة</string>
+    <string name="channel_commission_desc">زيادة أو نقص العمولة، الحوافز المستحقة أو الملغاة، وتغيير النسب.</string>
+    <string name="channel_security">تنبيهات الأمان</string>
+    <string name="channel_security_desc">تسجيل الدخول لحسابك من أجهزة أخرى.</string>
+    <string name="notif_off_title">فعّل الإشعارات</string>
+    <string name="notif_off_body">الإشعارات مقفولة، فمش هيوصلك لما عمولتك أو الحوافز تتغير، أو لما حد يسجّل دخول لحسابك من مكان تاني.</string>
+    <string name="notif_off_open">تفعيل</string>
+
     <plurals name="days_left">
         <item quantity="zero">لا أيام متبقية</item>
         <item quantity="one">يوم واحد متبقٍ</item>

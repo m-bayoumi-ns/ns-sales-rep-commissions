@@ -33,6 +33,9 @@ The tokens are stored encrypted on the phone (`EncryptedSharedPreferences`, Andr
     - commission by price range and category
     - collections and receivables
     - products (searchable), invoices and credit notes, customers
+- Phone notifications (commission up or down, bonuses earned or lost, rate changes, sign-ins from other devices, test
+  notifications from My account): a WorkManager job reads `GET /api/app/feed` (Bearer token, `X-NS-Install`) every 15 minutes
+  and shortly after the app opens. Android 13+ asks for permission once; a banner offers the settings while they are off.
 - Pull to refresh. Figures reload every 5 minutes while the app is open, and when you come back to it after 5 minutes away.
 - English / Arabic (RTL) follow the phone's language; on Android 13+ you can also pick it per app in system settings. Light and dark follow the phone.
 

@@ -7,6 +7,7 @@ import com.naguibselim.commissionsapp.data.Api
 import com.naguibselim.commissionsapp.data.ApiException
 import com.naguibselim.commissionsapp.data.CommissionsResponse
 import com.naguibselim.commissionsapp.data.SessionStore
+import com.naguibselim.commissionsapp.notify.FeedWorker
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -58,6 +59,8 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
                 _signIn.value = SignInState()
                 _commissions.value = CommissionsState()
                 _signedIn.value = true
+                FeedWorker.schedule(getApplication<Application>())
+                FeedWorker.checkSoon(getApplication<Application>())
                 load()
             } catch (error: Exception) {
                 _signIn.value = SignInState(problem = problemOf(error))
@@ -67,6 +70,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
 
     fun signOut() {
         loadJob?.cancel()
+        FeedWorker.cancel(getApplication<Application>())
         api.signOut()
         _commissions.value = CommissionsState()
         _signedIn.value = false

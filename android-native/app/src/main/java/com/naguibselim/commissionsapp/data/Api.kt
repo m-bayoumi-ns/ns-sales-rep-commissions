@@ -72,6 +72,19 @@ class Api(private val store: SessionStore) {
         }
     }
 
+    /** New notifications for this phone. The first call only records a baseline (plus a welcome item). */
+    suspend fun feed(installId: String, locale: String): List<FeedItem> {
+        val url = "$baseUrl/api/app/feed".toHttpUrl().newBuilder().addQueryParameter("locale", locale).build()
+        val response: FeedResponse = authorized { token ->
+            Request.Builder().url(url)
+                .header("Authorization", "Bearer $token")
+                .header("X-NS-Install", installId)
+                .header("User-Agent", userAgent)
+                .get().build()
+        }
+        return response.items
+    }
+
     // ------------------------------------------------------------------ plumbing
 
     private suspend inline fun <reified T> authorized(crossinline build: (String) -> Request): T {
