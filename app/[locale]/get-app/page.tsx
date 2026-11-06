@@ -2,7 +2,7 @@ import { BellRingIcon, ChartLineIcon, ShareIcon, ShieldCheckIcon, SquarePlusIcon
 import type { Metadata } from "next";
 import { useTranslations } from "next-intl";
 import { getTranslations } from "next-intl/server";
-import { AndroidDownloadButton, DeviceNote, IosSoonButton } from "@/components/layout/android-app";
+import { AndroidDownloadButton, DeviceNote, IosSoonButton, OpenInstalledAppLink } from "@/components/layout/android-app";
 import { BrandLogo } from "@/components/layout/brand-logo";
 import { LanguageSwitcher } from "@/components/layout/language-switcher";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
@@ -67,6 +67,7 @@ export default function GetAppPage() {
               {p("version", { version: ANDROID_RELEASE.version, size: sizeMb(ANDROID_RELEASE.bytes) })}
             </p>
             <DeviceNote />
+            <OpenInstalledAppLink />
           </div>
 
           {/* Phone preview */}

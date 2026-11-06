@@ -22,4 +22,5 @@
     <string name="notif_off_later">Later</string>
     <string name="test_title">Test notification</string>
     <string name="test_body">Notifications from NS Commissions reach this phone.</string>
+    <string name="asset_statements" translatable="false">[{\"include\": \"https://ns-sales-rep-commissions.vercel.app/.well-known/assetlinks.json\"}]</string>
 </resources>

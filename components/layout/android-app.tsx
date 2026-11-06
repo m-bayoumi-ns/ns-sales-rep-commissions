@@ -1,7 +1,7 @@
 "use client";
 
-import { AppleIcon, BellIcon, BellOffIcon, CheckCircle2Icon, DownloadIcon, SmartphoneIcon, XIcon } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { AppleIcon, BellIcon, BellOffIcon, CheckCircle2Icon, DownloadIcon, ExternalLinkIcon, SmartphoneIcon, XIcon } from "lucide-react";
+import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useEffect, useLayoutEffect, useState, useSyncExternalStore } from "react";
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
@@ -52,6 +52,42 @@ export function AppModeMarker() {
   return null;
 }
 
+// ---------------------------------------------------------------- open the installed app from the browser
+
+const APP_PACKAGE = "com.naguibselim.commissions";
+const APP_HOST = "ns-sales-rep-commissions.vercel.app";
+
+/**
+ * Chrome on Android: is the NS Commissions app installed on this phone? null = can't tell (other browsers,
+ * or an app older than 1.0.10, which doesn't declare its link to the site yet).
+ */
+export function useAppInstalled(device: Device): boolean | null {
+  const [installed, setInstalled] = useState<boolean | null>(null);
+  useEffect(() => {
+    if (device !== "android") return;
+    const nav = navigator as Navigator & { getInstalledRelatedApps?: () => Promise<{ id?: string; platform?: string }[]> };
+    if (!nav.getInstalledRelatedApps) return;
+    let alive = true;
+    nav
+      .getInstalledRelatedApps()
+      .then((apps) => alive && setInstalled(apps.some((app) => app.id === APP_PACKAGE)))
+      .catch(() => alive && setInstalled(null));
+    return () => {
+      alive = false;
+    };
+  }, [device]);
+  return installed;
+}
+
+/**
+ * Android "intent:" link that opens this page in the app; if the app isn't installed, Chrome goes to
+ * the fallback (the download page) instead.
+ */
+export function openInAppHref(pathWithLocale: string, fallbackPath: string) {
+  const fallback = encodeURIComponent(`https://${APP_HOST}${fallbackPath}`);
+  return `intent://${APP_HOST}${pathWithLocale}#Intent;scheme=https;package=${APP_PACKAGE};S.browser_fallback_url=${fallback};end`;
+}
+
 // ---------------------------------------------------------------- mobile banner
 
 const DISMISS_KEY = "ns-get-app-dismissed";
@@ -72,7 +108,9 @@ function dismissedRecently() {
  */
 export function GetAppBanner() {
   const t = useTranslations("androidApp.banner");
+  const locale = useLocale();
   const device = useDevice();
+  const installed = useAppInstalled(device);
   const pathname = usePathname();
   const snoozed = useSyncExternalStore(noop, dismissedRecently, () => true);
   const [closed, setClosed] = useState(false);
@@ -98,17 +136,37 @@ export function GetAppBanner() {
       <div className="flex items-center gap-3 rounded-2xl border bg-card/95 p-3 shadow-[0_12px_32px_rgba(0,0,0,0.25)] backdrop-blur">
         {/* eslint-disable-next-line @next/next/no-img-element -- small static icon */}
         <img src="/brand/app-icon.png" alt="" width={44} height={44} className="size-11 shrink-0 rounded-xl" />
-        <Link href="/get-app" className="min-w-0 flex-1 outline-none" onClick={() => setClosed(true)}>
-          <span className="block text-sm font-semibold leading-tight">{t("title")}</span>
-          <span className="line-clamp-2 block text-xs text-muted-foreground">{device === "ios" ? t("bodyIos") : t("bodyAndroid")}</span>
-        </Link>
-        <Link
-          href="/get-app"
-          onClick={() => setClosed(true)}
-          className="inline-flex h-8 shrink-0 items-center rounded-lg bg-primary px-3 text-xs font-semibold text-primary-foreground hover:bg-primary/90"
-        >
-          {t("open")}
-        </Link>
+        {installed ? (
+          <>
+            {/* The app is on this phone: open the same page in it. */}
+            <a href={openInAppHref(`/${locale}${pathname}`, `/${locale}/get-app`)} className="min-w-0 flex-1 outline-none">
+              <span className="block text-sm font-semibold leading-tight">{t("title")}</span>
+              <span className="line-clamp-2 block text-xs text-muted-foreground">{t("bodyInstalled")}</span>
+            </a>
+            <a
+              href={openInAppHref(`/${locale}${pathname}`, `/${locale}/get-app`)}
+              className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg bg-primary px-3 text-xs font-semibold text-primary-foreground hover:bg-primary/90"
+            >
+              <ExternalLinkIcon aria-hidden className="size-3.5" />
+              {t("openApp")}
+            </a>
+          </>
+        ) : (
+          <>
+            <Link href="/get-app" className="min-w-0 flex-1 outline-none" onClick={() => setClosed(true)}>
+              <span className="block text-sm font-semibold leading-tight">{t("title")}</span>
+              <span className="line-clamp-2 block text-xs text-muted-foreground">{device === "ios" ? t("bodyIos") : t("bodyAndroid")}</span>
+            </Link>
+            <Link
+              href="/get-app"
+              onClick={() => setClosed(true)}
+              className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg bg-primary px-3 text-xs font-semibold text-primary-foreground hover:bg-primary/90"
+            >
+              {device === "android" ? <DownloadIcon aria-hidden className="size-3.5" /> : null}
+              {device === "android" ? t("download") : t("open")}
+            </Link>
+          </>
+        )}
         <button
           type="button"
           onClick={close}
@@ -127,7 +185,26 @@ export function GetAppBanner() {
 /** Primary Android button: download in a browser, "Installed" inside the app. */
 export function AndroidDownloadButton({ className }: { className?: string }) {
   const t = useTranslations("androidApp");
+  const locale = useLocale();
   const device = useDevice();
+  const installed = useAppInstalled(device);
+  if (installed) {
+    return (
+      <a
+        href={openInAppHref(`/${locale}/commissions`, `/${locale}/get-app`)}
+        className={cn(
+          "inline-flex h-12 items-center gap-3 rounded-xl bg-primary px-5 text-primary-foreground shadow-sm transition hover:bg-primary/90",
+          className,
+        )}
+      >
+        <ExternalLinkIcon aria-hidden className="size-5" />
+        <span className="flex flex-col items-start leading-tight">
+          <span className="text-[11px] opacity-80">{t("page.installedSmall")}</span>
+          <span className="text-sm font-semibold">{t("page.openApp")}</span>
+        </span>
+      </a>
+    );
+  }
   if (device === "app") {
     return (
       <span className={cn("inline-flex h-12 items-center gap-2 rounded-xl bg-success-soft px-5 text-sm font-semibold text-success", className)}>
@@ -150,6 +227,20 @@ export function AndroidDownloadButton({ className }: { className?: string }) {
         <span className="text-[11px] opacity-80">{t("page.androidSmall")}</span>
         <span className="text-sm font-semibold">{t("page.androidBig")}</span>
       </span>
+    </a>
+  );
+}
+
+/** Android browsers where installation can't be detected: "Already have the app? Open it". */
+export function OpenInstalledAppLink() {
+  const t = useTranslations("androidApp.page");
+  const locale = useLocale();
+  const device = useDevice();
+  const installed = useAppInstalled(device);
+  if (device !== "android" || installed) return null;
+  return (
+    <a href={openInAppHref(`/${locale}/commissions`, `/${locale}/get-app`)} className="text-sm font-semibold text-primary hover:underline">
+      {t("alreadyInstalled")}
     </a>
   );
 }

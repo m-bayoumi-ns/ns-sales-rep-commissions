@@ -792,7 +792,10 @@
       "bodyAndroid": "Your commission on your phone — faster and always signed in.",
       "bodyIos": "Android app available · iPhone coming soon",
       "open": "View",
-      "notNow": "Not now"
+      "notNow": "Not now",
+      "bodyInstalled": "The app is installed on this phone — open this page in it.",
+      "openApp": "Open",
+      "download": "Download"
     },
     "page": {
       "metaTitle": "Mobile app",
@@ -832,7 +835,10 @@
       "i1": "Open this site in Safari and tap Share.",
       "i2": "Choose “Add to Home Screen”, then Add.",
       "help": "Prefer the browser?",
-      "openSite": "Open the website"
+      "openSite": "Open the website",
+      "installedSmall": "Installed on this phone",
+      "openApp": "Open the app",
+      "alreadyInstalled": "Already have the app? Open it"
     },
     "notify": {
       "on": "Notifications are on",

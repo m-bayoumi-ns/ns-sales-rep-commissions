@@ -22,6 +22,11 @@
         android:usesCleartextTraffic="false"
         android:theme="@style/Theme.NS.Starting">
 
+        <!-- Links the app to the website (public/.well-known/assetlinks.json), so the site can tell the app is installed. -->
+        <meta-data
+            android:name="asset_statements"
+            android:resource="@string/asset_statements" />
+
         <activity
             android:name=".MainActivity"
             android:exported="true"
