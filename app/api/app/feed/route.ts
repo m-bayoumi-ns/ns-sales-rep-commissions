@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { type NextRequest, NextResponse } from "next/server";
 import { isLocale, routing } from "@/i18n/routing";
 import { buildFeed } from "@/lib/app/feed";
+import { describeDevice } from "@/lib/app/logins";
 import { readSessionUser } from "@/lib/auth/dal";
 import { isSupabaseConfigured } from "@/lib/env";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -31,6 +32,8 @@ export async function GET(request: NextRequest) {
   const queryLocale = request.nextUrl.searchParams.get("locale") ?? undefined;
   const locale = isLocale(cookieLocale) ? cookieLocale : isLocale(queryLocale) ? queryLocale : routing.defaultLocale;
 
-  const items = await buildFeed(user, installId, sessionId, locale);
+  const userAgent = request.headers.get("user-agent");
+  const appVersion = userAgent?.match(/NSCommissionsApp\/([\d.]+)/)?.[1] ?? null;
+  const items = await buildFeed(user, { installId, sessionId, appVersion, device: describeDevice(userAgent) }, locale);
   return NextResponse.json({ items }, { headers: { "Cache-Control": "no-store" } });
 }

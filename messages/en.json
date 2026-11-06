@@ -900,6 +900,30 @@
     "welcome": {
       "title": "Notifications are on",
       "body": "You'll be notified here when your commission goes up or down, a bonus changes, rates are updated, or your account is signed in elsewhere."
+    },
+    "test": {
+      "title": "Test notification",
+      "body": "Notifications from NS Commissions reach this phone."
     }
+  },
+  "phoneNotify": {
+    "title": "Phone notifications",
+    "subtitle": "Commission changes, bonuses, rate updates and sign-ins, on your phone.",
+    "phones": "Your phones",
+    "phone": "Phone",
+    "version": "app {version}",
+    "lastCheck": "Last check {time}",
+    "never": "Has not checked in yet",
+    "active": "Working",
+    "stale": "Not checking",
+    "noPhones": "No phone has connected yet. Install the app, sign in, allow notifications, and open the app once.",
+    "sendTest": "Send a test notification to my phone",
+    "sending": "Sending…",
+    "sent": "Sent. An open app shows it within seconds; a closed app within about 15 minutes.",
+    "error": "Could not send the test. Try again.",
+    "howItWorks": "While the app is open or in the background it checks at once; when it is closed, Android lets it check about every 15 minutes.",
+    "signIns": "Recent sign-ins",
+    "noSignIns": "No sign-ins recorded yet.",
+    "thisSession": "This session"
   }
 }

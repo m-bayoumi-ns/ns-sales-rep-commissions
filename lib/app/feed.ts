@@ -7,6 +7,7 @@ import type { Adjustment, RepResult } from "@/lib/commissions/engine";
 import { notificationsFor } from "@/lib/commissions/notifications";
 import { readJson, writeJson } from "@/lib/commissions/storage";
 import { getCommissionsView, resolveMonth } from "@/lib/commissions/view";
+import { deviceFile, lastTestRequest } from "./devices";
 import { loginsFor } from "./logins";
 
 /**
@@ -34,10 +35,19 @@ export type Snapshot = {
   adjustments: Record<string, { met: boolean; applies: boolean; amount: number }>;
 };
 
-type DeviceState = { seenLoginsAt: string; seenRatesAt: string; snapshot: Snapshot | null };
+type DeviceState = {
+  seenLoginsAt: string;
+  seenRatesAt: string;
+  seenTestAt?: string;
+  snapshot: Snapshot | null;
+  /** Shown on My account: when this phone last reached the server, which app version, how many items it got. */
+  lastSeenAt?: string;
+  appVersion?: string | null;
+  device?: string | null;
+  lastItems?: number;
+};
 
-const stateFile = (userId: string, installId: string) =>
-  `ns-sales-rep-commissions/app/devices/${userId.replace(/[^a-zA-Z0-9-]/g, "")}/${installId.replace(/[^a-zA-Z0-9-]/g, "").slice(0, 64)}.json`;
+export type FeedClient = { installId: string; sessionId: string | null; appVersion: string | null; device: string | null };
 
 const egp = (value: number, locale: Locale) =>
   new Intl.NumberFormat(locale === "ar" ? "ar-EG" : "en-US", { maximumFractionDigits: 0 }).format(Math.round(value));
@@ -54,9 +64,10 @@ function snapshotOf(month: string, result: RepResult): Snapshot {
   };
 }
 
-export async function buildFeed(user: AppUser, installId: string, sessionId: string | null, locale: Locale): Promise<FeedItem[]> {
+export async function buildFeed(user: AppUser, client: FeedClient, locale: Locale): Promise<FeedItem[]> {
+  const { installId, sessionId } = client;
   const t = await getTranslations({ locale, namespace: "appFeed" });
-  const file = stateFile(user.id, installId);
+  const file = deviceFile(user.id, installId);
   const stored = await readJson<DeviceState>(file);
   const now = new Date().toISOString();
   const items: FeedItem[] = [];
@@ -64,6 +75,13 @@ export async function buildFeed(user: AppUser, installId: string, sessionId: str
   // 0. First check on this phone: one notification confirming they work (and showing how they look).
   if (!stored) {
     items.push({ id: `welcome-${installId}`, channel: "commission", title: t("welcome.title"), body: t("welcome.body"), path: "/commissions" });
+  }
+
+  // Test requested from My account ("send a test notification to my phone").
+  const testAt = await lastTestRequest(user.id);
+  const testIsNew = testAt != null && testAt > (stored?.seenTestAt ?? "") && Date.now() - Date.parse(testAt) < 60 * 60 * 1000;
+  if (testIsNew) {
+    items.push({ id: `test-${testAt}`, channel: "commission", title: t("test.title"), body: t("test.body"), path: "/account" });
   }
 
   // 1. Sign-ins from other sessions.
@@ -120,7 +138,12 @@ export async function buildFeed(user: AppUser, installId: string, sessionId: str
   await writeJson(file, {
     seenLoginsAt: [stored?.seenLoginsAt ?? "", newestLogin, stored ? "" : now].sort().at(-1) ?? now,
     seenRatesAt: [stored?.seenRatesAt ?? "", newestRate, stored ? "" : now].sort().at(-1) ?? now,
+    seenTestAt: testIsNew ? testAt : (stored?.seenTestAt ?? ""),
     snapshot,
+    lastSeenAt: now,
+    appVersion: client.appVersion,
+    device: client.device,
+    lastItems: items.length,
   } satisfies DeviceState);
 
   return items;

@@ -54,6 +54,23 @@ async function upload(objectPath: string, body: string) {
   if (error) throw new Error(`Upload failed: ${error.message}`);
 }
 
+/** Names of the files directly inside a folder (empty when the folder does not exist). */
+export async function listFiles(folder: string): Promise<string[]> {
+  if (isDemoMode()) {
+    try {
+      return (await fs.readdir(path.join(LOCAL_ROOT, folder), { withFileTypes: true })).filter((entry) => entry.isFile()).map((entry) => entry.name);
+    } catch {
+      return [];
+    }
+  }
+  const { data, error } = await createSupabaseAdminClient().storage.from(BUCKET).list(folder, { limit: 100 });
+  if (error) {
+    console.error(`[storage] list ${folder}:`, error.message);
+    return [];
+  }
+  return (data ?? []).filter((item) => item.id != null && item.name !== ".emptyFolderPlaceholder").map((item) => item.name);
+}
+
 /** Small JSON files in the same bucket (app settings, notifications). null when missing or unreadable. */
 export async function readJson<T>(objectPath: string): Promise<T | null> {
   const buffer = await download(objectPath);
