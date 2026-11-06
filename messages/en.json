@@ -608,17 +608,20 @@
     "view": {
       "products": "By product",
       "invoices": "By invoice",
-      "customers": "By customer"
+      "customers": "By customer",
+      "days": "By day"
     },
     "viewTitle": {
       "products": "Products sold ({count})",
       "invoices": "Invoices ({count})",
-      "customers": "Customers ({count})"
+      "customers": "Customers ({count})",
+      "days": "Days ({count})"
     },
     "searchView": {
       "products": "Search product, colour or invoice",
       "invoices": "Search invoice number or customer",
-      "customers": "Search customer"
+      "customers": "Search customer",
+      "days": "Search invoice or customer"
     },
     "refundTag": "Credit note",
     "linesN": "{count, plural, one {# line} other {# lines}}",
@@ -629,7 +632,8 @@
     "qtyM": "Qty (m)",
     "priceNet": "Price after discount",
     "commissionCol": "Commission",
-    "total": "Total"
+    "total": "Total",
+    "refundsN": "{count, plural, one {# credit note} other {# credit notes}}"
   },
   "register": {
     "title": "Create your seller account",

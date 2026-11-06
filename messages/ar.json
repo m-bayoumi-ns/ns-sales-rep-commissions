@@ -608,17 +608,20 @@
     "view": {
       "products": "حسب المنتج",
       "invoices": "حسب الفاتورة",
-      "customers": "حسب العميل"
+      "customers": "حسب العميل",
+      "days": "حسب اليوم"
     },
     "viewTitle": {
       "products": "المنتجات المباعة ({count})",
       "invoices": "الفواتير ({count})",
-      "customers": "العملاء ({count})"
+      "customers": "العملاء ({count})",
+      "days": "الأيام ({count})"
     },
     "searchView": {
       "products": "ابحث عن منتج أو لون أو فاتورة",
       "invoices": "ابحث برقم الفاتورة أو العميل",
-      "customers": "ابحث عن عميل"
+      "customers": "ابحث عن عميل",
+      "days": "ابحث برقم الفاتورة أو العميل"
     },
     "refundTag": "إشعار دائن",
     "linesN": "{count, plural, one {بند واحد} two {بندان} other {# بند}}",
@@ -629,7 +632,8 @@
     "qtyM": "الكمية (م)",
     "priceNet": "السعر بعد الخصم",
     "commissionCol": "العمولة",
-    "total": "الإجمالي"
+    "total": "الإجمالي",
+    "refundsN": "{count, plural, one {إشعار دائن واحد} two {إشعاران دائنان} other {# إشعار دائن}}"
   },
   "register": {
     "title": "إنشاء حساب مندوب",

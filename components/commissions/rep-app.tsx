@@ -373,13 +373,13 @@ function useTips(detail: RepDetail, settings: CommissionSettings): Tip[] {
 
 // ---------------------------------------------------------------- tab 2: sales
 const SHOWN = 20;
-type SalesView = "products" | "invoices" | "customers";
+type SalesView = "products" | "invoices" | "customers" | "days";
 
 function Sales({ detail, clock }: { detail: RepDetail; clock: MonthClock }) {
   const t = useTranslations("app2");
   const tc = useTranslations("cm");
   const locale = useLocale() as Locale;
-  const [view, setView] = useState<SalesView>("products");
+  const [view, setView] = useState<SalesView>("days");
   const [query, setQuery] = useState("");
   const [all, setAll] = useState(false);
   const text = query.trim().toLowerCase();
@@ -387,18 +387,36 @@ function Sales({ detail, clock }: { detail: RepDetail; clock: MonthClock }) {
   const products = useMemo(() => detail.products.filter((row) => match(`${row.productName} ${row.code ?? ""} ${row.color ?? ""} ${row.invoices.join(" ")}`)), [detail.products, text]); // eslint-disable-line react-hooks/exhaustive-deps
   const invoices = useMemo(() => detail.invoiceRows.filter((row) => match(`${row.name} ${row.customer}`)), [detail.invoiceRows, text]); // eslint-disable-line react-hooks/exhaustive-deps
   const customers = useMemo(() => detail.customerRows.filter((row) => match(row.name)), [detail.customerRows, text]); // eslint-disable-line react-hooks/exhaustive-deps
-  const count = { products: products.length, invoices: invoices.length, customers: customers.length }[view];
+  // By day: the invoices of each day (newest first); the search matches invoice numbers and customers on that day.
+  const days = useMemo(() => {
+    const map = new Map<string, { day: string; invoices: number; refunds: number; customers: Set<string>; qty: number; amount: number; commission: number }>();
+    for (const row of detail.invoiceRows) {
+      if (!match(`${row.name} ${row.customer} ${row.day}`)) continue;
+      const entry = map.get(row.day) ?? { day: row.day, invoices: 0, refunds: 0, customers: new Set<string>(), qty: 0, amount: 0, commission: 0 };
+      if (row.refund) entry.refunds += 1;
+      else entry.invoices += 1;
+      entry.customers.add(row.customer);
+      entry.qty += row.qty;
+      entry.amount += row.amount;
+      entry.commission += row.commission;
+      map.set(row.day, entry);
+    }
+    return [...map.values()].sort((a, b) => b.day.localeCompare(a.day));
+  }, [detail.invoiceRows, text]); // eslint-disable-line react-hooks/exhaustive-deps
+  const count = { products: products.length, invoices: invoices.length, customers: customers.length, days: days.length }[view];
   const bucketLabel = (bucket: string) => (bucket === "slow" || bucket === "digital" ? t(`cat.${bucket}`) : bucket === "none" ? t("noRange") : t("range", { key: bucket }));
   const cut = <T,>(list: T[]) => (all ? list : list.slice(0, SHOWN));
   const dayLabel = (day: string) => new Intl.DateTimeFormat(locale === "ar" ? "ar-EG-u-nu-latn" : "en-GB", { day: "numeric", month: "short", timeZone: "UTC" }).format(new Date(`${day}T00:00:00Z`));
   const totalCommission = detail.invoiceRows.reduce((sum, row) => sum + row.commission, 0);
+  const weekdayLabel = (day: string) =>
+    new Intl.DateTimeFormat(locale === "ar" ? "ar-EG-u-nu-latn" : "en-GB", { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" }).format(new Date(`${day}T00:00:00Z`));
 
   return (
     <>
       <DailyChart points={detail.daily} target={detail.rep.result.totalTarget} closedOrToday={clock.asOf} title={tc("chart.title")} caption={tc("chart.caption")} />
       <section className="flex flex-col gap-3">
-        <div role="tablist" aria-label={t("salesViews")} className="grid grid-cols-3 gap-1 rounded-xl bg-muted p-1">
-          {(["products", "invoices", "customers"] as SalesView[]).map((key) => (
+        <div role="tablist" aria-label={t("salesViews")} className="grid grid-cols-4 gap-1 rounded-xl bg-muted p-1">
+          {(["days", "customers", "invoices", "products"] as SalesView[]).map((key) => (
             <button
               key={key}
               type="button"
@@ -482,7 +500,29 @@ function Sales({ detail, clock }: { detail: RepDetail; clock: MonthClock }) {
                       </span>
                     </li>
                   ))
-                : cut(customers).map((row, index) => (
+                : view === "days"
+                  ? cut(days).map((row) => (
+                      <li key={row.day} className="flex items-center gap-3 px-4 py-3">
+                        <span className="flex size-9 shrink-0 flex-col items-center justify-center rounded-xl bg-accent text-primary">
+                          <span className="text-sm leading-none font-bold tabular-nums">{Number(row.day.slice(8, 10))}</span>
+                        </span>
+                        <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                          <span className="text-sm font-medium">{weekdayLabel(row.day)}</span>
+                          <span className="text-[11px] text-muted-foreground">
+                            {t("invoicesN", { count: row.invoices })}
+                            {row.refunds ? ` · ${t("refundsN", { count: row.refunds })}` : ""} · {t("customersN", { count: row.customers.size })}
+                          </span>
+                          <span dir="ltr" className="text-start text-[11px] text-muted-foreground tabular-nums">
+                            {formatNumber(row.qty)} {t("m")} · {formatNumber(row.amount)}
+                          </span>
+                        </div>
+                        <span dir="ltr" className={cn("shrink-0 text-sm font-semibold tabular-nums", row.commission < 0 ? "text-destructive" : "text-success")}>
+                          {row.commission >= 0 ? "+" : ""}
+                          {formatNumber(row.commission)}
+                        </span>
+                      </li>
+                    ))
+                  : cut(customers).map((row, index) => (
                     <li key={`${row.name}-${index}`} className="flex items-center gap-3 px-4 py-3">
                       <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-accent text-xs font-bold text-primary tabular-nums">{index + 1}</span>
                       <div className="flex min-w-0 flex-1 flex-col gap-0.5">
