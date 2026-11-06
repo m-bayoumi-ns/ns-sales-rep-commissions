@@ -16,4 +16,8 @@
     <string name="channel_commission_desc">Commission going up or down, bonuses earned or lost, and rate changes.</string>
     <string name="channel_security">Security alerts</string>
     <string name="channel_security_desc">Sign-ins to your account from other devices.</string>
+    <string name="notif_off_title">Turn on notifications</string>
+    <string name="notif_off_body">Notifications are off for NS Commissions, so you won\'t hear when your commission or bonuses change, or when your account is signed in elsewhere.</string>
+    <string name="notif_off_open">Turn on</string>
+    <string name="notif_off_later">Later</string>
 </resources>

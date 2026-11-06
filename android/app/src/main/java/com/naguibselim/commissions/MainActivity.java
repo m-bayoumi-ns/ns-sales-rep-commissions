@@ -276,12 +276,15 @@ public class MainActivity extends Activity {
 
     /** After a signed-in page loads: ask once for notification permission, and check for news (at most every 2 min). */
     private void onSignedInPage() {
-        if (Build.VERSION.SDK_INT >= 33
-                && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
-            android.content.SharedPreferences prefs = getSharedPreferences("ns_app", MODE_PRIVATE);
-            if (!prefs.getBoolean("asked_notifications", false)) {
+        android.content.SharedPreferences prefs = getSharedPreferences("ns_app", MODE_PRIVATE);
+        boolean enabled = androidx.core.app.NotificationManagerCompat.from(this).areNotificationsEnabled();
+        if (!enabled) {
+            if (Build.VERSION.SDK_INT >= 33 && !prefs.getBoolean("asked_notifications", false)) {
+                // First time: Android's own "Allow notifications?" prompt.
                 prefs.edit().putBoolean("asked_notifications", true).apply();
                 requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS}, REQ_NOTIFICATIONS);
+            } else {
+                offerNotificationSettings(prefs);
             }
         }
         askToRunInBackgroundOnce();
@@ -289,6 +292,39 @@ public class MainActivity extends Activity {
         if (now - lastFeedCheckAt > FEED_CHECK_GAP_MS) {
             lastFeedCheckAt = now;
             FeedWorker.checkSoon(this);
+        }
+    }
+
+    /**
+     * Notifications are blocked (the prompt was refused, or the phone blocks them by default): explain why they
+     * matter and open the app's notification settings. Shown at most once a day.
+     */
+    private void offerNotificationSettings(android.content.SharedPreferences prefs) {
+        long now = System.currentTimeMillis();
+        if (now - prefs.getLong("offered_notification_settings_at", 0) < 24L * 60 * 60 * 1000) return;
+        prefs.edit().putLong("offered_notification_settings_at", now).apply();
+        new android.app.AlertDialog.Builder(this)
+                .setTitle(R.string.notif_off_title)
+                .setMessage(R.string.notif_off_body)
+                .setPositiveButton(R.string.notif_off_open, (d, w) -> openNotificationSettings())
+                .setNegativeButton(R.string.notif_off_later, null)
+                .show();
+    }
+
+    private void openNotificationSettings() {
+        Intent intent;
+        if (Build.VERSION.SDK_INT >= 26) {
+            intent = new Intent(android.provider.Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+                    .putExtra(android.provider.Settings.EXTRA_APP_PACKAGE, getPackageName());
+        } else {
+            intent = new Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                    Uri.parse("package:" + getPackageName()));
+        }
+        try {
+            startActivity(intent);
+        } catch (ActivityNotFoundException e) {
+            startActivity(new Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                    Uri.parse("package:" + getPackageName())));
         }
     }
 
