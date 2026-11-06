@@ -213,7 +213,8 @@ function Row({
     <li className="flex items-center gap-3 px-4 py-3">
       {icon ? <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-accent text-primary">{icon}</span> : null}
       <div className="flex min-w-0 flex-1 flex-col gap-1">
-        <span className="truncate text-sm font-medium">{label}</span>
+        {/* Full name, wrapping onto a second line on narrow screens rather than cut with "…". */}
+        <span className="text-sm font-medium leading-snug break-words">{label}</span>
         {sub ? <span className="text-xs text-muted-foreground">{sub}</span> : null}
         {progress !== undefined ? (
           <span className="h-1.5 overflow-hidden rounded-full bg-muted" dir="ltr">
@@ -225,11 +226,11 @@ function Row({
         ) : null}
       </div>
       {value !== undefined ? (
-        <div className="flex shrink-0 flex-col items-end">
+        <div className="flex max-w-[42%] shrink-0 flex-col items-end text-end">
           <span dir="ltr" className={cn("text-sm font-semibold tabular-nums", tone === "good" && "text-success", tone === "bad" && "text-destructive", tone === "muted" && "text-muted-foreground")}>
             {value}
           </span>
-          {valueSub ? <span className="text-[11px] text-muted-foreground">{valueSub}</span> : null}
+          {valueSub ? <span className="text-[11px] leading-snug text-muted-foreground">{valueSub}</span> : null}
         </div>
       ) : null}
     </li>
@@ -468,7 +469,7 @@ function Sales({ detail, clock }: { detail: RepDetail; clock: MonthClock }) {
                       </span>
                       <InvoiceTags names={row.invoices} />
                     </div>
-                    <div className="flex shrink-0 flex-col items-end">
+                    <div className="flex max-w-[42%] shrink-0 flex-col items-end text-end">
                       <span dir="ltr" className="text-sm font-semibold text-success tabular-nums">
                         +{formatNumber(row.commission)}
                       </span>
