@@ -1,10 +1,28 @@
 [
   {
-    "relation": ["delegate_permission/common.handle_all_urls", "delegate_permission/common.get_login_creds"],
+    "relation": [
+      "delegate_permission/common.handle_all_urls",
+      "delegate_permission/common.get_login_creds"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.naguibselim.commissionsapp",
+      "sha256_cert_fingerprints": [
+        "F2:0A:5F:3C:05:D2:3D:A3:8D:5C:DC:D7:99:ED:1F:49:29:22:6A:45:84:C5:47:9E:A4:E9:61:09:21:EE:8E:D8"
+      ]
+    }
+  },
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls",
+      "delegate_permission/common.get_login_creds"
+    ],
     "target": {
       "namespace": "android_app",
       "package_name": "com.naguibselim.commissions",
-      "sha256_cert_fingerprints": ["F2:0A:5F:3C:05:D2:3D:A3:8D:5C:DC:D7:99:ED:1F:49:29:22:6A:45:84:C5:47:9E:A4:E9:61:09:21:EE:8E:D8"]
+      "sha256_cert_fingerprints": [
+        "F2:0A:5F:3C:05:D2:3D:A3:8D:5C:DC:D7:99:ED:1F:49:29:22:6A:45:84:C5:47:9E:A4:E9:61:09:21:EE:8E:D8"
+      ]
     }
   }
 ]

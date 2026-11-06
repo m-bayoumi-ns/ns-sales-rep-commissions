@@ -65,7 +65,8 @@ export function AppModeMarker() {
 
 // ---------------------------------------------------------------- open the installed app from the browser
 
-const APP_PACKAGE = "com.naguibselim.commissions";
+// The native app (android-native/), which the download page serves. The older WebView app is com.naguibselim.commissions.
+const APP_PACKAGE = "com.naguibselim.commissionsapp";
 const APP_HOST = "ns-sales-rep-commissions.vercel.app";
 
 /**

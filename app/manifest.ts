@@ -23,7 +23,7 @@ export default function manifest(): MetadataRoute.Manifest {
       { src: "/brand/icon-512.png", sizes: "512x512", type: "image/png" },
       { src: "/brand/icon-maskable-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
     ],
-    related_applications: [{ platform: "play", id: "com.naguibselim.commissions", url: "https://ns-sales-rep-commissions.vercel.app/get-app" }],
+    related_applications: [{ platform: "play", id: "com.naguibselim.commissionsapp", url: "https://ns-sales-rep-commissions.vercel.app/get-app" }],
     prefer_related_applications: false,
   };
 }

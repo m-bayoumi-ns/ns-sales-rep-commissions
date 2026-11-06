@@ -1,6 +1,7 @@
 name: Android APK
 
-# Builds the NS Commissions Android app and publishes the APK as a GitHub Release.
+# Builds the NS Commissions WebView app (android/) and publishes the APK as a GitHub Release only.
+# The website's download page serves the native app instead (android-native-apk.yml).
 # Runs when anything under android/ changes, or by hand from the Actions tab ("Run workflow").
 
 on:
@@ -65,20 +66,6 @@ jobs:
           mkdir -p dist
           cp android/app/build/outputs/apk/release/app-release.apk "dist/NS-Commissions-1.0.${GITHUB_RUN_NUMBER}.apk"
           ls -la dist
-
-      - name: Publish APK on the website
-        # Commits the APK to public/downloads so the site's "Download Android app" button serves it.
-        # Only commits files outside android/, so this does not start another build.
-        if: env.ANDROID_KEYSTORE_PATH != ''
-        run: |
-          cp "dist/NS-Commissions-1.0.${GITHUB_RUN_NUMBER}.apk" public/downloads/ns-commissions.apk
-          BYTES=$(stat -c %s public/downloads/ns-commissions.apk)
-          printf '{\n  "version": "1.0.%s",\n  "bytes": %s,\n  "publishedAt": "%s"\n}\n' "$GITHUB_RUN_NUMBER" "$BYTES" "$(date -u +%Y-%m-%d)" > lib/android-release.json
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add public/downloads/ns-commissions.apk lib/android-release.json
-          git commit -m "Android app 1.0.${GITHUB_RUN_NUMBER} on the website"
-          for i in 1 2 3; do git pull --rebase origin main && git push origin HEAD:main && break; sleep 5; done
 
       - uses: actions/upload-artifact@v4
         with:
