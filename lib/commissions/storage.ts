@@ -71,6 +71,33 @@ export async function listFiles(folder: string): Promise<string[]> {
   return (data ?? []).filter((item) => item.id != null && item.name !== ".emptyFolderPlaceholder").map((item) => item.name);
 }
 
+/** Names of the sub-folders directly inside a folder. */
+export async function listFolders(folder: string): Promise<string[]> {
+  if (isDemoMode()) {
+    try {
+      return (await fs.readdir(path.join(LOCAL_ROOT, folder), { withFileTypes: true })).filter((entry) => entry.isDirectory()).map((entry) => entry.name);
+    } catch {
+      return [];
+    }
+  }
+  const { data, error } = await createSupabaseAdminClient().storage.from(BUCKET).list(folder, { limit: 1000 });
+  if (error) {
+    console.error(`[storage] list ${folder}:`, error.message);
+    return [];
+  }
+  return (data ?? []).filter((item) => item.id == null).map((item) => item.name);
+}
+
+/** Deletes a file (no error when it is already gone). */
+export async function removeFile(objectPath: string) {
+  if (isDemoMode()) {
+    await fs.rm(path.join(LOCAL_ROOT, objectPath), { force: true });
+    return;
+  }
+  const { error } = await createSupabaseAdminClient().storage.from(BUCKET).remove([objectPath]);
+  if (error) console.error(`[storage] remove ${objectPath}:`, error.message);
+}
+
 /** Small JSON files in the same bucket (app settings, notifications). null when missing or unreadable. */
 export async function readJson<T>(objectPath: string): Promise<T | null> {
   const buffer = await download(objectPath);

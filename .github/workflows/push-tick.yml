@@ -1,0 +1,28 @@
+name: Push notifications schedule
+
+# Every 30 minutes from 8:00 to 22:00 Cairo time: asks the site to check subscribed browsers / iPhone web apps
+# for commission and bonus changes and push them (see app/api/app/push-tick/route.ts).
+# Needs the PUSH_CRON_KEY repository secret.
+
+on:
+  schedule:
+    - cron: "*/30 6-19 * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  tick:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Call the site
+        env:
+          KEY: ${{ secrets.PUSH_CRON_KEY }}
+        run: |
+          if [ -z "$KEY" ]; then echo "::warning::PUSH_CRON_KEY secret is missing"; exit 0; fi
+          status=$(curl -sS -o response.json -w "%{http_code}" -m 90 -X POST \
+            -H "x-cron-key: $(printf '%s' "$KEY" | tr -d ' \r\n')" \
+            https://ns-sales-rep-commissions.vercel.app/api/app/push-tick)
+          echo "HTTP $status"; cat response.json; echo
+          [ "$status" = "200" ]

@@ -11,6 +11,7 @@ import { rateChanges } from "@/lib/commissions/changes";
 import { addNotification } from "@/lib/commissions/notifications";
 import { after } from "next/server";
 import { logActivity } from "@/lib/activity";
+import { pushFeedFor, pushFeedForAll } from "@/lib/app/push";
 
 export type SaveResult = { ok: true; savedAt: string; notified: number } | { ok: false; reason: "invalid" | "forbidden" | "storage"; detail?: string };
 
@@ -41,6 +42,11 @@ export async function saveCommissionSettings(raw: unknown, notifyRaw?: unknown):
         await addNotification({ month: parsed.data.month, by: user.name, recipients, changes, note: notify.data.note || null });
         notified = recipients.mode === "all" ? -1 : recipients.userIds.length;
         after(() => logActivity({ action: "notify", userId: user.id, email: user.email, details: { month: parsed.data.month, changes: changes.length, recipients } }));
+        // Browsers / iPhone web apps: push the rate change now (the Android app hears the realtime ping).
+        after(async () => {
+          if (recipients.mode === "all") await pushFeedForAll();
+          else for (const id of recipients.userIds) await pushFeedFor(id);
+        });
       }
     }
   } catch (error) {

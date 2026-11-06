@@ -35,6 +35,16 @@ function detectDevice(): Device {
   return "desktop";
 }
 
+/** Installed iPhone web app (opened from the home screen), or any browser's installed app window. */
+export function isStandalone() {
+  return (navigator as Navigator & { standalone?: boolean }).standalone === true || window.matchMedia("(display-mode: standalone)").matches;
+}
+
+/** Android app or installed web app: the app layout (no Home / language / theme buttons in the header). */
+function isAppShell() {
+  return navigator.userAgent.includes("NSCommissionsApp") || isStandalone();
+}
+
 /** The visitor's device, read once on the client ("unknown" while rendering on the server). */
 export function useDevice(): Device {
   return useSyncExternalStore(noop, detectDevice, () => "unknown");
@@ -48,7 +58,7 @@ export function useDevice(): Device {
 export function AppModeMarker() {
   const pathname = usePathname();
   useLayoutEffect(() => {
-    if (navigator.userAgent.includes("NSCommissionsApp")) document.documentElement.setAttribute("data-app", "");
+    if (isAppShell()) document.documentElement.setAttribute("data-app", "");
   }, [pathname]);
   return null;
 }
@@ -122,6 +132,7 @@ export function GetAppBanner() {
   const [closed, setClosed] = useState(false);
 
   if (closed || snoozed || pathname.startsWith("/get-app")) return null;
+  if (typeof window !== "undefined" && isStandalone()) return null;
   if (device !== "android" && device !== "ios") return null;
   // Wait for the install check, so the button doesn't flip from "Download" to "Open".
   if (device === "android" && installed === null) return null;
@@ -253,20 +264,23 @@ export function OpenInstalledAppLink() {
   );
 }
 
-/** iPhone button, disabled until the iOS version ships. */
+/** iPhone button: jumps to the "Add to Home Screen" steps (the iPhone version is the installable web app). */
 export function IosSoonButton({ className }: { className?: string }) {
   const t = useTranslations("androidApp.page");
   return (
-    <span
-      aria-disabled
-      className={cn("inline-flex h-12 cursor-not-allowed items-center gap-3 rounded-xl border border-dashed bg-card/60 px-5 text-muted-foreground", className)}
+    <a
+      href="#iphone"
+      className={cn(
+        "inline-flex h-12 items-center gap-3 rounded-xl border bg-card px-5 text-foreground shadow-sm transition hover:bg-muted",
+        className,
+      )}
     >
       <AppleIcon aria-hidden className="size-5" />
       <span className="flex flex-col items-start leading-tight">
-        <span className="text-[11px]">{t("iosSmall")}</span>
+        <span className="text-[11px] text-muted-foreground">{t("iosSmall")}</span>
         <span className="text-sm font-semibold">{t("iosBig")}</span>
       </span>
-    </span>
+    </a>
   );
 }
 

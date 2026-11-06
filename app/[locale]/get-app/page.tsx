@@ -150,23 +150,29 @@ export default function GetAppPage() {
             <p className="rounded-xl bg-muted px-3 py-2 text-xs text-muted-foreground">{p("androidNote")}</p>
           </div>
 
-          <div className="flex flex-col gap-4 rounded-3xl border border-dashed bg-card/60 p-6">
+          <div id="iphone" className="flex scroll-mt-20 flex-col gap-4 rounded-3xl border bg-card p-6 shadow-sm">
             <div className="flex items-center gap-2">
               <h2 className="text-lg font-bold">{p("iosTitle")}</h2>
-              <span className="rounded-full bg-warning-soft px-2.5 py-0.5 text-[11px] font-semibold text-warning">{p("soon")}</span>
+              <span className="rounded-full bg-accent px-2.5 py-0.5 text-[11px] font-semibold text-primary">{p("soon")}</span>
             </div>
             <p className="text-sm leading-relaxed text-muted-foreground">{p("iosBody")}</p>
-            <h3 className="text-sm font-semibold">{p("iosMeanwhile")}</h3>
             <ol className="flex flex-col gap-3 text-sm">
               <li className="flex items-center gap-3">
-                <ShareIcon aria-hidden className="size-5 shrink-0 text-primary" />
-                {p("i1")}
+                <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">1</span>
+                <span className="leading-relaxed">{p("i1")}</span>
+                <ShareIcon aria-hidden className="ms-auto size-5 shrink-0 text-primary" />
               </li>
               <li className="flex items-center gap-3">
-                <SquarePlusIcon aria-hidden className="size-5 shrink-0 text-primary" />
-                {p("i2")}
+                <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">2</span>
+                <span className="leading-relaxed">{p("i2")}</span>
+                <SquarePlusIcon aria-hidden className="ms-auto size-5 shrink-0 text-primary" />
+              </li>
+              <li className="flex items-center gap-3">
+                <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">3</span>
+                <span className="leading-relaxed">{p("i3")}</span>
               </li>
             </ol>
+            <p className="rounded-xl bg-muted px-3 py-2 text-xs text-muted-foreground">{p("iosNote")}</p>
           </div>
         </section>
 

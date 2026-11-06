@@ -8,6 +8,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { cn } from "@/lib/utils";
 import { ThisPhoneNotifications } from "./android-app";
 import { TestNotificationButton } from "./test-notification-button";
+import { WebPushControl } from "./web-push-control";
 
 /** A phone that has not checked in for this long is shown as "not checking". */
 const STALE_MS = 45 * 60 * 1000;
@@ -40,6 +41,7 @@ export async function PhoneNotifications({ user }: { user: AppUser }) {
 
       <div className="flex flex-col gap-3 px-5 py-4">
         <ThisPhoneNotifications />
+        <WebPushControl />
         <h3 className="text-sm font-semibold">{t("phones")}</h3>
         {devices.length ? (
           <ul className="flex flex-col gap-2">

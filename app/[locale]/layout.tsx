@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Cairo, Inter } from "next/font/google";
 import { notFound } from "next/navigation";
 import Script from "next/script";
@@ -33,8 +33,19 @@ export async function generateMetadata(): Promise<Metadata> {
     title: { default: t("name"), template: `%s · ${t("name")}` },
     description: "Sales rep commissions for Naguib Selim.",
     robots: { index: false, follow: false },
+    // iPhone "Add to Home Screen": full-screen app with its own icon and name.
+    appleWebApp: { capable: true, title: "NS Commissions", statusBarStyle: "default" },
+    icons: { apple: "/brand/apple-touch-icon.png", icon: "/brand/icon-192.png" },
   };
 }
+
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
+    { media: "(prefers-color-scheme: dark)", color: "#0d0f12" },
+  ],
+  viewportFit: "cover",
+};
 
 export default async function LocaleLayout({ children }: LayoutProps<"/[locale]">) {
   const locale = await rootLocale();
@@ -56,7 +67,9 @@ export default async function LocaleLayout({ children }: LayoutProps<"/[locale]"
             <AppModeMarker />
             {/* Marks pages opened inside the Android app before first paint (see .web-only / .app-only in globals.css). */}
             <Script id="ns-app-mode" strategy="beforeInteractive">
-              {"if(navigator.userAgent.indexOf('NSCommissionsApp')>-1)document.documentElement.setAttribute('data-app','')"}
+              {
+                "if(navigator.userAgent.indexOf('NSCommissionsApp')>-1||navigator.standalone===true||matchMedia('(display-mode: standalone)').matches)document.documentElement.setAttribute('data-app','')"
+              }
             </Script>
           </Providers>
         </NextIntlClientProvider>
