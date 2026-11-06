@@ -28,7 +28,7 @@ sealed class ApiException(message: String) : Exception(message) {
 }
 
 /**
- * Talks to the website's /api/app/* endpoints. The Odoo and Supabase keys stay on the server; the phone only
+ * Talks to the website's /api/app endpoints (session, session/refresh, commissions). The Odoo and Supabase keys stay on the server; the phone only
  * holds the user's own Supabase session, refreshed here before it expires.
  */
 class Api(private val store: SessionStore) {
