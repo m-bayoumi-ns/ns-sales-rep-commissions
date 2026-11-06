@@ -1,7 +1,7 @@
 "use client";
 
-import { AppleIcon, BellIcon, BellOffIcon, CheckCircle2Icon, DownloadIcon, RefreshCwIcon, SmartphoneIcon, XIcon } from "lucide-react";
-import { useLocale, useTranslations } from "next-intl";
+import { AppleIcon, BellIcon, BellOffIcon, CheckCircle2Icon, DownloadIcon, SmartphoneIcon, XIcon } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useLayoutEffect, useState, useSyncExternalStore } from "react";
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
@@ -225,7 +225,6 @@ export function AndroidAppCard() {
           </Link>
         )}
       </div>
-      {device === "app" ? <AppNotificationsPanel /> : null}
     </section>
   );
 }
@@ -246,15 +245,18 @@ function readStatus(): AppStatus | null {
   }
 }
 
-/** Inside the app: are notifications on, when the phone last checked, and buttons to test / check / fix. */
-function AppNotificationsPanel() {
+/**
+ * Inside the app only: whether this phone allows notifications, with a shortcut to turn them on.
+ * Shown at the top of My account → Phone notifications (the test button and last check are there too).
+ */
+export function ThisPhoneNotifications() {
   const t = useTranslations("androidApp.notify");
-  const locale = useLocale();
+  const device = useDevice();
   const [status, setStatus] = useState<AppStatus | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
   const refresh = useCallback(() => setStatus(readStatus()), []);
 
   useEffect(() => {
+    if (device !== "app") return;
     // eslint-disable-next-line react-hooks/set-state-in-effect -- reads the native bridge once mounted
     refresh();
     const timer = setInterval(refresh, 3000);
@@ -263,72 +265,32 @@ function AppNotificationsPanel() {
       clearInterval(timer);
       window.removeEventListener("focus", refresh);
     };
-  }, [refresh]);
+  }, [device, refresh]);
 
-  if (!window.NSApp?.status) {
-    return <p className="border-t px-5 py-3 text-xs text-warning">{t("update")}</p>;
-  }
-
-  const enabled = status?.enabled ?? false;
-  const last = status?.lastCheckAt
-    ? new Intl.DateTimeFormat(locale === "ar" ? "ar-EG" : "en-GB", {
-        hour: "2-digit",
-        minute: "2-digit",
-        day: "numeric",
-        month: "short",
-      }).format(new Date(status.lastCheckAt))
-    : null;
-  const result = status?.lastStatus ?? "";
-  const resultText = result.startsWith("ok")
-    ? t("resultOk")
-    : result === "signed-out" || result === "http-401"
-      ? t("resultSignedOut")
-      : result
-        ? t("resultError", { code: result })
-        : t("resultNever");
-
-  return (
-    <div className="flex flex-col gap-3 border-t px-5 py-4">
-      <div className="flex items-center gap-2 text-sm">
-        {enabled ? <BellIcon aria-hidden className="size-4 text-success" /> : <BellOffIcon aria-hidden className="size-4 text-destructive" />}
-        <span className={cn("font-semibold", enabled ? "text-success" : "text-destructive")}>{enabled ? t("on") : t("off")}</span>
-      </div>
-      <p className="text-xs text-muted-foreground">
-        {last ? t("lastCheck", { time: last }) : t("noCheck")} · {resultText}
+  if (device !== "app") return null;
+  if (!window.NSApp?.status) return <p className="rounded-xl bg-warning-soft px-3 py-2 text-xs text-warning">{t("update")}</p>;
+  if (!status) return null;
+  if (status.enabled) {
+    return (
+      <p className="flex items-center gap-2 text-sm font-semibold text-success">
+        <BellIcon aria-hidden className="size-4" />
+        {t("on")}
       </p>
-      <div className="flex flex-wrap gap-2">
-        {enabled ? (
-          <button
-            type="button"
-            onClick={() => setMessage(window.NSApp?.testNotification?.() ? t("testSent") : t("testBlocked"))}
-            className="inline-flex h-9 items-center gap-2 rounded-lg bg-primary px-3.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
-          >
-            <BellIcon aria-hidden className="size-4" />
-            {t("test")}
-          </button>
-        ) : (
-          <button
-            type="button"
-            onClick={() => window.NSApp?.openNotificationSettings?.()}
-            className="inline-flex h-9 items-center gap-2 rounded-lg bg-primary px-3.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
-          >
-            <BellIcon aria-hidden className="size-4" />
-            {t("turnOn")}
-          </button>
-        )}
-        <button
-          type="button"
-          onClick={() => {
-            window.NSApp?.checkNow?.();
-            setMessage(t("checking"));
-          }}
-          className="inline-flex h-9 items-center gap-2 rounded-lg border px-3.5 text-sm font-medium hover:bg-muted"
-        >
-          <RefreshCwIcon aria-hidden className="size-4" />
-          {t("checkNow")}
-        </button>
-      </div>
-      {message ? <p className="text-xs text-muted-foreground">{message}</p> : null}
+    );
+  }
+  return (
+    <div className="flex flex-wrap items-center gap-3 rounded-xl bg-destructive-soft px-3 py-2.5">
+      <span className="flex items-center gap-2 text-sm font-semibold text-destructive">
+        <BellOffIcon aria-hidden className="size-4" />
+        {t("off")}
+      </span>
+      <button
+        type="button"
+        onClick={() => window.NSApp?.openNotificationSettings?.()}
+        className="ms-auto inline-flex h-8 items-center rounded-lg bg-primary px-3 text-xs font-semibold text-primary-foreground hover:bg-primary/90"
+      >
+        {t("turnOn")}
+      </button>
     </div>
   );
 }

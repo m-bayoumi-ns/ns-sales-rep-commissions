@@ -6,6 +6,7 @@ import type { AppUser } from "@/lib/auth/types";
 import { isSupabaseConfigured } from "@/lib/env";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { cn } from "@/lib/utils";
+import { ThisPhoneNotifications } from "./android-app";
 import { TestNotificationButton } from "./test-notification-button";
 
 /** A phone that has not checked in for this long is shown as "not checking". */
@@ -38,6 +39,7 @@ export async function PhoneNotifications({ user }: { user: AppUser }) {
       </div>
 
       <div className="flex flex-col gap-3 px-5 py-4">
+        <ThisPhoneNotifications />
         <h3 className="text-sm font-semibold">{t("phones")}</h3>
         {devices.length ? (
           <ul className="flex flex-col gap-2">
