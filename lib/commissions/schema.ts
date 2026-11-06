@@ -65,9 +65,13 @@ export const rulesSchema = z.object({
   /** Cash sales ≥ this % of the month's sales → flat bonus. */
   cashSharePct: pct.default(60),
   cashBonus: nonNeg.default(2000),
+  /** Target achievement (%) needed before the cash bonus is paid; empty = the target must be met (100 %). */
+  cashMinAchievementPct: optNum,
   /** Collections > this % of the month's sales → flat bonus. */
   collectionPct: pct.default(120),
   collectionBonus: nonNeg.default(2000),
+  /** Target achievement (%) needed before the collections bonus is paid; empty = the target must be met (100 %). */
+  collectionMinAchievementPct: optNum,
   /** Total achievement below this % → commission = lowRate % of total sales only. */
   lowAchievementPct: pct.default(50),
   lowRate: pct.default(0.1),

@@ -671,28 +671,48 @@ function Statement({ detail, settings }: { detail: RepDetail; settings: Commissi
   );
 }
 
-/** Products sold in one price range / category: price after discount and quantity. */
+/** Products sold in one price range / category: price after discount, quantity and the commission each earned. */
+/** "[007861] Y7" → "Y7": the statement lists products by name only. */
+const plainName = (name: string) => name.replace(/^\s*\[[^\]]*\]\s*/, "") || name;
+
 function BucketProducts({ rows }: { rows: RepDetail["products"] }) {
   const t = useTranslations("app2");
+  const num = "px-2 py-1.5 text-end whitespace-nowrap tabular-nums";
   return (
-    <div className="mt-1 mb-2 overflow-hidden rounded-xl border bg-muted/40">
-      <div className="grid grid-cols-[minmax(0,1fr)_auto_auto] gap-3 border-b px-3 py-1.5 text-[11px] font-semibold text-muted-foreground">
-        <span>{t("product")}</span>
-        <span className="w-20 text-end">{t("price")}</span>
-        <span className="w-20 text-end">{t("qtyM")}</span>
-      </div>
-      <ul className="max-h-72 divide-y overflow-y-auto">
-        {rows.map((row) => (
-          <li key={row.key} className="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-3 px-3 py-1.5 text-xs">
-            <bdi className="truncate">
-              {row.productName}
-              {row.color ? <span className="text-muted-foreground"> · {row.color}</span> : null}
-            </bdi>
-            <span dir="ltr" className="w-20 text-end tabular-nums">{row.avgPrice == null ? "—" : formatNumber(row.avgPrice)}</span>
-            <span dir="ltr" className="w-20 text-end font-medium tabular-nums">{formatNumber(row.qty)}</span>
-          </li>
-        ))}
-      </ul>
+    <div className="mt-1 mb-2 max-h-96 overflow-auto rounded-xl border bg-muted/40">
+      <table className="w-full text-xs">
+        <thead className="sticky top-0 bg-muted text-[11px] text-muted-foreground">
+          <tr>
+            <th className="px-2 py-1.5 text-start font-semibold">{t("product")}</th>
+            <th className="px-2 py-1.5 text-end font-semibold">{t("priceNet")}</th>
+            <th className="px-2 py-1.5 text-end font-semibold">{t("qtyM")}</th>
+            <th className="px-2 py-1.5 text-end font-semibold">{t("commissionCol")}</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y">
+          {rows.map((row) => (
+            <tr key={row.key}>
+              <td className="px-2 py-1.5">
+                <bdi className="block min-w-[5.5rem] text-left rtl:text-right">
+                  {plainName(row.productName)}
+                  {row.color ? <span className="text-muted-foreground"> · {row.color}</span> : null}
+                </bdi>
+              </td>
+              <td dir="ltr" className={num}>{row.avgPrice == null ? "—" : formatNumber(row.avgPrice)}</td>
+              <td dir="ltr" className={num}>{formatNumber(row.qty)}</td>
+              <td dir="ltr" className={cn(num, "font-semibold", row.commission < 0 ? "text-destructive" : "text-success")}>{formatNumber(row.commission)}</td>
+            </tr>
+          ))}
+        </tbody>
+        <tfoot className="sticky bottom-0 bg-muted font-semibold">
+          <tr>
+            <td className="px-2 py-1.5">{t("total")}</td>
+            <td />
+            <td dir="ltr" className={num}>{formatNumber(rows.reduce((sum, row) => sum + row.qty, 0))}</td>
+            <td dir="ltr" className={num}>{formatNumber(rows.reduce((sum, row) => sum + row.commission, 0))}</td>
+          </tr>
+        </tfoot>
+      </table>
     </div>
   );
 }
@@ -700,7 +720,9 @@ function BucketProducts({ rows }: { rows: RepDetail["products"] }) {
 function StatementAdjustment({ item, rules, replaced }: { item: Adjustment; rules: CommissionSettings["rules"]; replaced: boolean }) {
   const t = useTranslations("cm.build");
   const locale = useLocale() as Locale;
-  const earned = item.key === "collectionShare" ? item.applies : item.met && item.applies && !replaced;
+  // Cash and collections bonuses follow their own minimum achievement, not the commission system.
+  const independent = item.key === "cash" || item.key === "collection";
+  const earned = item.key === "collectionShare" ? item.applies : item.met && item.applies && (independent || !replaced);
   const Icon = earned ? (item.amount < 0 ? CircleMinusIcon : BadgeCheckIcon) : CircleDashedIcon;
   const label = {
     allTargets: t("allTargets", { pct: rules.allTargetsBonusPct }),
@@ -722,12 +744,17 @@ function StatementAdjustment({ item, rules, replaced }: { item: Adjustment; rule
       : item.current == null
         ? t("noData")
         : t("standing", { current: formatPercent(item.current), threshold: formatPercent(item.threshold) });
+  // Cash / collections bonus: the target achievement it also needs.
+  const gate = item.gate
+    ? t(item.gate.met ? "gateMet" : "gateNeeded", { required: formatPercent(item.gate.required), now: formatPercent(item.gate.achievement) })
+    : null;
   return (
     <li className={cn("flex items-start gap-2 text-sm", !earned && "text-muted-foreground")}>
       <Icon aria-hidden className={cn("mt-0.5 size-4 shrink-0", earned && (item.amount < 0 ? "text-destructive" : "text-success"))} />
       <span className="flex min-w-0 flex-col">
         <span className={cn(earned && "font-medium text-foreground")}>{label}</span>
         <span className="text-[11px]">{item.met && !item.applies && !replaced ? t("notUnderSystem") : status}</span>
+        {gate ? <span className={cn("text-[11px]", item.gate?.met ? "" : "text-warning")}>{gate}</span> : null}
       </span>
       <span aria-hidden className="mb-1 flex-1 self-end border-b border-dotted" />
       <span dir="ltr" className={cn("shrink-0 font-semibold tabular-nums", earned && (item.amount < 0 ? "text-destructive" : "text-success"))}>

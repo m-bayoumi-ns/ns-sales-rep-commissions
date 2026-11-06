@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDownIcon, LogOutIcon, Settings2Icon, UserCogIcon } from "lucide-react";
+import { ChevronDownIcon, LogOutIcon, Settings2Icon, UserCogIcon, UsersIcon } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useTransition } from "react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -74,6 +74,12 @@ export function UserMenu({ user }: { user: HeaderUser }) {
           <DropdownMenuItem onClick={() => router.push("/settings")}>
             <Settings2Icon aria-hidden />
             {t("settings")}
+          </DropdownMenuItem>
+        ) : null}
+        {user.isAdmin ? (
+          <DropdownMenuItem onClick={() => router.push("/accounts")}>
+            <UsersIcon aria-hidden />
+            {t("accounts")}
           </DropdownMenuItem>
         ) : null}
         {user.isAdmin ? <DropdownMenuSeparator /> : null}

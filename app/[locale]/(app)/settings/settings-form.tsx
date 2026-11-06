@@ -533,6 +533,11 @@ function RulesCard({ rules, setRule }: { rules: Rules; setRule: <K extends keyof
               <Field label={t("cashBonus")}>
                 <NumberInput label={t("cashBonus")} value={rules.cashBonus} onChange={n("cashBonus")} suffix={t("egp")} />
               </Field>
+              <div className="col-span-2">
+                <Field label={t("minAchievement")} hint={t("minAchievementHint")}>
+                  <NumberInput label={t("minAchievement")} value={rules.cashMinAchievementPct} onChange={(value) => setRule("cashMinAchievementPct", value)} placeholder={t("minAchievementEmpty")} suffix="%" />
+                </Field>
+              </div>
             </div>
             <div className="grid grid-cols-2 gap-2">
               <Field label={t("collection")} hint={t("collectionHint")}>
@@ -541,6 +546,11 @@ function RulesCard({ rules, setRule }: { rules: Rules; setRule: <K extends keyof
               <Field label={t("collectionBonus")}>
                 <NumberInput label={t("collectionBonus")} value={rules.collectionBonus} onChange={n("collectionBonus")} suffix={t("egp")} />
               </Field>
+              <div className="col-span-2">
+                <Field label={t("minAchievement")} hint={t("minAchievementHint")}>
+                  <NumberInput label={t("minAchievement")} value={rules.collectionMinAchievementPct} onChange={(value) => setRule("collectionMinAchievementPct", value)} placeholder={t("minAchievementEmpty")} suffix="%" />
+                </Field>
+              </div>
             </div>
           </div>
         </fieldset>

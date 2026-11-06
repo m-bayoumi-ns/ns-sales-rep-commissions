@@ -17,7 +17,8 @@
     "switchLanguageShort": "ع",
     "home": "Home",
     "settings": "Settings",
-    "account": "My account"
+    "account": "My account",
+    "accounts": "Seller accounts"
   },
   "login": {
     "title": "Sign in to Customer Payments",
@@ -199,7 +200,9 @@
       "notMet": "Not reached yet",
       "noData": "No data yet",
       "standing": "Now {current} · needs {threshold}",
-      "notUnderSystem": "Met, but not paid under the current system"
+      "notUnderSystem": "Met, but not paid under the current system",
+      "gateMet": "Target achievement {now} · needs {required} ✓",
+      "gateNeeded": "Also needs {required} of target · now {now}"
     },
     "next": {
       "title": "What would raise the commission",
@@ -230,7 +233,16 @@
       "pace": "Target pace",
       "ahead": "Not recorded yet",
       "cash": "Cash sales",
-      "collections": "Collections"
+      "collections": "Collections",
+      "titleDaily": "Daily sales against the target pace",
+      "titleWeekly": "Weekly sales against the target pace",
+      "salesWeek": "Weekly sales",
+      "daily": "Daily",
+      "weekly": "Weekly",
+      "grain": "Show by",
+      "captionDaily": "Columns: daily sales · solid line: running total · dashed line: even pace to the target · reads left to right",
+      "captionWeekly": "Columns: sales per week of the month · solid line: running total · dashed line: even pace to the target · reads left to right",
+      "partialWeek": "Week so far: {days} of {total} days"
     },
     "tiers": {
       "title": "Commission by price range and category",
@@ -444,7 +456,10 @@
       "ladderAdd": "Add step",
       "detailsTitle": "Statement: products under each category",
       "detailsHint": "Ticked categories can be opened in the seller's Statement to list the products sold, their prices and quantities (meters).",
-      "rangeKey": "Range {key}"
+      "rangeKey": "Range {key}",
+      "minAchievement": "Only from target achievement of",
+      "minAchievementHint": "Empty = paid only once the target is met (100%).",
+      "minAchievementEmpty": "100 (target met)"
     },
     "reps": {
       "title": "4 · Sales reps and targets",
@@ -611,7 +626,10 @@
     "invoiceNumbers": "Invoice numbers",
     "product": "Product",
     "price": "Price",
-    "qtyM": "Qty (m)"
+    "qtyM": "Qty (m)",
+    "priceNet": "Price after discount",
+    "commissionCol": "Commission",
+    "total": "Total"
   },
   "register": {
     "title": "Create your seller account",

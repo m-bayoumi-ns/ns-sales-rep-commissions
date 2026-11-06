@@ -49,6 +49,8 @@ export type Adjustment = {
   /** Where the rep stands on the condition: current value and the threshold, in the condition's unit. */
   current: number | null;
   threshold: number | null;
+  /** Cash / collections bonus: the target achievement (%) also required, and where the rep is. */
+  gate?: { required: number; achievement: number | null; met: boolean };
 };
 
 export type BucketResult = { key: string; qty: number; amount: number; commission: number; rate: number | null };
@@ -189,11 +191,22 @@ export function calculate(settings: CommissionSettings, targets: RepTargets, dat
     current: slowAchievement,
     threshold: rules.slowMinPct,
   });
-  add({ key: "cash", met: cashShare != null && cashShare >= rules.cashSharePct, applies: fullRules, value: rules.cashBonus, current: cashShare, threshold: rules.cashSharePct });
+  // Cash and collections bonuses: their own condition plus a minimum target achievement (empty = 100 %, the
+  // target met). They follow that minimum instead of the commission system, so a modest minimum pays them below 70 %.
+  // Without a total target the achievement cannot be checked and only their own condition counts.
+  const gateFor = (min: number | null) => {
+    const required = min ?? 100;
+    return { required, achievement, met: totalTarget == null || (achievement != null && achievement >= required) };
+  };
+  const cashGate = gateFor(rules.cashMinAchievementPct);
+  const cashOwn = cashShare != null && cashShare >= rules.cashSharePct;
+  const collectionGate = gateFor(rules.collectionMinAchievementPct);
+  add({ key: "cash", met: cashOwn && cashGate.met, applies: true, value: rules.cashBonus, current: cashShare, threshold: rules.cashSharePct, gate: cashGate });
   add({
     key: "collection",
-    met: collectionRatio != null && collectionRatio > rules.collectionPct,
-    applies: fullRules,
+    met: collectionRatio != null && collectionRatio > rules.collectionPct && collectionGate.met,
+    applies: true,
+    gate: collectionGate,
     value: rules.collectionBonus,
     current: collectionRatio,
     threshold: rules.collectionPct,

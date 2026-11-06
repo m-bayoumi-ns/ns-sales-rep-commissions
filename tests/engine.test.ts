@@ -191,3 +191,29 @@ describe("price-range targets", () => {
     expect(missed.allTargetsMet).toBe(false);
   });
 });
+
+describe("cash and collections bonus minimum achievement", () => {
+  const withMin = (cash: number | null, collection: number | null) =>
+    settingsSchema.parse({ ...settings, rules: { ...settings.rules, cashMinAchievementPct: cash, collectionMinAchievementPct: collection } });
+  const data = { lines: [line({ qty: 1000, amount: 300_000, cash: true })], collections: 400_000 };
+  const targets = { totalTarget: 1_000_000, slowTarget: null, digitalTarget: null };
+  const bonus = (result: ReturnType<typeof calculate>, key: string) => result.adjustments.find((item) => item.key === key)!;
+
+  it("empty minimum: paid only once the target is met", () => {
+    const result = calculate(withMin(null, null), targets, data, { monthClosed: true });
+    expect(result.achievement).toBe(30);
+    expect(bonus(result, "cash").amount).toBe(0);
+    expect(bonus(result, "cash").gate).toEqual({ required: 100, achievement: 30, met: false });
+    expect(bonus(result, "collection").amount).toBe(0);
+  });
+  it("a modest minimum pays the bonuses even below the 50% / 70% levels", () => {
+    const result = calculate(withMin(25, 25), targets, data, { monthClosed: true });
+    expect(result.regime).toBe("low");
+    expect(bonus(result, "cash").amount).toBe(2000);
+    expect(bonus(result, "collection").amount).toBe(2000);
+  });
+  it("still needs its own condition", () => {
+    const result = calculate(withMin(25, 25), targets, { ...data, collections: 100_000 }, { monthClosed: true });
+    expect(bonus(result, "collection").amount).toBe(0);
+  });
+});
