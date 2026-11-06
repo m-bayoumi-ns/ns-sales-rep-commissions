@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { useRouter } from "@/i18n/navigation";
 import { changePassword, type PasswordState } from "@/lib/accounts/actions";
 
-export function PasswordForm({ forced }: { forced: boolean }) {
+export function PasswordForm() {
   const t = useTranslations("account");
   const router = useRouter();
   const [state, action, pending] = useActionState<PasswordState, FormData>(changePassword, { status: "idle" });
@@ -18,19 +18,20 @@ export function PasswordForm({ forced }: { forced: boolean }) {
   useEffect(() => {
     if (state.status !== "saved") return;
     form.current?.reset();
-    // After a forced change the rest of the site opens again.
-    if (forced) {
-      const timer = setTimeout(() => router.replace("/commissions"), 1200);
-      return () => clearTimeout(timer);
-    }
-  }, [state, forced, router]);
+    // Password changed → straight into the commission page.
+    const timer = setTimeout(() => {
+      router.replace("/commissions");
+      router.refresh();
+    }, 900);
+    return () => clearTimeout(timer);
+  }, [state, router]);
 
   return (
     <form ref={form} action={action} aria-busy={pending} className="flex flex-col gap-4">
       {state.status === "saved" ? (
         <p role="status" className="flex items-center gap-2 rounded-xl bg-success-soft px-3 py-2 text-sm text-success">
           <CheckCircle2Icon aria-hidden className="size-4" />
-          {t(forced ? "savedForced" : "saved")}
+          {t("savedForced")}
         </p>
       ) : state.status !== "idle" ? (
         <p role="alert" className="rounded-xl bg-destructive-soft px-3 py-2 text-sm text-destructive">

@@ -31,7 +31,14 @@ export async function readSessionUser(): Promise<AppUser | null> {
   const { data, error } = await supabase.auth.getClaims();
   if (error || !data?.claims?.sub) return null;
 
-  return loadAppUser(supabase, data.claims);
+  const user = await loadAppUser(supabase, data.claims);
+  // The session token may predate an administrator switching "must change password" on (or a sheet-created account's
+  // first sign-in may carry a token without it), so for sales-rep accounts read the flag from the Auth user itself.
+  if (!user.mustChangePassword && user.branchFilterType === "sales_rep" && user.permissionType !== "super_admin") {
+    const { data: fresh } = await supabase.auth.getUser();
+    if (fresh?.user?.app_metadata?.must_change_password) return { ...user, mustChangePassword: true };
+  }
+  return user;
 }
 
 /** For Server Components: the signed-in user, or a redirect to the login page. */

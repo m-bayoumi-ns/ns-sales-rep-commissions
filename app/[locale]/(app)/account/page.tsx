@@ -57,7 +57,7 @@ async function Account({ searchParams }: { searchParams: PageProps<"/[locale]/ac
             <KeyRoundIcon aria-hidden className="size-4 text-primary" />
             {t("changePassword")}
           </h2>
-          <PasswordForm forced={user.mustChangePassword} />
+          <PasswordForm />
         </div>
       </section>
     </div>

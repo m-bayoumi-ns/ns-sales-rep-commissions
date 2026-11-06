@@ -85,11 +85,12 @@ export async function changePassword(_prev: PasswordState, formData: FormData): 
     console.error("[account] password update failed:", error.message);
     return { status: "error" };
   }
-  if (user.mustChangePassword) {
+  const { data: fresh } = await supabase.auth.getUser();
+  if (user.mustChangePassword || fresh?.user?.app_metadata?.must_change_password) {
     // The forced change is done: the flag switches itself off until an administrator turns it on again.
     await setMustChangePassword(user.id, false, { checkSeller: false });
-    await supabase.auth.refreshSession();
   }
+  await supabase.auth.refreshSession();
   after(() => logActivity({ action: "change_password", userId: user.id, email: user.email, details: { forced: user.mustChangePassword } }));
   revalidatePath("/", "layout");
   return { status: "saved" };
