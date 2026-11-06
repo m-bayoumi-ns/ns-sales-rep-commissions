@@ -18,8 +18,9 @@ import java.util.List;
 
 /** Notification channels and posting, shared by the background worker. */
 final class Notifier {
-    static final String CHANNEL_COMMISSION = "commission";
-    static final String CHANNEL_SECURITY = "security";
+    // v2 ids: channel importance can't be raised after creation, so 1.0.6's quieter channels are replaced.
+    static final String CHANNEL_COMMISSION = "commission_v2";
+    static final String CHANNEL_SECURITY = "security_v2";
 
     private static final String PREFS = "ns_notifier";
     private static final String KEY_POSTED = "posted_ids";
@@ -32,12 +33,21 @@ final class Notifier {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return;
         NotificationManager nm = context.getSystemService(NotificationManager.class);
         if (nm == null) return;
+        nm.deleteNotificationChannel("commission");
+        nm.deleteNotificationChannel("security");
+        // HIGH = pops up at the top of the screen (heads-up) with sound; PUBLIC = full text on the lock screen.
         NotificationChannel commission = new NotificationChannel(CHANNEL_COMMISSION,
-                context.getString(R.string.channel_commission), NotificationManager.IMPORTANCE_DEFAULT);
+                context.getString(R.string.channel_commission), NotificationManager.IMPORTANCE_HIGH);
         commission.setDescription(context.getString(R.string.channel_commission_desc));
+        commission.setLockscreenVisibility(android.app.Notification.VISIBILITY_PUBLIC);
+        commission.enableVibration(true);
+        commission.setShowBadge(true);
         NotificationChannel security = new NotificationChannel(CHANNEL_SECURITY,
                 context.getString(R.string.channel_security), NotificationManager.IMPORTANCE_HIGH);
         security.setDescription(context.getString(R.string.channel_security_desc));
+        security.setLockscreenVisibility(android.app.Notification.VISIBILITY_PUBLIC);
+        security.enableVibration(true);
+        security.setShowBadge(true);
         nm.createNotificationChannel(commission);
         nm.createNotificationChannel(security);
     }
@@ -67,7 +77,11 @@ final class Notifier {
                 .setContentIntent(tap)
                 .setAutoCancel(true)
                 .setCategory(security ? NotificationCompat.CATEGORY_ALARM : NotificationCompat.CATEGORY_STATUS)
-                .setPriority(security ? NotificationCompat.PRIORITY_HIGH : NotificationCompat.PRIORITY_DEFAULT);
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setDefaults(NotificationCompat.DEFAULT_ALL)
+                .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+                .setWhen(System.currentTimeMillis())
+                .setShowWhen(true);
 
         try {
             NotificationManagerCompat.from(context).notify(id.hashCode(), builder.build());

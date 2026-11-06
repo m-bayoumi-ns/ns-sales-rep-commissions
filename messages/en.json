@@ -876,6 +876,10 @@
       "collectionShare": "Collections adjustment",
       "lowRate": "Below-50% rate",
       "oldRate": "Old system rate"
+    },
+    "welcome": {
+      "title": "Notifications are on",
+      "body": "You'll be notified here when your commission goes up or down, a bonus changes, rates are updated, or your account is signed in elsewhere."
     }
   }
 }

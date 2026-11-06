@@ -284,11 +284,35 @@ public class MainActivity extends Activity {
                 requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS}, REQ_NOTIFICATIONS);
             }
         }
+        askToRunInBackgroundOnce();
         long now = System.currentTimeMillis();
         if (now - lastFeedCheckAt > FEED_CHECK_GAP_MS) {
             lastFeedCheckAt = now;
             FeedWorker.checkSoon(this);
         }
+    }
+
+    /**
+     * Battery savers (especially on Xiaomi, Oppo, Realme, Huawei, Samsung) can stop the background check,
+     * and then notifications only arrive when the app is opened. Ask once to be exempt.
+     */
+    @SuppressLint("BatteryLife")
+    private void askToRunInBackgroundOnce() {
+        android.content.SharedPreferences prefs = getSharedPreferences("ns_app", MODE_PRIVATE);
+        if (prefs.getBoolean("asked_battery", false)) return;
+        // Ask after the notification prompt, on a later page load.
+        if (Build.VERSION.SDK_INT >= 33 && !prefs.getBoolean("asked_notifications", false)) return;
+        android.os.PowerManager pm = (android.os.PowerManager) getSystemService(Context.POWER_SERVICE);
+        if (pm == null || pm.isIgnoringBatteryOptimizations(getPackageName())) return;
+        prefs.edit().putBoolean("asked_battery", true).apply();
+        web.postDelayed(() -> {
+            try {
+                startActivity(new Intent(android.provider.Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
+                        Uri.parse("package:" + getPackageName())));
+            } catch (ActivityNotFoundException ignored) {
+                // Some phones don't offer this screen.
+            }
+        }, 1500);
     }
 
     private class ShellChrome extends WebChromeClient {

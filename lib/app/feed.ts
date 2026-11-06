@@ -61,6 +61,11 @@ export async function buildFeed(user: AppUser, installId: string, sessionId: str
   const now = new Date().toISOString();
   const items: FeedItem[] = [];
 
+  // 0. First check on this phone: one notification confirming they work (and showing how they look).
+  if (!stored) {
+    items.push({ id: `welcome-${installId}`, channel: "commission", title: t("welcome.title"), body: t("welcome.body"), path: "/commissions" });
+  }
+
   // 1. Sign-ins from other sessions.
   const logins = await loginsFor(user.id);
   if (stored) {
