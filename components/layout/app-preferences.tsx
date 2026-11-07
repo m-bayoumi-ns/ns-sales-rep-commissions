@@ -29,8 +29,7 @@ function SwitchMark({ on }: { on: boolean }) {
 }
 
 /**
- * Inside the Android app the header has no language or theme buttons; they live here, in the account menu,
- * as switches. Rendered only in the app (the `app-only` class is hidden in browsers).
+ * In the Android app and on small screens, language and theme settings live in the account menu as switches.
  */
 export function AppPreferenceItems() {
   const t = useTranslations("header");
@@ -43,7 +42,7 @@ export function AppPreferenceItems() {
   const arabic = locale === "ar";
 
   return (
-    <div className="app-only">
+    <div className="app-only mobile-menu-preferences">
       <DropdownMenuGroup>
         <DropdownMenuItem
           closeOnClick={false}

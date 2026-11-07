@@ -159,6 +159,7 @@ export default function GetAppPage() {
               <span className="rounded-full bg-accent px-2.5 py-0.5 text-[11px] font-semibold text-primary">{p("soon")}</span>
             </div>
             <p className="text-sm leading-relaxed text-muted-foreground">{p("iosBody")}</p>
+            <p className="rounded-xl border border-primary/15 bg-accent px-3 py-2 text-sm text-accent-foreground">{p("iosMeanwhile")}</p>
             <ol className="flex flex-col gap-3 text-sm">
               <li className="flex items-center gap-3">
                 <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">1</span>

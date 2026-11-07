@@ -68,7 +68,6 @@ export function UserMenu({ user }: { user: HeaderUser }) {
           </DropdownMenuLabel>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
-        <AppPreferenceItems />
         <DropdownMenuItem onClick={() => router.push("/account")}>
           <UserCogIcon aria-hidden />
           {t("account")}
@@ -85,6 +84,7 @@ export function UserMenu({ user }: { user: HeaderUser }) {
             {t("accounts")}
           </DropdownMenuItem>
         ) : null}
+        <AppPreferenceItems />
         <AndroidAppMenuItem />
         <DropdownMenuSeparator />
         <DropdownMenuItem disabled={signingOut} onClick={() => startSignOut(() => signOut(locale))}>

@@ -94,7 +94,7 @@ export function WebPushControl() {
           {t("iphoneStep2")}
         </p>
         <p className="text-muted-foreground">{t("iphoneStep3")}</p>
-        <Link href="/get-app" className="text-xs font-semibold text-primary hover:underline">
+        <Link href="/get-app" target="_blank" rel="noopener noreferrer" className="text-xs font-semibold text-primary hover:underline">
           {t("more")}
         </Link>
       </div>

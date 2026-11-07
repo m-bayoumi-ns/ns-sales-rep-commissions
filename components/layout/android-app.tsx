@@ -4,7 +4,7 @@ import { AppleIcon, BellIcon, BellOffIcon, CheckCircle2Icon, DownloadIcon, Exter
 import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useEffect, useLayoutEffect, useState, useSyncExternalStore } from "react";
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
-import { Link, usePathname, useRouter } from "@/i18n/navigation";
+import { Link, usePathname } from "@/i18n/navigation";
 import { hasAppInstalled } from "@/lib/app/actions";
 import { ANDROID_APK_URL, sizeMb, type AndroidRelease } from "@/lib/android-app";
 import { cn } from "@/lib/utils";
@@ -181,12 +181,14 @@ export function GetAppBanner() {
           </>
         ) : (
           <>
-            <Link href="/get-app" className="min-w-0 flex-1 outline-none" onClick={() => setClosed(true)}>
+            <Link href="/get-app" target="_blank" rel="noopener noreferrer" className="min-w-0 flex-1 outline-none" onClick={() => setClosed(true)}>
               <span className="block text-sm font-semibold leading-tight">{t("title")}</span>
               <span className="line-clamp-2 block text-xs text-muted-foreground">{device === "ios" ? t("bodyIos") : t("bodyAndroid")}</span>
             </Link>
             <Link
               href="/get-app"
+              target="_blank"
+              rel="noopener noreferrer"
               onClick={() => setClosed(true)}
               className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg bg-primary px-3 text-xs font-semibold text-primary-foreground hover:bg-primary/90"
             >
@@ -281,7 +283,7 @@ export function IosSoonButton({ className }: { className?: string }) {
       <AppleIcon aria-hidden className="size-5" />
       <span className="flex flex-col items-start leading-tight">
         <span className="text-[11px] text-muted-foreground">{t("iosSmall")}</span>
-        <span className="text-sm font-semibold">{t("iosBig")}</span>
+        <span className="whitespace-nowrap text-sm font-semibold">{t("iosBig")}</span>
       </span>
     </button>
   );
@@ -302,10 +304,10 @@ export function DeviceNote() {
 export function AndroidAppMenuItem() {
   const t = useTranslations("androidApp");
   const device = useDevice();
-  const router = useRouter();
+  const locale = useLocale();
   if (device === "app") return null;
   return (
-    <DropdownMenuItem onClick={() => router.push("/get-app")}>
+    <DropdownMenuItem onClick={() => window.open(`/${locale}/get-app`, "_blank", "noopener,noreferrer")}>
       <SmartphoneIcon aria-hidden />
       {t("menu")}
     </DropdownMenuItem>
@@ -335,6 +337,8 @@ export function AndroidAppCard({ release }: { release: AndroidRelease }) {
         ) : (
           <Link
             href="/get-app"
+            target="_blank"
+            rel="noopener noreferrer"
             className="ms-auto inline-flex h-9 shrink-0 items-center rounded-lg bg-primary px-3.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
           >
             {t("view")}
