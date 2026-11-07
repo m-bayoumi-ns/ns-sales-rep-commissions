@@ -25,7 +25,7 @@ The tokens are stored encrypted on the phone (`EncryptedSharedPreferences`, Andr
 - **Sign in**: email or username plus password, with a link to the website's seller registration.
 - **Commissions**: month and seller pickers, live / closed state, and notices (no rates, inherited rates, missing sheet, unlinked reps).
   - **Team summary** (managers): team sales, commission, collections, reps on track, reps below minimum, then a ranked card per rep.
-  - **Statement** (one seller, the default view and the only one a seller sees):
+  - **Statement** (one seller, the default view and the only one a seller sees), organized into Summary, Sales, Collections and Statement tabs:
     - commission and the system that applies
     - targets: total, prorated to date, projection, needed per day, slow-moving / digital / range targets
     - how the commission is built (every bonus and deduction and how close the rep is)
@@ -37,6 +37,8 @@ The tokens are stored encrypted on the phone (`EncryptedSharedPreferences`, Andr
   notifications from My account): a WorkManager job reads `GET /api/app/feed` (Bearer token, `X-NS-Install`) every 15 minutes
   and shortly after the app opens. Android 13+ asks for permission once; a banner offers the settings while they are off.
 - Pull to refresh. Figures reload every 5 minutes while the app is open, and when you come back to it after 5 minutes away.
+- Website links to a commission month or rep open the matching view in the native app, including after signing in.
+- Administrators can open commission settings and account management on the website from the app menu.
 - English / Arabic (RTL) follow the phone's language; on Android 13+ you can also pick it per app in system settings. Light and dark follow the phone.
 
 ## Project layout

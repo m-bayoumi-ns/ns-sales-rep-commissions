@@ -36,6 +36,8 @@
     <string name="refresh">تحديث الآن</string>
     <string name="more">المزيد</string>
     <string name="open_website">فتح على الموقع</string>
+    <string name="commission_settings">إعدادات العمولات</string>
+    <string name="manage_accounts">إدارة الحسابات</string>
     <string name="my_account">حسابي</string>
     <string name="sign_out">تسجيل الخروج</string>
     <string name="month">الشهر</string>
@@ -102,6 +104,10 @@
 
     <!-- كشف العمولة -->
     <string name="back_to_team">ملخص الفريق (كل المندوبين)</string>
+    <string name="tab_summary">الملخص</string>
+    <string name="tab_sales">المبيعات</string>
+    <string name="tab_collections">التحصيلات</string>
+    <string name="tab_statement">كشف العمولة</string>
     <string name="statement">كشف العمولة</string>
     <string name="commission_now">العمولة المستحقة حتى الآن</string>
     <string name="commission_final">عمولة الشهر</string>

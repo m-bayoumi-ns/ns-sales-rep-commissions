@@ -2,8 +2,10 @@ package com.naguibselim.commissionsapp.ui
 
 import android.Manifest
 import android.content.Intent
+import android.net.Uri
 import android.os.Build
 import android.provider.Settings
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
@@ -24,6 +26,7 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
@@ -52,6 +55,8 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -75,6 +80,7 @@ import com.naguibselim.commissionsapp.data.RepSummary
 import com.naguibselim.commissionsapp.notify.Notifier
 import com.naguibselim.commissionsapp.util.Format
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -89,6 +95,16 @@ fun CommissionsScreen(viewModel: AppViewModel) {
     val website = "${BuildConfig.API_BASE_URL}/${langSegment()}"
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     val context = LocalContext.current
+    val listState = rememberLazyListState()
+    val scope = rememberCoroutineScope()
+    var detailSection by rememberSaveable(state.data?.detail?.rep?.key) { mutableStateOf(RepSection.Summary) }
+    val selectedDetail = state.data?.detail
+    val canReturnToTeam = (state.data?.repOptions?.size ?: 0) > 1
+
+    BackHandler(enabled = selectedDetail != null && (detailSection != RepSection.Summary || canReturnToTeam)) {
+        if (detailSection != RepSection.Summary) detailSection = RepSection.Summary
+        else viewModel.selectRep(state.data?.allReps ?: "all")
+    }
 
     // Notifications: ask once on Android 13+, then show a banner while they are off.
     var notificationsOn by remember { mutableStateOf(Notifier.canNotify(context)) }
@@ -144,6 +160,18 @@ fun CommissionsScreen(viewModel: AppViewModel) {
                             IconButton(onClick = { menu = true }) { Icon(Icons.Filled.MoreVert, contentDescription = stringResource(R.string.more)) }
                             DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
                                 DropdownMenuItem(text = { Text(stringResource(R.string.open_website)) }, onClick = { menu = false; uri.openUri("$website/commissions") })
+                                if (state.data?.user?.admin == true) {
+                                    DropdownMenuItem(
+                                        text = { Text(stringResource(R.string.commission_settings)) },
+                                        onClick = {
+                                            menu = false
+                                            val url = Uri.parse("$website/settings").buildUpon()
+                                            state.data?.clock?.month?.let { url.appendQueryParameter("month", it) }
+                                            uri.openUri(url.build().toString())
+                                        },
+                                    )
+                                    DropdownMenuItem(text = { Text(stringResource(R.string.manage_accounts)) }, onClick = { menu = false; uri.openUri("$website/accounts") })
+                                }
                                 DropdownMenuItem(text = { Text(stringResource(R.string.my_account)) }, onClick = { menu = false; uri.openUri("$website/account") })
                                 HorizontalDivider()
                                 DropdownMenuItem(text = { Text(stringResource(R.string.sign_out)) }, onClick = { menu = false; viewModel.signOut() })
@@ -176,6 +204,7 @@ fun CommissionsScreen(viewModel: AppViewModel) {
                         }
                     }
                     else -> LazyColumn(
+                        state = listState,
                         modifier = Modifier.fillMaxSize(),
                         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 32.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -204,6 +233,11 @@ fun CommissionsScreen(viewModel: AppViewModel) {
                             data.detail != null -> repDetailItems(
                                 data = data,
                                 detail = data.detail,
+                                section = detailSection,
+                                onSection = { next ->
+                                    detailSection = next
+                                    scope.launch { listState.animateScrollToItem(0) }
+                                },
                                 onBackToTeam = if (data.repOptions.size > 1) ({ viewModel.selectRep(data.allReps) }) else null,
                             )
                             else -> teamItems(data, format, onOpen = { viewModel.selectRep(it.key) })

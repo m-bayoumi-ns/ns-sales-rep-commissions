@@ -1,5 +1,6 @@
 package com.naguibselim.commissionsapp
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -22,6 +23,7 @@ class MainActivity : ComponentActivity() {
         installSplashScreen()
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        viewModel.openCommissionLink(intent?.data)
         Notifier.createChannels(this)
         setContent {
             NsTheme {
@@ -29,6 +31,12 @@ class MainActivity : ComponentActivity() {
                 if (signedIn) CommissionsScreen(viewModel) else LoginScreen(viewModel)
             }
         }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        viewModel.openCommissionLink(intent.data)
     }
 
     override fun onResume() {

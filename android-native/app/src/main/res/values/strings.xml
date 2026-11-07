@@ -36,6 +36,8 @@
     <string name="refresh">Refresh now</string>
     <string name="more">More</string>
     <string name="open_website">Open on the website</string>
+    <string name="commission_settings">Commission settings</string>
+    <string name="manage_accounts">Manage accounts</string>
     <string name="my_account">My account</string>
     <string name="sign_out">Sign out</string>
     <string name="month">Month</string>
@@ -102,6 +104,10 @@
 
     <!-- Statement -->
     <string name="back_to_team">Team summary (all sellers)</string>
+    <string name="tab_summary">Summary</string>
+    <string name="tab_sales">Sales</string>
+    <string name="tab_collections">Collections</string>
+    <string name="tab_statement">Statement</string>
     <string name="statement">Commission statement</string>
     <string name="commission_now">Commission earned so far</string>
     <string name="commission_final">Commission for the month</string>

@@ -18,12 +18,15 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.ScrollableTabRow
+import androidx.compose.material3.Tab
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -54,7 +57,15 @@ import com.naguibselim.commissionsapp.data.TargetBucket
 import kotlin.math.max
 
 /** The seller's commission statement: the same sections as the website's rep page. */
-fun LazyListScope.repDetailItems(data: CommissionsResponse, detail: RepDetail, onBackToTeam: (() -> Unit)?) {
+enum class RepSection { Summary, Sales, Collections, Statement }
+
+fun LazyListScope.repDetailItems(
+    data: CommissionsResponse,
+    detail: RepDetail,
+    section: RepSection,
+    onSection: (RepSection) -> Unit,
+    onBackToTeam: (() -> Unit)?,
+) {
     val key = detail.rep.key
     if (onBackToTeam != null) {
         item(key = "back-$key") {
@@ -66,14 +77,43 @@ fun LazyListScope.repDetailItems(data: CommissionsResponse, detail: RepDetail, o
         }
     }
     item(key = "header-$key") { HeaderCard(data, detail) }
-    item(key = "targets-$key") { TargetsCard(data, detail) }
-    item(key = "build-$key") { BuildCard(data, detail) }
-    item(key = "chart-$key") { ChartCard(data, detail) }
-    item(key = "tiers-$key") { TiersCard(data, detail) }
-    item(key = "collections-$key") { CollectionsCard(data, detail) }
-    item(key = "products-$key") { ProductsCard(detail) }
-    item(key = "invoices-$key") { InvoicesCard(detail) }
-    item(key = "customers-$key") { CustomersCard(detail) }
+    item(key = "tabs-$key") { DetailTabs(section, onSection) }
+    when (section) {
+        RepSection.Summary -> item(key = "targets-$key") { TargetsCard(data, detail) }
+        RepSection.Sales -> {
+            item(key = "chart-$key") { ChartCard(data, detail) }
+            item(key = "tiers-$key") { TiersCard(data, detail) }
+            item(key = "products-$key") { ProductsCard(detail) }
+            item(key = "invoices-$key") { InvoicesCard(detail) }
+            item(key = "customers-$key") { CustomersCard(detail) }
+        }
+        RepSection.Collections -> item(key = "collections-$key") { CollectionsCard(data, detail) }
+        RepSection.Statement -> item(key = "build-$key") { BuildCard(data, detail) }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun DetailTabs(selected: RepSection, onSelect: (RepSection) -> Unit) {
+    val tabs = listOf(
+        RepSection.Summary to R.string.tab_summary,
+        RepSection.Sales to R.string.tab_sales,
+        RepSection.Collections to R.string.tab_collections,
+        RepSection.Statement to R.string.tab_statement,
+    )
+    ScrollableTabRow(
+        selectedTabIndex = tabs.indexOfFirst { it.first == selected }.coerceAtLeast(0),
+        edgePadding = 0.dp,
+        containerColor = MaterialTheme.colorScheme.background,
+    ) {
+        tabs.forEach { (section, label) ->
+            Tab(
+                selected = section == selected,
+                onClick = { onSelect(section) },
+                text = { Text(stringResource(label), maxLines = 1) },
+            )
+        }
+    }
 }
 
 // ---------------------------------------------------------------- header

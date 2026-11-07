@@ -1,8 +1,10 @@
 package com.naguibselim.commissionsapp.ui
 
 import android.app.Application
+import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.naguibselim.commissionsapp.BuildConfig
 import com.naguibselim.commissionsapp.data.Api
 import com.naguibselim.commissionsapp.data.ApiException
 import com.naguibselim.commissionsapp.data.CommissionsResponse
@@ -57,7 +59,9 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
             try {
                 api.signIn(identifier, password)
                 _signIn.value = SignInState()
-                _commissions.value = CommissionsState()
+                val month = _commissions.value.month
+                val rep = _commissions.value.rep
+                _commissions.value = CommissionsState(month = month, rep = rep)
                 _signedIn.value = true
                 FeedWorker.schedule(getApplication<Application>())
                 FeedWorker.checkSoon(getApplication<Application>())
@@ -65,7 +69,27 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
             } catch (error: Exception) {
                 _signIn.value = SignInState(problem = problemOf(error))
             }
+
         }
+    }
+
+    /** Opens the requested commission month/rep from a website link, including links received before sign-in. */
+    fun openCommissionLink(uri: Uri?) {
+        if (uri == null) return
+        val website = Uri.parse(BuildConfig.API_BASE_URL)
+        if (!uri.scheme.equals(website.scheme, ignoreCase = true) ||
+            !uri.host.equals(website.host, ignoreCase = true) ||
+            uri.port != website.port
+        ) return
+        val path = uri.pathSegments
+        if (path.size != 2 || path[0] !in setOf("en", "ar") || path[1] != "commissions") return
+
+        val month = uri.getQueryParameter("month")
+            ?.takeIf { Regex("""\d{4}-(0[1-9]|1[0-2])""").matches(it) }
+        val rep = uri.getQueryParameter("rep")
+            ?.takeIf { it.isNotBlank() && it.length <= 160 }
+        _commissions.update { it.copy(month = month, rep = rep, data = null, loading = false, refreshing = false, problem = null) }
+        if (_signedIn.value) load()
     }
 
     fun signOut() {
