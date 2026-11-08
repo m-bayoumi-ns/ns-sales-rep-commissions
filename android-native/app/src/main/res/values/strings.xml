@@ -288,7 +288,7 @@
     <string name="admin_bonus">Bonus</string>
     <string name="admin_add_bonus">Add bonus step</string>
     <string name="admin_targets">Sales reps and targets</string>
-    <string name="admin_targets_hint">Targets are read from the selected month's Excel sheet and are not saved in JSON settings.</string>
+    <string name="admin_targets_hint">Targets are read from the selected month Excel sheet and are not saved in JSON settings.</string>
     <string name="admin_range_unit">Price-range target unit</string>
     <string name="admin_digital_unit">Digital target unit</string>
     <string name="admin_egp">EGP</string>
