@@ -43,6 +43,7 @@
     <string name="all_sellers">كل المندوبين (ملخص الفريق)</string>
     <string name="live">مباشر</string>
     <string name="month_closed">شهر مغلق · أرقام نهائية</string>
+    <string name="month_closed_short">مغلق</string>
     <string name="day_of">اليوم %1$d من %2$d</string>
     <string name="loading">جارٍ قراءة الأرقام من أودو…</string>
     <string name="loading_hint">قد يستغرق ذلك حتى دقيقة في بداية اليوم.</string>
@@ -58,7 +59,10 @@
     <string name="empty_not_listed">حسابك غير مربوط بمندوب في قائمة %1$s.</string>
 
     <!-- ملخص الفريق -->
-    <string name="kpi_label">ملخص الفريق</string>
+    <string name="kpi_label">إجمالي الفريق</string>
+    <string name="team_sales_total">المبيعات %1$s · هدف الشهر النهائي %2$s</string>
+    <string name="team_sales_to_date">المبيعات %1$s · الهدف حتى الآن %2$s</string>
+    <string name="achieved">نسبة التحقيق</string>
     <string name="kpi_sales">مبيعات الفريق</string>
     <string name="of_target">%1$s من %2$s</string>
     <string name="of_target_to_date">%1$s من الهدف حتى اليوم %2$s</string>

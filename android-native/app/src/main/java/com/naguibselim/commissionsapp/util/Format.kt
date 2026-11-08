@@ -36,6 +36,8 @@ class Format(locale: Locale) {
         }
     }
 
+    fun compactMoney(value: Double): String = "${compact(value)} ${if (isArabic) "ج.م" else "EGP"}"
+
     /** 87.5% */
     fun pct(value: Double?): String = if (value == null) "—" else oneDecimal.format(value) + "%"
 

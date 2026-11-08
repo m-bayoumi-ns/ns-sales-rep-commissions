@@ -8,6 +8,8 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.background
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -27,10 +29,16 @@ import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.AccountBalanceWallet
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.ReceiptLong
+import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -42,6 +50,8 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -59,6 +69,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
@@ -146,6 +157,42 @@ fun CommissionsScreen(viewModel: AppViewModel) {
     CompositionLocalProvider(LocalFormat provides format) {
         Scaffold(
             containerColor = MaterialTheme.colorScheme.background,
+            bottomBar = {
+                if (selectedDetail != null) {
+                    NavigationBar(containerColor = MaterialTheme.colorScheme.surface) {
+                        NavigationBarItem(
+                            selected = false,
+                            onClick = { uri.openUri("$website/account") },
+                            icon = { Icon(Icons.Filled.Person, contentDescription = null) },
+                            label = { Text(stringResource(R.string.my_account), maxLines = 1) },
+                            alwaysShowLabel = true,
+                        )
+                        listOf(
+                            RepSection.Sales to R.string.tab_sales,
+                            RepSection.Summary to R.string.tab_summary,
+                            RepSection.Collections to R.string.tab_collections,
+                            RepSection.Statement to R.string.tab_statement,
+                        ).forEach { (section, label) ->
+                            val icon = when (section) {
+                                RepSection.Sales -> Icons.Filled.ShoppingCart
+                                RepSection.Summary -> Icons.Filled.Home
+                                RepSection.Collections -> Icons.Filled.AccountBalanceWallet
+                                RepSection.Statement -> Icons.Filled.ReceiptLong
+                            }
+                            NavigationBarItem(
+                                selected = detailSection == section,
+                                onClick = {
+                                    detailSection = section
+                                    scope.launch { listState.animateScrollToItem(0) }
+                                },
+                                icon = { Icon(icon, contentDescription = null) },
+                                label = { Text(stringResource(label), maxLines = 1) },
+                                alwaysShowLabel = true,
+                            )
+                        }
+                    }
+                }
+            },
             topBar = {
                 TopAppBar(
                     title = {
@@ -157,8 +204,10 @@ fun CommissionsScreen(viewModel: AppViewModel) {
                         }
                     },
                     actions = {
-                        IconButton(onClick = { viewModel.refresh() }, enabled = !state.loading && !state.refreshing) {
-                            Icon(Icons.Filled.Refresh, contentDescription = stringResource(R.string.refresh))
+                        if (selectedDetail == null || detailSection == RepSection.Summary) {
+                            IconButton(onClick = { viewModel.refresh() }, enabled = !state.loading && !state.refreshing) {
+                                Icon(Icons.Filled.Refresh, contentDescription = stringResource(R.string.refresh))
+                            }
                         }
                         var menu by remember { mutableStateOf(false) }
                         Box {
@@ -216,6 +265,7 @@ fun CommissionsScreen(viewModel: AppViewModel) {
                             Filters(
                                 data = data,
                                 loading = state.loading,
+                                showStatus = selectedDetail == null || detailSection == RepSection.Summary,
                                 onMonth = viewModel::selectMonth,
                                 onRep = viewModel::selectRep,
                             )
@@ -237,15 +287,13 @@ fun CommissionsScreen(viewModel: AppViewModel) {
                                 data = data,
                                 detail = data.detail,
                                 section = detailSection,
-                                onSection = { next ->
-                                    detailSection = next
-                                    scope.launch { listState.animateScrollToItem(0) }
-                                },
                                 onBackToTeam = if (data.repOptions.size > 1) ({ viewModel.selectRep(data.allReps) }) else null,
                             )
                             else -> teamItems(data, format, onOpen = { viewModel.selectRep(it.key) })
                         }
-                        item(key = "updated") { UpdatedLine(data, format) }
+                        if (selectedDetail == null || detailSection == RepSection.Summary) {
+                            item(key = "updated") { UpdatedLine(data, format) }
+                        }
                     }
                 }
             }
@@ -308,7 +356,7 @@ private fun ProblemState(problem: Problem, onRetry: () -> Unit, onOpenWebsite: (
 }
 
 @Composable
-private fun Filters(data: CommissionsResponse, loading: Boolean, onMonth: (String) -> Unit, onRep: (String) -> Unit) {
+private fun Filters(data: CommissionsResponse, loading: Boolean, showStatus: Boolean, onMonth: (String) -> Unit, onRep: (String) -> Unit) {
     val format = LocalFormat.current
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
@@ -334,19 +382,21 @@ private fun Filters(data: CommissionsResponse, loading: Boolean, onMonth: (Strin
                 )
             }
         }
-        val clock = data.clock
-        val status = LocalStatus.current
-        if (clock.closed) {
-            Pill(stringResource(R.string.month_closed), MaterialTheme.colorScheme.onSurfaceVariant, MaterialTheme.colorScheme.surfaceVariant)
-        } else {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Pill(stringResource(R.string.live), status.success, status.successSoft)
-                Text(
-                    stringResource(R.string.day_of, clock.elapsedDays, clock.monthDays) + " · " +
-                        pluralStringResource(R.plurals.days_left, clock.remainingDays, clock.remainingDays),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+        if (showStatus) {
+            val clock = data.clock
+            val status = LocalStatus.current
+            if (clock.closed) {
+                Pill(stringResource(R.string.month_closed), MaterialTheme.colorScheme.onSurfaceVariant, MaterialTheme.colorScheme.surfaceVariant)
+            } else {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Pill(stringResource(R.string.live), status.success, status.successSoft)
+                    Text(
+                        stringResource(R.string.day_of, clock.elapsedDays, clock.monthDays) + " · " +
+                            pluralStringResource(R.plurals.days_left, clock.remainingDays, clock.remainingDays),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
             }
         }
     }
@@ -402,100 +452,74 @@ private fun LazyListScope.teamItems(data: CommissionsResponse, format: Format, o
         val totals = data.totals
         val closed = data.clock.closed
         val target = if (closed) totals.target else totals.targetToDate
-        val achievement = if (target > 0) 100 * totals.sales / target else null
-        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text(stringResource(R.string.kpi_label), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                StatTile(
-                    label = stringResource(R.string.kpi_sales),
-                    value = format.compact(totals.sales),
-                    caption = if (achievement != null) stringResource(if (closed) R.string.of_target else R.string.of_target_to_date, format.pct(achievement), format.compact(target)) else stringResource(R.string.kpi_no_target),
-                    modifier = Modifier.weight(1f),
-                    accent = achievementColor(achievement),
-                )
-                StatTile(
-                    label = stringResource(R.string.kpi_commission),
-                    value = format.number(totals.commission),
-                    caption = stringResource(if (closed) R.string.kpi_final else R.string.kpi_so_far),
-                    modifier = Modifier.weight(1f),
-                )
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                StatTile(
-                    label = stringResource(R.string.kpi_collections),
-                    value = format.compact(totals.collections),
-                    caption = if (totals.sales > 0) stringResource(R.string.of_sales, format.pct(100 * totals.collections / totals.sales)) else null,
-                    modifier = Modifier.weight(1f),
-                )
-                StatTile(
-                    label = stringResource(R.string.kpi_on_track),
-                    value = "${format.number(totals.onTrack.toDouble())} / ${format.number(data.reps.size.toDouble())}",
-                    caption = stringResource(R.string.kpi_on_track_sub),
-                    modifier = Modifier.weight(1f),
-                    accent = LocalStatus.current.success,
-                )
-            }
-            if (totals.flagged > 0) {
-                StatTile(
-                    label = stringResource(R.string.kpi_flagged),
-                    value = format.number(totals.flagged.toDouble()),
-                    caption = stringResource(R.string.kpi_flagged_sub, format.money(data.settings.rules.minimumSales)),
-                    modifier = Modifier.fillMaxWidth(),
-                    accent = LocalStatus.current.danger,
-                )
-            }
-            Spacer(Modifier.height(4.dp))
-            Text(stringResource(R.string.board_title), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-            Text(stringResource(R.string.board_description), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
-    }
-    items(data.reps, key = { "rep-${it.key}" }) { rep -> RepCard(rep, data.clock.closed, format, onClick = { onOpen(rep) }) }
-}
-
-@Composable
-private fun RepCard(rep: RepSummary, closed: Boolean, format: Format, onClick: () -> Unit) {
-    val r = rep.result
-    val status = LocalStatus.current
-    Card(
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.5.dp),
-        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
-    ) {
-        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Row(verticalAlignment = Alignment.Top) {
-                Column(Modifier.weight(1f)) {
-                    Text(rep.name, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
-                    if (rep.odooUserId == null) {
-                        Text(stringResource(R.string.not_linked), style = MaterialTheme.typography.bodySmall, color = status.warning)
-                    }
-                }
-                Spacer(Modifier.width(8.dp))
-                Text(format.pct(r.achievement), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = achievementColor(r.achievement))
-            }
-            ProgressBar(r.achievement, projected = if (closed) null else rep.projectedAchievement)
-            val targetNow = if (closed) r.totalTarget else r.totalTargetToDate
+        Column(Modifier.fillMaxWidth().padding(vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+            Text(stringResource(R.string.kpi_label), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(format.money(totals.commission), style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.onSurface)
             Text(
-                "${stringResource(R.string.sales)}: ${format.money(r.sales)} " +
-                    if (targetNow != null) stringResource(if (closed) R.string.of_amount else R.string.of_amount_to_date, format.money(targetNow)) else "· " + stringResource(R.string.no_target),
+                stringResource(if (closed) R.string.team_sales_total else R.string.team_sales_to_date, format.compactMoney(totals.sales), if (target > 0) format.compactMoney(target) else "—"),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Column(Modifier.weight(1f)) {
-                    Text(stringResource(if (closed) R.string.commission else R.string.commission_so_far), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text(format.money(r.total), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+        }
+    }
+    item(key = "reps") {
+        Card(
+            shape = RoundedCornerShape(24.dp),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+        ) {
+            Column {
+                data.reps.forEachIndexed { index, rep ->
+                    if (index > 0) HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                    RepRow(rep, data.clock.closed, format, onClick = { onOpen(rep) })
                 }
-                RegimePill(r.regime)
             }
-            r.collectionRatio?.let {
-                Text(stringResource(R.string.collected_pct, format.pct(it)), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    }
+}
+
+@Composable
+private fun RepRow(rep: RepSummary, closed: Boolean, format: Format, onClick: () -> Unit) {
+    val r = rep.result
+    val status = LocalStatus.current
+    Row(
+        Modifier.fillMaxWidth().clickable(onClick = onClick).padding(horizontal = 14.dp, vertical = 13.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Box(
+            Modifier.size(40.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primaryContainer),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                rep.name.split(Regex("\\s+")).filter(String::isNotBlank).take(2).joinToString("") { it.take(1) },
+                color = MaterialTheme.colorScheme.primary,
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.Bold,
+            )
+        }
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+                Text(rep.name, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
+                if (rep.odooUserId == null) {
+                    Text(stringResource(R.string.not_linked), style = MaterialTheme.typography.labelSmall, color = status.warning, maxLines = 1)
+                }
+                if (r.belowMinimum || rep.minimumRisk) {
+                    Text(
+                        stringResource(if (r.belowMinimum) R.string.flag_below_minimum else R.string.flag_minimum_risk),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = if (r.belowMinimum) status.danger else status.warning,
+                    )
+                }
             }
-            rep.perDayToTarget?.let {
-                Text(stringResource(R.string.per_day_needed, format.money(it)), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(7.dp)) {
+                ProgressBar(r.achievement, projected = if (closed) null else rep.projectedAchievement, modifier = Modifier.weight(1f), height = 6)
+                Text(format.pct(r.achievement), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
             }
-            if (r.belowMinimum) Pill(stringResource(R.string.flag_below_minimum), status.danger, status.dangerSoft)
-            else if (rep.minimumRisk) Pill(stringResource(R.string.flag_minimum_risk), status.warning, status.warningSoft)
+        }
+        Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(format.number(r.total), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, color = status.success, maxLines = 1)
+            Text(format.compactMoney(r.sales), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
         }
     }
 }

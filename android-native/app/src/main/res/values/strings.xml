@@ -43,6 +43,7 @@
     <string name="all_sellers">All sellers (team summary)</string>
     <string name="live">Live</string>
     <string name="month_closed">Month closed · final figures</string>
+    <string name="month_closed_short">Closed</string>
     <string name="day_of">Day %1$d of %2$d</string>
     <string name="loading">Reading the figures from Odoo…</string>
     <string name="loading_hint">This can take up to a minute at the start of the day.</string>
@@ -58,7 +59,10 @@
     <string name="empty_not_listed">Your account is not linked to a sales rep in %1$s\'s list.</string>
 
     <!-- Team summary -->
-    <string name="kpi_label">Team summary</string>
+    <string name="kpi_label">Team total</string>
+    <string name="team_sales_total">Sales %1$s · final month target %2$s</string>
+    <string name="team_sales_to_date">Sales %1$s · %2$s target to date</string>
+    <string name="achieved">Achieved</string>
     <string name="kpi_sales">Team sales</string>
     <string name="of_target">%1$s of %2$s</string>
     <string name="of_target_to_date">%1$s of %2$s target to date</string>

@@ -18,15 +18,12 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.ScrollableTabRow
-import androidx.compose.material3.Tab
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -39,6 +36,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathEffect
@@ -64,7 +62,6 @@ fun LazyListScope.repDetailItems(
     data: CommissionsResponse,
     detail: RepDetail,
     section: RepSection,
-    onSection: (RepSection) -> Unit,
     onBackToTeam: (() -> Unit)?,
 ) {
     val key = detail.rep.key
@@ -77,8 +74,7 @@ fun LazyListScope.repDetailItems(
             }
         }
     }
-    item(key = "header-$key") { HeaderCard(data, detail) }
-    item(key = "tabs-$key") { DetailTabs(section, onSection) }
+    item(key = "header-$key") { HeaderCard(data, detail, section) }
     when (section) {
         RepSection.Summary -> {
             item(key = "targets-$key") { TargetsCard(data, detail) }
@@ -96,54 +92,80 @@ fun LazyListScope.repDetailItems(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun DetailTabs(selected: RepSection, onSelect: (RepSection) -> Unit) {
-    val tabs = listOf(
-        RepSection.Summary to R.string.tab_summary,
-        RepSection.Sales to R.string.tab_sales,
-        RepSection.Collections to R.string.tab_collections,
-        RepSection.Statement to R.string.tab_statement,
-    )
-    ScrollableTabRow(
-        selectedTabIndex = tabs.indexOfFirst { it.first == selected }.coerceAtLeast(0),
-        edgePadding = 0.dp,
-        containerColor = MaterialTheme.colorScheme.background,
-    ) {
-        tabs.forEach { (section, label) ->
-            Tab(
-                selected = section == selected,
-                onClick = { onSelect(section) },
-                text = { Text(stringResource(label), maxLines = 1) },
-            )
-        }
-    }
-}
-
 // ---------------------------------------------------------------- header
 
 @Composable
-private fun HeaderCard(data: CommissionsResponse, detail: RepDetail) {
+private fun HeaderCard(data: CommissionsResponse, detail: RepDetail, section: RepSection) {
     val f = LocalFormat.current
     val rep = detail.rep
     val r = rep.result
     val rules = data.settings.rules
     val closed = data.clock.closed
-    SectionCard {
-        Text(stringResource(R.string.statement), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
-        Text(rep.name, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-        Text(
-            pluralStringResource(R.plurals.invoices, rep.invoices, rep.invoices) + " · " + pluralStringResource(R.plurals.customers, rep.customers, rep.customers),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Spacer(Modifier.height(14.dp))
-        Text(stringResource(if (closed) R.string.commission_final else R.string.commission_now), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Text(f.money(r.total), style = MaterialTheme.typography.displaySmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
-        if (!closed) Text(stringResource(R.string.updates_live), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Spacer(Modifier.height(12.dp))
-        RegimePill(r.regime)
-        Spacer(Modifier.height(6.dp))
+    val white = Color.White
+    val period = if (closed) stringResource(R.string.month_closed_short) else stringResource(R.string.day_of, data.clock.elapsedDays, data.clock.monthDays)
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(26.dp))
+            .background(Brush.linearGradient(listOf(Color(0xFF5A3A1D), Color(0xFF2E1D0F))))
+            .padding(horizontal = 20.dp, vertical = 22.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            val initials = rep.name.split(Regex("\\s+")).filter(String::isNotBlank).take(2).joinToString("") { it.take(1) }
+            Box(
+                Modifier.size(44.dp).clip(CircleShape).background(white.copy(alpha = 0.15f)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(initials, color = white, fontWeight = FontWeight.Bold)
+            }
+            Column(Modifier.weight(1f)) {
+                Text(rep.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = white, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(
+                    "${f.month(data.clock.month)} · $period",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = white.copy(alpha = 0.72f),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+            Pill(regimeLabel(r.regime), white, white.copy(alpha = 0.16f))
+        }
+
+        Column(Modifier.fillMaxWidth().padding(top = 22.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(stringResource(if (closed) R.string.commission_final else R.string.commission_now), style = MaterialTheme.typography.bodyMedium, color = white.copy(alpha = 0.75f))
+            Text(f.money(r.total), style = MaterialTheme.typography.displaySmall, fontWeight = FontWeight.ExtraBold, color = white, maxLines = 1)
+            if (section == RepSection.Summary && !closed) {
+                Text(stringResource(R.string.updates_live), style = MaterialTheme.typography.bodySmall, color = white.copy(alpha = 0.7f))
+            }
+        }
+
+        if (r.achievement != null) {
+            val achievement = r.achievement.coerceAtLeast(0.0)
+            val projected = if (closed) achievement else (rep.projectedAchievement ?: achievement).coerceAtLeast(achievement)
+            Box(
+                Modifier.fillMaxWidth().padding(top = 20.dp).height(9.dp).clip(RoundedCornerShape(50)).background(white.copy(alpha = 0.16f)),
+            ) {
+                if (projected > achievement) {
+                    Box(Modifier.fillMaxWidth((projected / 100).coerceIn(0.0, 1.0).toFloat()).height(9.dp).background(white.copy(alpha = 0.24f)))
+                }
+                Box(
+                    Modifier
+                        .fillMaxWidth((achievement / 100).coerceIn(0.0, 1.0).toFloat())
+                        .height(9.dp)
+                        .background(Brush.horizontalGradient(listOf(Color(0xFFFCD34D), Color(0xFF6FD39A)))),
+                )
+            }
+        }
+
+        Row(
+            Modifier.fillMaxWidth().padding(top = 18.dp).clip(RoundedCornerShape(18.dp)).background(white.copy(alpha = 0.1f)).padding(vertical = 12.dp),
+            horizontalArrangement = Arrangement.SpaceEvenly,
+        ) {
+            HeroStat(stringResource(R.string.sales), f.compactMoney(r.sales), Modifier.weight(1f))
+            HeroStat(stringResource(if (closed) R.string.total_target else R.string.target_to_date), r.totalTargetToDate?.let(f::compactMoney) ?: "—", Modifier.weight(1f))
+            HeroStat(stringResource(R.string.achieved), f.pct(r.achievement), Modifier.weight(1f))
+        }
+
         val low = f.number(rules.lowAchievementPct)
         val old = f.number(rules.oldSystemUntilPct)
         Text(
@@ -153,16 +175,26 @@ private fun HeaderCard(data: CommissionsResponse, detail: RepDetail) {
                 "low" -> stringResource(R.string.regime_help_low, low, f.rate(rules.lowRate))
                 else -> stringResource(R.string.regime_help_no_target)
             },
+            Modifier.padding(top = 14.dp),
             style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            color = white.copy(alpha = 0.78f),
         )
-        if (r.belowMinimum) {
+        if (section == RepSection.Summary && (r.belowMinimum || rep.minimumRisk)) {
             Spacer(Modifier.height(10.dp))
-            NoticeBanner(stringResource(R.string.flag_below_long, f.money(r.sales), f.money(rules.minimumSales)), warn = true)
-        } else if (rep.minimumRisk) {
-            Spacer(Modifier.height(10.dp))
-            NoticeBanner(stringResource(R.string.flag_risk_long, f.money(rep.projectedSales), f.money(rules.minimumSales)), warn = true)
+            NoticeBanner(
+                text = if (r.belowMinimum) stringResource(R.string.flag_below_long, f.money(r.sales), f.money(rules.minimumSales))
+                else stringResource(R.string.flag_risk_long, f.money(rep.projectedSales), f.money(rules.minimumSales)),
+                warn = true,
+            )
         }
+    }
+}
+
+@Composable
+private fun HeroStat(label: String, value: String, modifier: Modifier = Modifier) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = modifier) {
+        Text(label, style = MaterialTheme.typography.labelSmall, color = Color.White.copy(alpha = 0.68f), maxLines = 1)
+        Text(value, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, color = Color.White, maxLines = 1)
     }
 }
 
