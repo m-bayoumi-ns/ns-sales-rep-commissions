@@ -54,6 +54,11 @@ export function RepApp({ detail, settings, clock, teamLink, initialTab = "summar
 
   return (
     <div data-app-section={tab} className="rep-app mx-auto flex w-full max-w-3xl flex-col gap-4">
+      {tab === "summary" ? (
+        <div className="app-only flex justify-end">
+          <NotificationBell appHome />
+        </div>
+      ) : null}
       {teamLink ? (
         <Link href={{ pathname: "/commissions", query: { month: clock.month, rep: "all" } }} className="inline-flex w-fit items-center gap-1 text-sm font-medium text-muted-foreground hover:text-foreground">
           <ChevronLeftIcon aria-hidden className="size-4 rtl:rotate-180" />
@@ -74,7 +79,6 @@ export function RepApp({ detail, settings, clock, teamLink, initialTab = "summar
               <p className="text-xs text-white/70">{formatMonth(clock.month, locale)} · {clock.closed ? t("closed") : t("day", { day: clock.elapsedDays, days: clock.monthDays })}</p>
             </div>
             <LevelChip regime={r.regime} />
-            {tab === "summary" ? <span className="app-only"><NotificationBell appHome /></span> : null}
           </div>
 
           <div className="relative mt-6 flex flex-col items-center text-center">

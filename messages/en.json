@@ -568,7 +568,8 @@
       "collections": "Collections",
       "statement": "Statement",
       "account": "Account",
-      "navigation": "App navigation"
+      "navigation": "App navigation",
+      "home": "Home"
     },
     "footerLive": "Updates automatically every few minutes as invoices and payments are posted.",
     "footerClosed": "Final figures for a closed month.",

@@ -57,10 +57,13 @@ async function Account({ searchParams }: { searchParams: PageProps<"/[locale]/ac
           </span>
           <div className="min-w-0">
             <bdi className="account-identity-default web-only block truncate font-semibold">{user.name}</bdi>
-            <bdi className="app-only account-identity-seller block truncate font-semibold">{sellerDisplayName ?? user.name}</bdi>
+            <div className="app-only flex min-w-0 items-center gap-2">
+              <bdi className="account-identity-seller min-w-0 truncate font-semibold">{sellerDisplayName ?? user.name}</bdi>
+              <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[11px] font-semibold text-muted-foreground">{role}</span>
+            </div>
             <bdi className="block truncate text-xs text-muted-foreground">{user.email}</bdi>
           </div>
-          <span className="ms-auto rounded-full bg-muted px-2.5 py-1 text-[11px] font-semibold text-muted-foreground">{role}</span>
+          <span className="web-only ms-auto rounded-full bg-muted px-2.5 py-1 text-[11px] font-semibold text-muted-foreground">{role}</span>
         </div>
         {isSeller(user) && user.salesReps.length ? (
           <p className="account-linked-rep border-b px-5 py-3 text-sm text-muted-foreground">
