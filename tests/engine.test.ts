@@ -179,6 +179,10 @@ describe("calculate", () => {
     );
     expect(result.regime).toBe("old");
     expect(result.base).toBe(12_500);
+    expect(result.oldTiers.map(({ amount, rate, commission }) => ({ amount, rate, commission }))).toEqual([
+      { amount: 0, rate: 0.2, commission: 0 },
+      { amount: 300_000, rate: 0.4, commission: 1_200 },
+    ]);
     expect(result.total).toBe(9_200);
     expect(result.adjustments.find((item) => item.key === "oldTiers")?.amount).toBe(9_200);
   });

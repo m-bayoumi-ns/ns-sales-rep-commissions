@@ -10,6 +10,7 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.net.ConnectivityManager;
 import android.net.NetworkCapabilities;
@@ -88,6 +89,7 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         SplashScreen splash = SplashScreen.installSplashScreen(this);
         super.onCreate(savedInstanceState);
+        applyStatusBarBackground();
         splashStartedAt = System.currentTimeMillis();
         splash.setKeepOnScreenCondition(
                 () -> !firstPageShown && System.currentTimeMillis() - splashStartedAt < SPLASH_MAX_MS);
@@ -118,6 +120,17 @@ public class MainActivity extends Activity {
             Uri deepLink = getIntent() != null ? getIntent().getData() : null;
             web.loadUrl(isInternal(deepLink) ? deepLink.toString() : startUri.toString());
         }
+    }
+
+    private void applyStatusBarBackground() {
+        getWindow().setStatusBarColor(getColor(R.color.background));
+        View decor = getWindow().getDecorView();
+        int flags = decor.getSystemUiVisibility();
+        boolean dark = (getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK)
+                == Configuration.UI_MODE_NIGHT_YES;
+        decor.setSystemUiVisibility(dark
+                ? flags & ~View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
+                : flags | View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR);
     }
 
     @SuppressLint("SetJavaScriptEnabled")
@@ -635,6 +648,7 @@ public class MainActivity extends Activity {
     @Override
     protected void onResume() {
         super.onResume();
+        applyStatusBarBackground();
         web.onResume();
     }
 

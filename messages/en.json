@@ -391,22 +391,22 @@
       "hint": "Leave a range's rate at 0 to switch it off. Products listed below use their category rate instead of the matching range rate."
     },
     "oldTiers": {
-      "title": "Old-system commission tiers",
+      "title": "Old-system commission ranges",
       "description": "Used from {from}% to below {to}% of target. These rates apply to regular products only; slow-moving and digital products keep their configured category rates.",
       "mode": "Old-system calculation",
-      "modeTiers": "Separate price tiers for regular products",
+      "modeTiers": "Separate price ranges for regular products",
       "modeBase": "Use the current line commission",
       "modeRate": "Fixed percentage of total sales",
-      "add": "Add tier",
-      "remove": "Remove tier",
-      "range": "Tier {key}",
+      "add": "Add range",
+      "remove": "Remove range",
+      "range": "Range {key}",
       "from": "Unit price from",
       "to": "To (exclusive)",
       "perUnit": "EGP",
       "noLimit": "No limit",
       "rate": "Commission rate",
-      "overlap": "Some old-system tiers overlap: a price in two tiers uses the first.",
-      "hint": "Regular products use these rates instead of the main price tiers; classified products keep their category rates."
+      "overlap": "Some old-system ranges overlap: a price in two ranges uses the first.",
+      "hint": "Regular products use these rates instead of the main price ranges; classified products keep their category rates."
     },
     "products": {
       "title": "2 · Product categories",

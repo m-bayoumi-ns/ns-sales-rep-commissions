@@ -162,12 +162,13 @@ export type CommissionsView = {
   detail: RepDetail | null;
 };
 
-function bucketOf(settings: CommissionSettings, line: RepSaleLine): { bucket: string; rate: number } {
+function bucketOf(settings: CommissionSettings, line: RepSaleLine, useOldSystemTiers = false): { bucket: string; rate: number } {
   const rule = productRuleFor(settings.products, line.productId, line.templateId);
   const unit = line.qty ? Math.abs(line.amount / line.qty) : Math.abs(line.amount);
-  const index = tierIndex(settings.tiers, unit);
+  const tiers = useOldSystemTiers ? settings.rules.oldSystemTiers : settings.tiers;
+  const index = tierIndex(tiers, unit);
   if (rule) return { bucket: rule.category, rate: settings.categoryRates[rule.category] };
-  return index >= 0 ? { bucket: String.fromCharCode(65 + index), rate: settings.tiers[index].rate } : { bucket: "none", rate: 0 };
+  return index >= 0 ? { bucket: String.fromCharCode(65 + index), rate: tiers[index].rate } : { bucket: "none", rate: 0 };
 }
 
 export async function getCommissionsView(user: AppUser, month: string, repKey: string | undefined): Promise<CommissionsView> {
@@ -214,9 +215,10 @@ export async function getCommissionsView(user: AppUser, month: string, repKey: s
   let detail: RepDetail | null = null;
   if (selected) {
     const own = selected.odooUserId ? (linesBy.get(selected.odooUserId) ?? []) : [];
+    const useOldSystemTiers = selected.result.regime === "old" && settings.rules.oldSystemMode === "tiers";
     const products = new Map<string, ProductRow>();
     for (const line of own) {
-      const { bucket, rate } = bucketOf(settings, line);
+      const { bucket, rate } = bucketOf(settings, line, useOldSystemTiers);
       const keyOf = `${line.productId}|${bucket}`;
       const row = products.get(keyOf) ?? { key: keyOf, productName: line.productName, code: line.code, color: line.color, uom: line.uom, qty: 0, amount: 0, avgPrice: null, bucket, rate, commission: 0, invoices: [] };
       row.qty += line.qty;
@@ -228,7 +230,7 @@ export async function getCommissionsView(user: AppUser, month: string, repKey: s
     const invoiceMap = new Map<number, InvoiceRow>();
     const customerMap = new Map<string, CustomerRow & { moves: Set<number> }>();
     for (const line of own) {
-      const { rate } = bucketOf(settings, line);
+      const { rate } = bucketOf(settings, line, useOldSystemTiers);
       const commission = (line.amount * rate) / 100;
       const invoice = invoiceMap.get(line.moveId) ?? { moveId: line.moveId, name: line.moveName, day: line.day, customer: line.partnerName, refund: line.refund, qty: 0, amount: 0, commission: 0, lines: 0 };
       invoice.qty += line.qty;

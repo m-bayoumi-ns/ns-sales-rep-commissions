@@ -2,6 +2,7 @@
 
 import { Loader2Icon } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 const STEP_MS = 1600;
 
@@ -49,5 +50,16 @@ export function LoadingStatus({ title, steps, hint }: { title: string; steps: st
       </div>
       <style>{`@keyframes loading-slide { 0% { inset-inline-start: -33%; } 100% { inset-inline-start: 100%; } }`}</style>
     </>
+  );
+}
+
+export function PageLoadingStatus() {
+  const t = useTranslations("common.loading");
+  return (
+    <div aria-busy className="flex min-h-[50vh] items-center justify-center">
+      <div className="w-full max-w-lg">
+        <LoadingStatus title={t("title")} steps={[t("step1"), t("step2"), t("step3")]} hint={t("hint")} />
+      </div>
+    </div>
   );
 }

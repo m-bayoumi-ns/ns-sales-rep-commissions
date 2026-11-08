@@ -71,6 +71,8 @@ export type RepResult = {
   base: number;
   /** Per price range: sales, commission and — when the rep has a target for the range — its achievement. */
   tiers: RangeResult[];
+  /** Regular-product commission by the old system's configured price ranges. */
+  oldTiers: BucketResult[];
   /** Lines in no range (unit price outside every range) — they earn nothing. */
   unpriced: BucketResult;
   categories: Record<Category, BucketResult & { target: number | null; targetToDate: number | null; unit: TargetUnit; achieved: number; achievement: number | null }>;
@@ -176,6 +178,7 @@ export function calculate(settings: CommissionSettings, targets: RepTargets, dat
     const achieved = rules.rangeUnit === "qty" ? bucket.qty : bucket.amount;
     return { ...bucket, commission: round2(bucket.commission), target, targetToDate: currentTarget, unit: rules.rangeUnit, achieved, achievement: pctOf(achieved, currentTarget) };
   });
+  const oldTierResults = oldTierBuckets.map((bucket) => ({ ...bucket, commission: round2(bucket.commission) }));
   const allTargetsMet =
     achievement != null &&
     achievement >= 100 &&
@@ -265,6 +268,7 @@ export function calculate(settings: CommissionSettings, targets: RepTargets, dat
     collectionFactor,
     base,
     tiers: tierResults,
+    oldTiers: oldTierResults,
     unpriced: { ...unpriced, commission: 0 },
     categories,
     totalTarget,

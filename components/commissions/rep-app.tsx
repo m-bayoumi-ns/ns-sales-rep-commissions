@@ -760,8 +760,11 @@ function Statement({ detail, settings }: { detail: RepDetail; settings: Commissi
   const r = detail.rep.result;
   const { rules } = settings;
   const replaced = r.regime === "low" || (r.regime === "old" && rules.oldSystemMode !== "base");
+  const useOldSystemTiers = r.regime === "old" && rules.oldSystemMode === "tiers";
+  const activeTiers = useOldSystemTiers ? rules.oldSystemTiers : settings.tiers;
+  const activeBuckets = useOldSystemTiers ? r.oldTiers : r.tiers;
   const lines = [
-    ...r.tiers.map((bucket, index) => ({ key: bucket.key, label: t("range", { key: bucket.key }), sub: settings.tiers[index].to == null ? t("priceFrom", { from: formatNumber(settings.tiers[index].from) }) : t("priceBetween", { from: formatNumber(settings.tiers[index].from), to: formatNumber(settings.tiers[index].to) }), amount: bucket.amount, rate: formatRate(bucket.rate), commission: bucket.commission })),
+    ...activeBuckets.map((bucket, index) => ({ key: bucket.key, label: t("range", { key: bucket.key }), sub: activeTiers[index].to == null ? t("priceFrom", { from: formatNumber(activeTiers[index].from) }) : t("priceBetween", { from: formatNumber(activeTiers[index].from), to: formatNumber(activeTiers[index].to) }), amount: bucket.amount, rate: formatRate(bucket.rate), commission: bucket.commission })),
     ...(["slow", "digital"] as const).map((key) => ({ key, label: t(`cat.${key}`), sub: t("ownRates"), amount: r.categories[key].amount, rate: formatRate(settings.categoryRates[key]), commission: r.categories[key].commission })),
   ].filter((line) => line.amount !== 0 || line.commission !== 0);
   const [openKey, setOpenKey] = useState<string | null>(null);
@@ -814,7 +817,7 @@ function Statement({ detail, settings }: { detail: RepDetail; settings: Commissi
         <li className={cn("flex items-baseline gap-2 rounded-lg bg-accent/60 px-2 py-2 text-sm font-bold text-foreground", replaced && "opacity-50")}>
           <span>{t("lineCommission")}</span>
           <span aria-hidden className="mb-1 flex-1 border-b border-dotted" />
-          <span dir="ltr" className="tabular-nums">{formatNumber(r.base)}</span>
+          <span dir="ltr" className="tabular-nums">{formatNumber(useOldSystemTiers ? r.adjustments.find((item) => item.key === "oldTiers")?.amount ?? r.base : r.base)}</span>
         </li>
       </ul>
 

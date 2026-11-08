@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { connection } from "next/server";
 import { getTranslations } from "next-intl/server";
 import { Suspense } from "react";
+import { PageLoadingStatus } from "@/components/common/loading-status";
 import { requireUser } from "@/lib/auth/dal";
 import { isAdmin, isSeller } from "@/lib/auth/permissions";
 import { AndroidAppCard } from "@/components/layout/android-app";
@@ -22,7 +23,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default function AccountPage({ searchParams }: PageProps<"/[locale]/account">) {
   return (
-    <Suspense fallback={<div className="mx-auto h-96 w-full max-w-xl animate-pulse rounded-3xl border bg-card" />}>
+    <Suspense fallback={<PageLoadingStatus />}>
       <Account searchParams={searchParams} />
     </Suspense>
   );
