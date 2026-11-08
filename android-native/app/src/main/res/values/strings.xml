@@ -87,7 +87,7 @@
     <string name="per_day_needed">Needs %1$s a day to reach target</string>
 
     <!-- Regime -->
-    <string name="regime_full">Full commission + bonuses</string>
+    <string name="regime_full">Full system + bonuses</string>
     <string name="regime_old">Old commission system</string>
     <string name="regime_low" formatted="false">Below 50% · 0.1% only</string>
     <string name="regime_no_target">No target set</string>

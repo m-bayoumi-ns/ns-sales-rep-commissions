@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
-import { changeSellerUsername, createAccountsFromSheet, setAccountActive, setForcePassword } from "@/lib/accounts/actions";
+import { changeSellerUsername, createAccountsFromSheet, setAccountActive, setForcePassword, setSellerDisplayName } from "@/lib/accounts/actions";
 import { Switch } from "./accounts-table";
 import type { CreateResult, SheetRepAccount } from "@/lib/accounts/server";
 import { formatMonth } from "@/lib/format";
@@ -83,6 +83,7 @@ export function SheetReps({ month, reps, defaultPassword }: { month: string; rep
           <li key={rep.name} className="flex flex-wrap items-center gap-3 px-4 py-2.5">
             <div className="flex min-w-0 flex-1 flex-col">
               <bdi className="truncate text-left text-sm font-medium rtl:text-right">{rep.name}</bdi>
+              <DisplayNameField rep={rep} />
               <UsernameField rep={rep} />
             </div>
             {rep.account ? (
@@ -152,6 +153,84 @@ export function SheetReps({ month, reps, defaultPassword }: { month: string; rep
         </ul>
       ) : null}
     </section>
+  );
+}
+
+/** Commission-card name; an empty value restores the name from the target sheet. */
+function DisplayNameField({ rep }: { rep: SheetRepAccount }) {
+  const t = useTranslations("accounts.sheet");
+  const router = useRouter();
+  const [editing, setEditing] = useState(false);
+  const [value, setValue] = useState(rep.displayName);
+  const [saving, startSaving] = useTransition();
+  const [error, setError] = useState<string | null>(null);
+
+  const save = () => {
+    const next = value.trim();
+    if (next === rep.displayName) {
+      setEditing(false);
+      return;
+    }
+    setError(null);
+    startSaving(async () => {
+      const result = await setSellerDisplayName(rep.name, next);
+      if (result.ok) {
+        toast.success(t("displayNameSaved"));
+        setEditing(false);
+        router.refresh();
+      } else {
+        setError(t("displayNameFailed"));
+      }
+    });
+  };
+
+  if (!editing) {
+    return (
+      <span className="flex items-center gap-1.5 text-start text-xs text-muted-foreground">
+        {t("cardName")}: <bdi className="max-w-56 truncate font-semibold text-foreground">{rep.displayName}</bdi>
+        <button
+          type="button"
+          onClick={() => {
+            setValue(rep.displayName);
+            setError(null);
+            setEditing(true);
+          }}
+          aria-label={t("editCardName")}
+          title={t("editCardName")}
+          className="rounded p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+        >
+          <PencilIcon aria-hidden className="size-3.5" />
+        </button>
+      </span>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-1 pt-1">
+      <div className="flex items-center gap-1.5">
+        <input
+          autoFocus
+          value={value}
+          maxLength={120}
+          onChange={(event) => setValue(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === "Enter") save();
+            if (event.key === "Escape") setEditing(false);
+          }}
+          aria-label={t("editCardName")}
+          aria-invalid={error ? true : undefined}
+          placeholder={rep.name}
+          className="h-8 w-56 max-w-full rounded-md border border-input bg-card px-2 text-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50 aria-invalid:border-destructive dark:bg-input/30"
+        />
+        <button type="button" onClick={save} disabled={saving} aria-label={t("save")} title={t("save")} className="flex size-8 shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50">
+          {saving ? <Loader2Icon aria-hidden className="size-4 animate-spin" /> : <CheckIcon aria-hidden className="size-4" />}
+        </button>
+        <button type="button" onClick={() => setEditing(false)} aria-label={t("cancel")} title={t("cancel")} className="flex size-8 shrink-0 items-center justify-center rounded-md border hover:bg-muted">
+          <XIcon aria-hidden className="size-4" />
+        </button>
+      </div>
+      <span className={cn("text-[11px]", error ? "text-destructive" : "text-muted-foreground")}>{error ?? t("cardNameHint")}</span>
+    </div>
   );
 }
 

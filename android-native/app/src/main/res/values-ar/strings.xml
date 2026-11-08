@@ -87,7 +87,7 @@
     <string name="per_day_needed">يحتاج %1$s يوميًا لتحقيق الهدف</string>
 
     <!-- النظام -->
-    <string name="regime_full">عمولة كاملة + حوافز</string>
+    <string name="regime_full">النظام الكامل + الحوافز</string>
     <string name="regime_old">نظام العمولة القديم</string>
     <string name="regime_low" formatted="false">أقل من 50% · 0.1% فقط</string>
     <string name="regime_no_target">لم يُحدد هدف</string>

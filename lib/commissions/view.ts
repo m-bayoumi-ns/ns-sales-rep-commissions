@@ -6,6 +6,7 @@ import { cleanRepName, matchRep, normalizeName } from "./names";
 import { getCollections, getRepCandidates, getReceivables, getSalesLines, getUserNames, type OdooRep, type RepSaleLine } from "./odoo";
 import type { Category, CommissionSettings } from "./schema";
 import { loadSettings, readTargetSheet, type StoredSettings, type TargetSheet } from "./storage";
+import { loadAppSettings } from "@/lib/accounts/app-settings";
 
 export const FIRST_MONTH = "2026-01";
 
@@ -34,7 +35,7 @@ export function monthClock(month: string): MonthClock {
 
 // ---------------------------------------------------------------- the month's sales reps
 export type RepEntry = {
-  /** URL key: the Odoo user id, or "n:<name>" while not linked. */
+  /** URL key: the Odoo user id, or "n:<name>" while not linked; duplicate links add a name suffix. */
   key: string;
   name: string;
   odooUserId: number | null;
@@ -71,7 +72,20 @@ export function monthReps(stored: StoredSettings, sheet: TargetSheet, candidates
       rangeTargets: [0, 1, 2].map((index) => own?.rangeTargets?.[index] ?? row.rangeTargets?.[index] ?? null),
     });
   }
-  return out;
+
+  const usedKeys = new Set<string>();
+  return out.map((rep) => {
+    if (!usedKeys.has(rep.key)) {
+      usedKeys.add(rep.key);
+      return rep;
+    }
+
+    const baseKey = `${rep.key}:n:${encodeURIComponent(rep.name)}`;
+    let key = baseKey;
+    for (let suffix = 1; usedKeys.has(key); suffix += 1) key = `${baseKey}:${suffix}`;
+    usedKeys.add(key);
+    return { ...rep, key };
+  });
 }
 
 export async function loadMonthSetup(month: string) {
@@ -196,6 +210,7 @@ export async function getCommissionsView(user: AppUser, month: string, repKey: s
 
   // One seller at a time: the chosen one, else the first in the seller list; "all" = the team summary.
   const selected = repKey === ALL_REPS ? undefined : (summaries.find((rep) => rep.key === repKey) ?? summaries.find((rep) => rep.key === repOptions(summaries)[0]?.key));
+  const displayName = selected ? (await loadAppSettings()).sellerDisplayNames?.[normalizeName(selected.name)] : undefined;
   let detail: RepDetail | null = null;
   if (selected) {
     const own = selected.odooUserId ? (linesBy.get(selected.odooUserId) ?? []) : [];
@@ -251,7 +266,15 @@ export async function getCommissionsView(user: AppUser, month: string, repKey: s
       .sort((a, b) => b.amount - a.amount)
       .slice(0, 10);
     const sum = (source: string) => collected.filter((row) => row.source === source).reduce((total, row) => total + row.amount, 0);
-    detail = { rep: selected, products: productRows, daily, customers, invoiceRows, customerRows, collections: { payment: sum("payment"), refund: sum("refund"), cheque: sum("cheque"), manual: sum("manual") } };
+    detail = {
+      rep: displayName ? { ...selected, name: displayName } : selected,
+      products: productRows,
+      daily,
+      customers,
+      invoiceRows,
+      customerRows,
+      collections: { payment: sum("payment"), refund: sum("refund"), cheque: sum("cheque"), manual: sum("manual") },
+    };
   }
 
   return {

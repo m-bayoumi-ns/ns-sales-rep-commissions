@@ -124,7 +124,7 @@
       "minimumRiskLong": "Note: at the current pace the month would end at about {projected}, below the minimum of {amount}."
     },
     "regime": {
-      "full": "Full commission + bonuses",
+      "full": "Full system + bonuses",
       "old": "Old commission system",
       "low": "Below 50% · 0.1% only",
       "noTarget": "No target set"
@@ -534,7 +534,7 @@
     "earnedNow": "Your commission so far",
     "earnedFinal": "Your commission this month",
     "level": {
-      "full": "Full commission with every bonus",
+      "full": "Full system active; line commission still depends on collections",
       "old": "Old system — reach {old}% of target to unlock bonuses",
       "low": "Below {low}% of target — {rate}% of sales only",
       "noTarget": "No target set this month",
@@ -762,6 +762,11 @@
       "loginTitle": "Sign-in details to give to the sellers",
       "loginHint": "They sign in with the username (or the full email) and this password, then choose their own password.",
       "edit": "Edit username",
+      "cardName": "Card name",
+      "editCardName": "Edit commission card name",
+      "cardNameHint": "Shown on the commission card; leave blank to use the target-sheet name.",
+      "displayNameSaved": "Commission card name saved",
+      "displayNameFailed": "The commission card name could not be saved",
       "save": "Save",
       "cancel": "Cancel",
       "usernameSaved": "Username changed to {username}",
@@ -911,7 +916,7 @@
       "body": "Now: {regime} (target achieved {achievement}%)."
     },
     "regimes": {
-      "full": "full commission + bonuses",
+      "full": "full system + bonuses",
       "old": "old commission system",
       "low": "below 50% · 0.1% only",
       "noTarget": "no target set"

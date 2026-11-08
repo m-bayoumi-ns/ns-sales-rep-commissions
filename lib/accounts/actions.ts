@@ -11,6 +11,7 @@ import { logActivity } from "@/lib/activity";
 import { readSessionUser } from "@/lib/auth/dal";
 import { isAdmin } from "@/lib/auth/permissions";
 import { clearFailures, isLocked, recordFailure } from "@/lib/auth/rate-limit";
+import { normalizeName } from "@/lib/commissions/names";
 import { isDemoMode } from "@/lib/dev";
 import { ANDROID_VARIANTS } from "@/lib/android-app";
 import { isAdminConfigured, publicEnv } from "@/lib/env";
@@ -197,5 +198,27 @@ export async function changeSellerUsername(repName: string, userId: string | nul
   } catch (error) {
     console.error("[accounts] username change failed:", error);
     return { ok: false, reason: "error" };
+  }
+}
+
+/** Administrator: choose the label shown on this seller's commission detail card. Empty restores the sheet name. */
+export async function setSellerDisplayName(repName: string, displayName: string): Promise<AccountResult> {
+  const admin = await requireAdmin();
+  const parsed = z.object({ repName: z.string().trim().min(1).max(200), displayName: z.string().trim().max(120) }).safeParse({ repName, displayName });
+  if (!parsed.success) return { ok: false };
+
+  try {
+    const settings = await loadAppSettings();
+    const sellerDisplayNames = { ...(settings.sellerDisplayNames ?? {}) };
+    const key = normalizeName(parsed.data.repName);
+    if (parsed.data.displayName) sellerDisplayNames[key] = parsed.data.displayName;
+    else delete sellerDisplayNames[key];
+    await saveAppSettings({ ...settings, sellerDisplayNames });
+    after(() => logActivity({ action: "seller_display_name_changed", userId: admin.id, email: admin.email, details: { repName: parsed.data.repName, displayName: parsed.data.displayName || null } }));
+    revalidatePath("/", "layout");
+    return { ok: true };
+  } catch (error) {
+    console.error("[accounts] display name change failed:", error);
+    return { ok: false };
   }
 }

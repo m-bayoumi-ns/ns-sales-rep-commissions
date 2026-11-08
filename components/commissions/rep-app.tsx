@@ -78,7 +78,9 @@ export function RepApp({ detail, settings, clock, teamLink }: { detail: RepDetai
               {formatNumber(r.total)}
               <span className="ms-2 text-xl font-semibold text-white/70">{locale === "ar" ? "ج.م" : "EGP"}</span>
             </span>
-            <span className="mt-2 text-xs text-white/70">{t(`level.${r.regime}`, { low: settings.rules.lowAchievementPct, old: settings.rules.oldSystemUntilPct, rate: settings.rules.lowRate })}</span>
+            {r.regime !== "full" ? (
+              <span className="mt-2 text-xs text-white/70">{t(`level.${r.regime}`, { low: settings.rules.lowAchievementPct, old: settings.rules.oldSystemUntilPct, rate: settings.rules.lowRate })}</span>
+            ) : null}
           </div>
 
           <LevelRoad achievement={r.achievement} projected={clock.closed ? null : rep.projectedAchievement} low={settings.rules.lowAchievementPct} old={settings.rules.oldSystemUntilPct} />

@@ -16,6 +16,7 @@ export type ActivityAction =
   | "force_password_change"
   | "notify"
   | "username_changed"
+  | "seller_display_name_changed"
   | "android_download_changed";
 
 /**

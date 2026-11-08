@@ -1,14 +1,16 @@
 import "server-only";
 import { isDemoMode } from "@/lib/dev";
-import { ANDROID_VARIANTS, type AndroidVariant, DEFAULT_ANDROID_VARIANT } from "@/lib/android-app";
 import { PROFILE_TABLE } from "@/lib/auth/profile";
 import { addMonths, currentMonth } from "@/lib/finance/core";
 import { findSheetName, normalizeName } from "@/lib/commissions/names";
 import { loadMonthSetup } from "@/lib/commissions/view";
 import { usernameFor, usernameOf, loginEmail } from "./usernames";
 import { readTargetSheet } from "@/lib/commissions/storage";
-import { readJson, writeJson } from "@/lib/commissions/storage";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
+import { loadAppSettings, saveAppSettings } from "./app-settings";
+
+export { loadAppSettings, saveAppSettings } from "./app-settings";
+export type { AppSettings } from "./app-settings";
 
 /**
  * Sales-rep accounts. They live in the same Supabase Auth + `profiles` table as ns-home:
@@ -17,26 +19,6 @@ import { createSupabaseAdminClient } from "@/lib/supabase/server";
  * "Must change password" is a flag in the Auth user's app_metadata, cleared when the password is changed.
  */
 export const SELLER_PAGE = "sales-commissions";
-const APP_SETTINGS = "ns-sales-rep-commissions/app-settings.json";
-
-export type AppSettings = {
-  autoApprove: boolean;
-  /** Usernames chosen by an administrator for sheet reps who have no account yet (normalized name → username). */
-  usernames?: Record<string, string>;
-  /** Which Android app the website's download button serves (Settings → Android app download). */
-  androidDownload?: AndroidVariant;
-};
-export async function loadAppSettings(): Promise<AppSettings> {
-  const data = await readJson<Partial<AppSettings>>(APP_SETTINGS);
-  return {
-    autoApprove: data?.autoApprove ?? false,
-    usernames: data?.usernames ?? {},
-    androidDownload: ANDROID_VARIANTS.includes(data?.androidDownload as AndroidVariant) ? data!.androidDownload : DEFAULT_ANDROID_VARIANT,
-  };
-}
-export async function saveAppSettings(settings: AppSettings) {
-  await writeJson(APP_SETTINGS, settings);
-}
 
 export type SellerAccount = {
   id: string;
@@ -212,7 +194,7 @@ export async function registerSeller(input: { name: string; email: string; passw
 /** Default password for accounts created from the sheet; the seller must change it at first sign-in. */
 export const DEFAULT_PASSWORD = "00000000";
 
-export type SheetRepAccount = { name: string; odooUserId: number | null; account: SellerAccount | null; username: string };
+export type SheetRepAccount = { name: string; displayName: string; odooUserId: number | null; account: SellerAccount | null; username: string };
 
 /** Reps of the latest target sheet, each with their account (if any) and the username a new account would get. */
 export async function sheetRepAccounts(accounts: SellerAccount[]): Promise<{ month: string; reps: SheetRepAccount[] } | null> {
@@ -221,12 +203,19 @@ export async function sheetRepAccounts(accounts: SellerAccount[]): Promise<{ mon
   const setup = await loadMonthSetup(latest.month);
   const byRep = new Map(accounts.filter((account) => account.rep).map((account) => [normalizeName(account.rep!), account]));
   const taken = new Set(accounts.map((account) => account.username).filter((name): name is string => name != null));
-  const chosen = (await loadAppSettings()).usernames ?? {};
+  const appSettings = await loadAppSettings();
+  const chosen = appSettings.usernames ?? {};
   for (const name of Object.values(chosen)) taken.add(name);
   const reps = setup.reps.map((rep) => {
     const account = byRep.get(normalizeName(rep.name)) ?? null;
     const preset = chosen[normalizeName(rep.name)];
-    return { name: rep.name, odooUserId: rep.odooUserId, account, username: account?.username ?? preset ?? usernameFor(rep.name, rep.odooUserId, taken) };
+    return {
+      name: rep.name,
+      displayName: appSettings.sellerDisplayNames?.[normalizeName(rep.name)] ?? rep.name,
+      odooUserId: rep.odooUserId,
+      account,
+      username: account?.username ?? preset ?? usernameFor(rep.name, rep.odooUserId, taken),
+    };
   });
   return { month: latest.month, reps };
 }
