@@ -289,6 +289,9 @@ tr:hover > .fin-sticky { background-color: color-mix(in oklab, var(--muted) 50%,
 html[data-app] .web-only { display: none !important; }
 html:not([data-app]) .app-only:not(.mobile-menu-preferences) { display: none !important; }
 html[data-app] #main:has(.android-bottom-nav) { padding-bottom: calc(6rem + env(safe-area-inset-bottom)); }
+html[data-app] .rep-app:not([data-app-section="summary"]) .rep-balance-header,
+html[data-app] .rep-app:not([data-app-section="summary"]) .rep-footer { display: none !important; }
+html[data-app] .android-sales-results[data-mobile-selected="false"] { display: none !important; }
 .mobile-menu-preferences { display: none; }
 html[data-app] .mobile-menu-preferences { display: block !important; }
 @media (max-width: 767px) {

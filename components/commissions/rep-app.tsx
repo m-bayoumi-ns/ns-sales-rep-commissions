@@ -2,12 +2,14 @@
 
 import {
   BadgeCheckIcon,
+  CalendarDaysIcon,
   BanknoteIcon,
   CalendarClockIcon,
-  ChevronDownIcon,
   ChevronLeftIcon,
+  ChevronDownIcon,
   CircleDashedIcon,
   CircleMinusIcon,
+  ChevronRightIcon,
   FlagIcon,
   HandCoinsIcon,
   LayersIcon,
@@ -50,7 +52,7 @@ export function RepApp({ detail, settings, clock, teamLink, initialTab = "summar
   const r = rep.result;
 
   return (
-    <div className="mx-auto flex w-full max-w-3xl flex-col gap-4">
+    <div data-app-section={tab} className="rep-app mx-auto flex w-full max-w-3xl flex-col gap-4">
       {teamLink ? (
         <Link href={{ pathname: "/commissions", query: { month: clock.month, rep: "all" } }} className="inline-flex w-fit items-center gap-1 text-sm font-medium text-muted-foreground hover:text-foreground">
           <ChevronLeftIcon aria-hidden className="size-4 rtl:rotate-180" />
@@ -60,7 +62,7 @@ export function RepApp({ detail, settings, clock, teamLink, initialTab = "summar
 
       <div className="overflow-hidden rounded-3xl border bg-card shadow-sm">
         {/* Balance header */}
-        <header className="relative overflow-hidden bg-gradient-to-br from-[#5a3a1d] via-[#4a2d16] to-[#2e1d0f] px-5 pt-5 pb-6 text-white sm:px-7">
+        <header className="rep-balance-header relative overflow-hidden bg-gradient-to-br from-[#5a3a1d] via-[#4a2d16] to-[#2e1d0f] px-5 pt-5 pb-6 text-white sm:px-7">
           <div aria-hidden className="pointer-events-none absolute -end-20 -top-24 size-72 rounded-full bg-amber-300/15 blur-3xl" />
           <div className="relative flex items-center gap-3">
             <Initials name={rep.name} />
@@ -121,7 +123,7 @@ export function RepApp({ detail, settings, clock, teamLink, initialTab = "summar
           {tab === "statement" ? <Statement detail={detail} settings={settings} /> : null}
         </div>
       </div>
-      <p className="text-center text-xs text-muted-foreground">{t(clock.closed ? "footerClosed" : "footerLive")}</p>
+      <p className="rep-footer text-center text-xs text-muted-foreground">{t(clock.closed ? "footerClosed" : "footerLive")}</p>
       <AndroidBottomNav active={tab} onSelect={setTab} />
     </div>
   );
@@ -469,6 +471,7 @@ function Sales({ detail, clock }: { detail: RepDetail; clock: MonthClock }) {
   const tc = useTranslations("cm");
   const locale = useLocale() as Locale;
   const [view, setView] = useState<SalesView>("days");
+  const [mobileView, setMobileView] = useState<SalesView | null>(null);
   const [query, setQuery] = useState("");
   const [all, setAll] = useState(false);
   const text = query.trim().toLowerCase();
@@ -492,7 +495,8 @@ function Sales({ detail, clock }: { detail: RepDetail; clock: MonthClock }) {
     }
     return [...map.values()].sort((a, b) => b.day.localeCompare(a.day));
   }, [detail.invoiceRows, text]); // eslint-disable-line react-hooks/exhaustive-deps
-  const count = { products: products.length, invoices: invoices.length, customers: customers.length, days: days.length }[view];
+  const currentView = mobileView ?? view;
+  const count = { products: products.length, invoices: invoices.length, customers: customers.length, days: days.length }[currentView];
   const bucketLabel = (bucket: string) => (bucket === "slow" || bucket === "digital" ? t(`cat.${bucket}`) : bucket === "none" ? t("noRange") : t("range", { key: bucket }));
   const cut = <T,>(list: T[]) => (all ? list : list.slice(0, SHOWN));
   const dayLabel = (day: string) => new Intl.DateTimeFormat(locale === "ar" ? "ar-EG-u-nu-latn" : "en-GB", { day: "numeric", month: "short", timeZone: "UTC" }).format(new Date(`${day}T00:00:00Z`));
@@ -502,9 +506,42 @@ function Sales({ detail, clock }: { detail: RepDetail; clock: MonthClock }) {
 
   return (
     <>
-      <DailyChart points={detail.daily} target={detail.rep.result.totalTarget} closedOrToday={clock.asOf} title={tc("chart.title")} caption={tc("chart.caption")} />
-      <section className="flex flex-col gap-3">
-        <div role="tablist" aria-label={t("salesViews")} className="grid grid-cols-4 gap-1 rounded-xl bg-muted p-1">
+      <div className="web-only">
+        <DailyChart points={detail.daily} target={detail.rep.result.totalTarget} closedOrToday={clock.asOf} title={tc("chart.title")} caption={tc("chart.caption")} />
+      </div>
+      {mobileView == null ? (
+        <section className="app-only flex flex-col gap-3">
+          <h2 className="text-center text-lg font-bold">{t("chooseSalesView")}</h2>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {(["days", "customers", "invoices", "products"] as SalesView[]).map((key) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => {
+                  setMobileView(key);
+                  setAll(false);
+                  setQuery("");
+                }}
+                className="flex min-h-20 items-center gap-3 rounded-2xl border bg-card px-4 py-4 text-start shadow-sm transition-colors hover:bg-accent"
+              >
+                <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-accent text-primary">
+                  {key === "days" ? <CalendarDaysIcon aria-hidden className="size-5" /> : key === "customers" ? <UsersIcon aria-hidden className="size-5" /> : key === "invoices" ? <ReceiptTextIcon aria-hidden className="size-5" /> : <PackageIcon aria-hidden className="size-5" />}
+                </span>
+                <span className="min-w-0 flex-1 font-semibold">{t(`view.${key}`)}</span>
+                <ChevronRightIcon aria-hidden className="size-4 shrink-0 text-muted-foreground rtl:rotate-180" />
+              </button>
+            ))}
+          </div>
+        </section>
+      ) : null}
+      <section className={cn("flex flex-col gap-3", mobileView == null ? "web-only" : "android-sales-results")} data-mobile-selected={mobileView != null}>
+        {mobileView ? (
+          <button type="button" onClick={() => { setMobileView(null); setQuery(""); }} className="flex w-fit items-center gap-1 rounded-lg px-2 py-1 text-sm font-medium text-primary hover:bg-muted">
+            <ChevronLeftIcon aria-hidden className="size-4 rtl:rotate-180" />
+            {t("chooseSalesView")}
+          </button>
+        ) : null}
+        <div role="tablist" aria-label={t("salesViews")} className="web-only grid grid-cols-4 gap-1 rounded-xl bg-muted p-1">
           {(["days", "customers", "invoices", "products"] as SalesView[]).map((key) => (
             <button
               key={key}
@@ -523,15 +560,15 @@ function Sales({ detail, clock }: { detail: RepDetail; clock: MonthClock }) {
         </div>
         <div className="flex flex-wrap items-center justify-between gap-2 px-1">
           <h3 className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-            {t(`viewTitle.${view}`, { count })}
+            {t(`viewTitle.${currentView}`, { count })}
           </h3>
           <label className="relative w-full sm:w-64">
-            <span className="sr-only">{t(`searchView.${view}`)}</span>
+            <span className="sr-only">{t(`searchView.${currentView}`)}</span>
             <SearchIcon aria-hidden className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <input
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder={t(`searchView.${view}`)}
+              placeholder={t(`searchView.${currentView}`)}
               className="h-9 w-full rounded-full border border-input bg-card ps-9 pe-3 text-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30"
             />
           </label>
@@ -541,7 +578,7 @@ function Sales({ detail, clock }: { detail: RepDetail; clock: MonthClock }) {
           <p className="rounded-2xl border border-dashed py-8 text-center text-sm text-muted-foreground">{t("noSales")}</p>
         ) : (
           <ul className="divide-y overflow-hidden rounded-2xl border bg-card">
-            {view === "products"
+            {currentView === "products"
               ? cut(products).map((row) => (
                   <li key={row.key} className="flex items-center gap-3 px-4 py-3">
                     <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-accent text-primary">
@@ -567,7 +604,7 @@ function Sales({ detail, clock }: { detail: RepDetail; clock: MonthClock }) {
                     </div>
                   </li>
                 ))
-              : view === "invoices"
+              : currentView === "invoices"
                 ? cut(invoices).map((row) => (
                     <li key={row.moveId} className="flex items-center gap-3 px-4 py-3">
                       <span className={cn("flex size-9 shrink-0 items-center justify-center rounded-xl", row.refund ? "bg-destructive-soft text-destructive" : "bg-accent text-primary")}>
@@ -589,7 +626,7 @@ function Sales({ detail, clock }: { detail: RepDetail; clock: MonthClock }) {
                       </span>
                     </li>
                   ))
-                : view === "days"
+                : currentView === "days"
                   ? cut(days).map((row) => (
                       <li key={row.day} className="flex items-center gap-3 px-4 py-3">
                         <span className="flex size-9 shrink-0 flex-col items-center justify-center rounded-xl bg-accent text-primary">

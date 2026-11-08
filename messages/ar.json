@@ -639,6 +639,7 @@
     "flagged": "أقل من الحد الأدنى",
     "notLinked": "غير مربوط",
     "salesViews": "عرض المبيعات",
+    "chooseSalesView": "اختر طريقة عرض العمولة",
     "view": {
       "products": "حسب المنتج",
       "invoices": "حسب الفاتورة",

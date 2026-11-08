@@ -639,6 +639,7 @@
     "flagged": "Below the minimum",
     "notLinked": "not linked",
     "salesViews": "Sales views",
+    "chooseSalesView": "Choose a commission view",
     "view": {
       "products": "By product",
       "invoices": "By invoice",
