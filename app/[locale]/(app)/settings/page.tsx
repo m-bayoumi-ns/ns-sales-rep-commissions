@@ -64,7 +64,6 @@ async function SettingsContent({ searchParams }: { searchParams: PageProps<"/[lo
         source={setup.stored.source}
         inheritedFrom={setup.stored.inheritedFrom}
         sheet={{ found: setup.sheet.found, path: setup.sheet.path, columns: setup.sheet.columns, count: setup.sheet.reps.length }}
-        sheetReps={setup.sheet.reps}
         reps={setup.reps}
         candidates={setup.candidates.map(({ id, name }) => ({ id, name }))}
         accounts={accounts.filter((account) => account.active).map(({ id, name, email }) => ({ id, name, email }))}

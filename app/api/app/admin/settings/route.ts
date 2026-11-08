@@ -68,7 +68,6 @@ export async function GET(request: NextRequest) {
         path: setup.sheet.path,
         count: setup.sheet.reps.length,
         columns: setup.sheet.columns,
-        reps: setup.sheet.reps,
       },
       candidates: setup.candidates.map(({ id, name }) => ({ id, name })),
       accounts: accounts.filter((account) => account.active).map(({ id, name, email }) => ({ id, name, email })),

@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.weight
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
@@ -37,6 +36,7 @@ internal fun AdminNumberField(
     modifier: Modifier = Modifier,
     optional: Boolean = false,
     suffix: String? = null,
+    readOnly: Boolean = false,
 ) {
     var text by rememberSaveable(id) { mutableStateOf(value?.toString().orEmpty()) }
     LaunchedEffect(value) {
@@ -45,7 +45,9 @@ internal fun AdminNumberField(
     }
     OutlinedTextField(
         value = text,
+        readOnly = readOnly,
         onValueChange = { next ->
+            if (readOnly) return@OutlinedTextField
             text = next
             if (next.isBlank()) {
                 if (optional) onValueChange(null) else onValueChange(0.0)

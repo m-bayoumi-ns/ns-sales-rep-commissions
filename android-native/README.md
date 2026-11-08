@@ -22,7 +22,7 @@ The tokens are stored encrypted on the phone (`EncryptedSharedPreferences`, Andr
 
 Administrator endpoints (bearer-authenticated and restricted to active administrators):
 
-- `GET/PUT /api/app/admin/settings` loads and saves monthly commission settings, product categories, Odoo links, targets, and seller notifications. Product search uses `?search=<name or code>`.
+- `GET/PUT /api/app/admin/settings` loads and saves monthly commission settings, product categories, Odoo links, and seller notifications. Sales targets are read-only from `Wholesales_Target/target_YYYY_MM.xlsx` in the `naguib-selim-db` bucket; target values are not written to monthly JSON settings. Product search uses `?search=<name or code>`.
 - `GET/PATCH /api/app/admin/accounts` manages seller accounts, sheet usernames and display names, approvals, password-change requirements, registration approval, and the website's Android download variant.
 
 ## Screens
@@ -44,7 +44,7 @@ Administrator endpoints (bearer-authenticated and restricted to active administr
   and shortly after the app opens. Android 13+ asks for permission once; a banner offers the settings while they are off.
 - Pull to refresh. Figures reload every 5 minutes while the app is open, and when you come back to it after 5 minutes away.
 - Website links to a commission month or rep open the matching view in the native app, including after signing in.
-- Native administrator screens: edit monthly price tiers, product commissions, commission rules, statement details, rep targets / Odoo links, and notifications; manage sheet and registered accounts, display names, usernames, approval, forced password changes, auto-approval, and the APK served by the website.
+- Native administrator screens: edit monthly price tiers, product commissions, commission rules, statement details, and Odoo links; view Excel-sourced rep targets and notifications; manage sheet and registered accounts, display names, usernames, approval, forced password changes, auto-approval, and the APK served by the website.
 - English / Arabic (RTL) follow the phone's language; on Android 13+ you can also pick it per app in system settings. Light and dark follow the phone.
 
 ## Project layout

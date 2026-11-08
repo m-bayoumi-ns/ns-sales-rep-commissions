@@ -7,9 +7,8 @@ import { Button } from "@/components/ui/button";
 import { useRouter } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import { rateChanges } from "@/lib/commissions/changes";
-import { matchRep, normalizeName } from "@/lib/commissions/names";
+import { matchRep } from "@/lib/commissions/names";
 import type { ProductSearchResult } from "@/lib/commissions/odoo";
-import type { SheetRep } from "@/lib/commissions/storage";
 import { CATEGORIES, type Category, type CommissionSettings, type ProductRule, type RepSetting, type Rules } from "@/lib/commissions/schema";
 import type { RepEntry } from "@/lib/commissions/view";
 import { formatDateTime, formatMonth, formatNumber } from "@/lib/format";
@@ -22,7 +21,6 @@ type Props = {
   source: "saved" | "inherited" | "default";
   inheritedFrom: string | null;
   sheet: { found: boolean; path: string; count: number; columns: { rep: string | null; total: string | null; slow: string | null; digital: string | null; ranges?: (string | null)[] } };
-  sheetReps: SheetRep[];
   reps: RepEntry[];
   candidates: { id: number; name: string }[];
   /** Active seller accounts that can be notified. */
@@ -40,7 +38,7 @@ const toNum = (value: string): number | null => {
 const uid = () => Math.random().toString(36).slice(2, 10);
 
 /** Number field that keeps what is typed (commas allowed) and reports a number or null. */
-function NumberInput({ value, onChange, label, placeholder, suffix, className }: { value: number | null; onChange: (value: number | null) => void; label: string; placeholder?: string; suffix?: string; className?: string }) {
+function NumberInput({ value, onChange, label, placeholder, suffix, className, readOnly = false }: { value: number | null; onChange: (value: number | null) => void; label: string; placeholder?: string; suffix?: string; className?: string; readOnly?: boolean }) {
   const [text, setText] = useState(value == null ? "" : String(value));
   // The value changed from outside (not by typing here): show it.
   const [seen, setSeen] = useState(value);
@@ -56,12 +54,14 @@ function NumberInput({ value, onChange, label, placeholder, suffix, className }:
         inputMode="decimal"
         value={text}
         placeholder={placeholder}
+        readOnly={readOnly}
         onChange={(event) => {
+          if (readOnly) return;
           setText(event.target.value);
           onChange(toNum(event.target.value));
         }}
-        onBlur={() => setText(value == null ? "" : formatNumber(value) === "—" ? "" : String(value))}
-        className={cn(inputClass, suffix && "pe-9")}
+        onBlur={() => { if (!readOnly) setText(value == null ? "" : formatNumber(value) === "—" ? "" : String(value)); }}
+        className={cn(inputClass, suffix && "pe-9", readOnly && "cursor-default bg-muted/40")}
       />
       {suffix ? <span className="pointer-events-none absolute end-2.5 text-xs text-muted-foreground">{suffix}</span> : null}
     </label>
@@ -93,14 +93,14 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
   );
 }
 
-export function SettingsForm({ month, initial, source, inheritedFrom, sheet, sheetReps, reps: monthReps, candidates, accounts }: Props) {
+export function SettingsForm({ month, initial, source, inheritedFrom, sheet, reps: monthReps, candidates, accounts }: Props) {
   const t = useTranslations("settings");
   const locale = useLocale() as Locale;
   const router = useRouter();
   const [settings, setSettings] = useState<CommissionSettings>(() => ({
     ...initial,
     month,
-    // The month's reps (from the target sheet), with their saved / sheet targets and Odoo link.
+    // Targets come from Excel; saved settings provide only the Odoo link.
     reps: monthReps.map((rep) => ({ name: rep.name, odooUserId: rep.odooUserId, totalTarget: rep.totalTarget, slowTarget: rep.slowTarget, digitalTarget: rep.digitalTarget, rangeTargets: rep.rangeTargets })),
   }));
   const [dirty, setDirty] = useState(source !== "saved");
@@ -108,21 +108,6 @@ export function SettingsForm({ month, initial, source, inheritedFrom, sheet, she
   const [saving, startSaving] = useTransition();
   const [notify, setNotify] = useState<NotifyState>({ mode: "all", userIds: [], note: "" });
   const changes = useMemo(() => rateChanges(initial, settings), [initial, settings]);
-  const sheetChangedReps = useMemo(() => {
-    if (!sheet.found) return [];
-    const currentByName = new Map(settings.reps.map((rep) => [normalizeName(rep.name), rep]));
-    return sheetReps.filter((row) => {
-      const current = currentByName.get(normalizeName(row.name));
-      if (!current) return true;
-      return (
-        (sheet.columns.total != null && current.totalTarget !== row.totalTarget) ||
-        (sheet.columns.slow != null && current.slowTarget !== row.slowTarget) ||
-        (sheet.columns.digital != null && current.digitalTarget !== row.digitalTarget) ||
-        (sheet.columns.ranges ?? []).some((column, index) => column != null && (current.rangeTargets?.[index] ?? null) !== (row.rangeTargets[index] ?? null))
-      );
-    });
-  }, [settings.reps, sheet, sheetReps]);
-
   const update = (change: (current: CommissionSettings) => CommissionSettings) => {
     setSettings(change);
     setDirty(true);
@@ -186,7 +171,7 @@ export function SettingsForm({ month, initial, source, inheritedFrom, sheet, she
       <TiersCard settings={settings} update={update} />
       <ProductsCard settings={settings} update={update} />
       <RulesCard rules={settings.rules} setRule={setRule} />
-      <RepsCard settings={settings} update={update} sheet={sheet} sheetReps={sheetReps} sheetChangedReps={sheetChangedReps} monthName={monthName} candidates={candidates} monthReps={monthReps} />
+      <RepsCard settings={settings} update={update} sheet={sheet} monthName={monthName} candidates={candidates} monthReps={monthReps} />
       <NotifyCard notify={notify} setNotify={setNotify} accounts={accounts} changes={changes.length} />
 
       <div className="fixed inset-x-0 bottom-0 z-30 border-t bg-card/95 backdrop-blur supports-backdrop-filter:bg-card/80">
@@ -667,8 +652,6 @@ function RepsCard({
   settings,
   update,
   sheet,
-  sheetReps,
-  sheetChangedReps,
   monthName,
   candidates,
   monthReps,
@@ -676,8 +659,6 @@ function RepsCard({
   settings: CommissionSettings;
   update: Updater;
   sheet: Props["sheet"];
-  sheetReps: SheetRep[];
-  sheetChangedReps: SheetRep[];
   monthName: string;
   candidates: { id: number; name: string }[];
   monthReps: RepEntry[];
@@ -691,38 +672,7 @@ function RepsCard({
   const unitLabel = (key: "slow" | "digital") => (units[key] === "qty" ? t("qty") : t("egp"));
   const rangeUnit = settings.rules.rangeUnit === "qty" ? t("qty") : t("egp");
   const ranges = settings.tiers.map((tier, index) => ({ index, key: String.fromCharCode(65 + index), active: tier.rate > 0 || tier.from > 0 || tier.to != null }));
-  const setRange = (repIndex: number, rangeIndex: number, value: number | null) =>
-    update((current) => ({
-      ...current,
-      reps: current.reps.map((rep, i) => {
-        if (i !== repIndex) return rep;
-        const next = [...(rep.rangeTargets ?? [])];
-        while (next.length <= rangeIndex) next.push(null);
-        next[rangeIndex] = value;
-        return { ...rep, rangeTargets: next };
-      }),
-    }));
-  const applySheetTargets = () =>
-    update((current) => {
-      const sheetByName = new Map(sheetReps.map((rep) => [normalizeName(rep.name), rep]));
-      return {
-        ...current,
-        reps: current.reps.map((rep) => {
-          const sheetRep = sheetByName.get(normalizeName(rep.name));
-          if (!sheetRep) return rep;
-          const next: RepSetting = { ...rep };
-          if (sheet.columns.total) next.totalTarget = sheetRep.totalTarget;
-          if (sheet.columns.slow) next.slowTarget = sheetRep.slowTarget;
-          if (sheet.columns.digital) next.digitalTarget = sheetRep.digitalTarget;
-          const rangeTargets = [...(rep.rangeTargets ?? [])];
-          sheetRangeColumns.forEach((column, index) => {
-            if (column) rangeTargets[index] = sheetRep.rangeTargets[index] ?? null;
-          });
-          next.rangeTargets = rangeTargets;
-          return next;
-        }),
-      };
-    });
+  const sheetHasTargetColumns = Boolean(sheet.columns.total || sheet.columns.slow || sheet.columns.digital || sheetRangeColumns.some(Boolean));
   const rangeTotal = (index: number) => settings.reps.reduce((sum, rep) => sum + (rep.rangeTargets?.[index] ?? 0), 0);
   return (
     <Card title={t("title")} description={t("description", { month: monthName })}>
@@ -734,16 +684,11 @@ function RepsCard({
           <span className="text-xs">{t("sheetColumns", { columns: [sheet.columns.total, ...sheetRangeColumns, sheet.columns.slow, sheet.columns.digital].filter(Boolean).join("، ") })}</span>
         ) : null}
       </p>
-      {sheetChangedReps.length ? (
-        <div className="flex flex-col gap-2 rounded-lg border border-warning/30 bg-warning-soft p-3 text-sm text-warning sm:flex-row sm:items-center sm:justify-between">
-          <p className="flex items-center gap-2">
-            <TriangleAlertIcon aria-hidden className="size-4 shrink-0" />
-            {t("sheetChanges", { count: sheetChangedReps.length })}
-          </p>
-          <Button type="button" variant="outline" onClick={applySheetTargets} className="shrink-0">
-            {t("applySheetTargets")}
-          </Button>
-        </div>
+      {sheet.found && sheetHasTargetColumns ? (
+        <p className="flex items-center gap-2 rounded-lg border border-success/30 bg-success-soft p-3 text-sm text-success">
+          <CheckCircle2Icon aria-hidden className="size-4 shrink-0" />
+          {t("excelSource")}
+        </p>
       ) : null}
       <label className="flex w-fit items-center gap-2 text-sm">
         <span className="text-muted-foreground">{t("rangeUnit")}</span>
@@ -799,18 +744,18 @@ function RepsCard({
                       {rep.odooUserId && rep.odooUserId === auto ? <span className="mt-1 block text-[11px] text-muted-foreground">{t("autoMatched")}</span> : null}
                     </td>
                     <td className="px-3 py-2">
-                      <NumberInput label={t("total")} value={rep.totalTarget} onChange={(value) => setRep(index, { totalTarget: value })} placeholder="—" />
+                      <NumberInput label={t("total")} value={rep.totalTarget} onChange={() => {}} placeholder="—" readOnly />
                     </td>
                     {ranges.map((range) => (
                       <td key={range.key} className="px-3 py-2">
-                        <NumberInput label={t("range", { key: range.key })} value={rep.rangeTargets?.[range.index] ?? null} onChange={(value) => setRange(index, range.index, value)} placeholder="—" />
+                        <NumberInput label={t("range", { key: range.key })} value={rep.rangeTargets?.[range.index] ?? null} onChange={() => {}} placeholder="—" readOnly />
                       </td>
                     ))}
                     <td className="px-3 py-2">
-                      <NumberInput label={t("slow")} value={rep.slowTarget} onChange={(value) => setRep(index, { slowTarget: value })} placeholder="—" />
+                      <NumberInput label={t("slow")} value={rep.slowTarget} onChange={() => {}} placeholder="—" readOnly />
                     </td>
                     <td className="px-3 py-2">
-                      <NumberInput label={t("digital")} value={rep.digitalTarget} onChange={(value) => setRep(index, { digitalTarget: value })} placeholder="—" />
+                      <NumberInput label={t("digital")} value={rep.digitalTarget} onChange={() => {}} placeholder="—" readOnly />
                     </td>
                   </tr>
                 );

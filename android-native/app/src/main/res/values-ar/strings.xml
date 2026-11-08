@@ -288,7 +288,7 @@
     <string name="admin_bonus">الحافز</string>
     <string name="admin_add_bonus">إضافة شريحة حافز</string>
     <string name="admin_targets">المندوبون والأهداف</string>
-    <string name="admin_targets_hint">تُحمّل الأهداف حسب الشهر المختار وتُحفظ مع إعدادات عمولته.</string>
+    <string name="admin_targets_hint">تُقرأ الأهداف من ملف إكسيل للشهر المختار ولا تُحفظ في إعدادات JSON.</string>
     <string name="admin_range_unit">وحدة هدف شرائح الأسعار</string>
     <string name="admin_digital_unit">وحدة هدف الديجيتال</string>
     <string name="admin_egp">جنيه</string>

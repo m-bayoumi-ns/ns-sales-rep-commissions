@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.weight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
@@ -45,6 +44,7 @@ import com.naguibselim.commissionsapp.data.BonusStep
 import com.naguibselim.commissionsapp.data.CommissionEditSettings
 import com.naguibselim.commissionsapp.data.ProductRule
 import com.naguibselim.commissionsapp.data.ProductVariant
+import com.naguibselim.commissionsapp.data.RepSetting
 import com.naguibselim.commissionsapp.data.Tier
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
@@ -575,9 +575,9 @@ private fun RepTargetsCard(rep: RepSetting, index: Int, data: AdminSettingsRespo
             { selected -> update { it.copy(reps = it.reps.mapIndexed { i, old -> if (i == index) old.copy(odooUserId = selected.toLongOrNull()) else old }) } },
         )
         AdminFieldRow {
-            AdminNumberField("rep-$index-total", stringResource(R.string.admin_total_target), rep.totalTarget, { value -> update { it.copy(reps = it.reps.mapIndexed { i, old -> if (i == index) old.copy(totalTarget = value) else old }) } }, Modifier.weight(1f), optional = true, suffix = stringResource(R.string.admin_egp))
-            AdminNumberField("rep-$index-slow", stringResource(R.string.admin_slow_target), rep.slowTarget, { value -> update { it.copy(reps = it.reps.mapIndexed { i, old -> if (i == index) old.copy(slowTarget = value) else old }) } }, Modifier.weight(1f), optional = true, suffix = stringResource(R.string.admin_egp))
-            AdminNumberField("rep-$index-digital", stringResource(R.string.admin_digital_target), rep.digitalTarget, { value -> update { it.copy(reps = it.reps.mapIndexed { i, old -> if (i == index) old.copy(digitalTarget = value) else old }) } }, Modifier.weight(1f), optional = true, suffix = stringResource(if (data.settings.rules.categoryUnits.digital == "qty") R.string.admin_units else R.string.admin_egp))
+            AdminNumberField("rep-$index-total", stringResource(R.string.admin_total_target), rep.totalTarget, {}, Modifier.weight(1f), optional = true, suffix = stringResource(R.string.admin_egp), readOnly = true)
+            AdminNumberField("rep-$index-slow", stringResource(R.string.admin_slow_target), rep.slowTarget, {}, Modifier.weight(1f), optional = true, suffix = stringResource(R.string.admin_egp), readOnly = true)
+            AdminNumberField("rep-$index-digital", stringResource(R.string.admin_digital_target), rep.digitalTarget, {}, Modifier.weight(1f), optional = true, suffix = stringResource(if (data.settings.rules.categoryUnits.digital == "qty") R.string.admin_units else R.string.admin_egp), readOnly = true)
         }
         rep.rangeTargets.forEachIndexed { range, target ->
             AdminNumberField("rep-$index-range-$range", stringResource(R.string.admin_range_target, ('A'.code + range).toChar()), target, { value ->
@@ -586,7 +586,7 @@ private fun RepTargetsCard(rep: RepSetting, index: Int, data: AdminSettingsRespo
                         if (i != index) old else old.copy(rangeTargets = old.rangeTargets.toMutableList().apply { this[range] = value })
                     })
                 }
-            }, optional = true, suffix = if (data.settings.rules.rangeUnit == "qty") stringResource(R.string.admin_units) else stringResource(R.string.admin_egp))
+            }, optional = true, suffix = if (data.settings.rules.rangeUnit == "qty") stringResource(R.string.admin_units) else stringResource(R.string.admin_egp), readOnly = true)
         }
     }
 }

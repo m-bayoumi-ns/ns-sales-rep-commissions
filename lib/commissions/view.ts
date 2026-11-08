@@ -47,7 +47,7 @@ export type RepEntry = {
   rangeTargets: (number | null)[];
 };
 
-/** Sheet reps (the month's list), with their saved targets and their Odoo user (saved link, else matched by name). */
+/** Targets always come from the month's Excel sheet; only the Odoo link is kept in saved settings. */
 export function monthReps(stored: StoredSettings, sheet: TargetSheet, candidates: OdooRep[], userNames: Map<number, string>): RepEntry[] {
   const saved = new Map(stored.settings.reps.map((rep) => [normalizeName(rep.name), rep]));
   const names = sheet.reps.length ? sheet.reps : stored.settings.reps.map((rep) => ({ name: rep.name, totalTarget: null, slowTarget: null, digitalTarget: null, rangeTargets: [] as (number | null)[] }));
@@ -66,10 +66,10 @@ export function monthReps(stored: StoredSettings, sheet: TargetSheet, candidates
       odooUserId,
       odooName: odooUserId ? (candidates.find((rep) => rep.id === odooUserId)?.name ?? userNames.get(odooUserId) ?? null) : null,
       linkedBy: own?.odooUserId ? "manual" : auto ? "auto" : null,
-      totalTarget: own?.totalTarget ?? row.totalTarget ?? null,
-      slowTarget: own?.slowTarget ?? row.slowTarget ?? null,
-      digitalTarget: own?.digitalTarget ?? row.digitalTarget ?? null,
-      rangeTargets: [0, 1, 2].map((index) => own?.rangeTargets?.[index] ?? row.rangeTargets?.[index] ?? null),
+      totalTarget: row.totalTarget,
+      slowTarget: row.slowTarget,
+      digitalTarget: row.digitalTarget,
+      rangeTargets: [0, 1, 2].map((index) => row.rangeTargets[index] ?? null),
     });
   }
 

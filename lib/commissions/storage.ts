@@ -168,7 +168,12 @@ export async function loadSettings(month: string): Promise<StoredSettings> {
 }
 
 export async function saveSettings(settings: CommissionSettings) {
-  await upload(settingsPath(settings.month), JSON.stringify(settings, null, 2));
+  // Target values are read from Excel and are never persisted in the monthly JSON.
+  const { reps, ...commissionSettings } = settings;
+  await upload(settingsPath(settings.month), JSON.stringify({
+    ...commissionSettings,
+    reps: reps.map(({ name, odooUserId }) => ({ name, odooUserId })),
+  }, null, 2));
   settingsCache.delete(settings.month);
 }
 
@@ -198,59 +203,62 @@ const TARGET_HEADER = /target|تارجت|المستهدف|الهدف|تارجي�
 
 /** Reads the month's target sheet: the reps of the "Sales Rep" column and, when present, their target columns. */
 export function readTargetSheet(month: string): Promise<TargetSheet> {
-  return cached(`target-sheet:${month}`, 10 * MINUTE, async () => {
+  return cached(`target-sheet:v2:${month}`, MINUTE, async () => {
     const objectPath = targetPath(month);
     const empty: TargetSheet = { found: false, path: objectPath, reps: [], columns: { rep: null, total: null, slow: null, digital: null, ranges: [null, null, null] } };
     const buffer = await download(objectPath);
     if (!buffer) return empty;
     const workbook = new ExcelJS.Workbook();
     await workbook.xlsx.load(buffer as unknown as ArrayBuffer);
-    for (const sheet of workbook.worksheets) {
-      // The header row: the first of the top 15 rows with a "Sales Rep" cell.
-      for (let rowIndex = 1; rowIndex <= Math.min(15, sheet.rowCount); rowIndex++) {
-        const headers = new Map<number, string>();
-        sheet.getRow(rowIndex).eachCell((cell, col) => headers.set(col, text(cell.value).trim()));
-        const repCol = [...headers].find(([, value]) => REP_HEADER.test(value))?.[0];
-        if (!repCol) continue;
-        const find = (match: (value: string) => boolean) => [...headers].find(([col, value]) => col !== repCol && match(value))?.[0] ?? null;
-        const slowCol = find((value) => SLOW_HEADER.test(value));
-        const digitalCol = find((value) => DIGITAL_HEADER.test(value));
-        // Optional "Range A" / "شريحة A" … columns.
-        const rangeCols = ["A", "B", "C"].map((key) => find((value) => new RegExp(`^(range|tier|شريحة|الشريحة|فئة)\\s*${key}$`, "i").test(value.trim())));
-        const totalCol = find((value) => TARGET_HEADER.test(value) && !SLOW_HEADER.test(value) && !DIGITAL_HEADER.test(value));
-        const reps = new Map<string, SheetRep>();
-        for (let r = rowIndex + 1; r <= sheet.rowCount; r++) {
-          const row = sheet.getRow(r);
-          const name = text(row.getCell(repCol).value).replace(/\s+/g, " ").trim();
-          if (!name || /^(total|الاجمالي|الإجمالي|اجمالي|إجمالي)$/i.test(name)) continue;
-          const entry = reps.get(name) ?? { name, totalTarget: null, slowTarget: null, digitalTarget: null, rangeTargets: [] as (number | null)[] };
-          const addTo = (field: "totalTarget" | "slowTarget" | "digitalTarget", col: number | null) => {
-            const value = col ? numberOf(row.getCell(col).value) : null;
-            if (value != null) entry[field] = (entry[field] ?? 0) + value;
-          };
-          addTo("totalTarget", totalCol);
-          addTo("slowTarget", slowCol);
-          addTo("digitalTarget", digitalCol);
-          rangeCols.forEach((col, index) => {
-            const value = col ? numberOf(row.getCell(col).value) : null;
-            if (value != null) entry.rangeTargets[index] = (entry.rangeTargets[index] ?? 0) + value;
-          });
-          reps.set(name, entry);
-        }
-        return {
-          found: true,
-          path: objectPath,
-          reps: [...reps.values()],
-          columns: {
-            rep: headers.get(repCol) ?? null,
-            total: totalCol ? headers.get(totalCol)! : null,
-            slow: slowCol ? headers.get(slowCol)! : null,
-            digital: digitalCol ? headers.get(digitalCol)! : null,
-            ranges: rangeCols.map((col) => col ? headers.get(col) ?? null : null),
-          },
-        };
-      }
-    }
-    return { ...empty, found: true };
+    return parseTargetWorkbook(workbook, objectPath);
   });
+}
+
+export function parseTargetWorkbook(workbook: ExcelJS.Workbook, objectPath: string): TargetSheet {
+  const empty: TargetSheet = { found: true, path: objectPath, reps: [], columns: { rep: null, total: null, slow: null, digital: null, ranges: [null, null, null] } };
+  for (const sheet of workbook.worksheets) {
+    for (let rowIndex = 1; rowIndex <= Math.min(15, sheet.rowCount); rowIndex++) {
+      const headers = new Map<number, string>();
+      sheet.getRow(rowIndex).eachCell((cell, col) => headers.set(col, text(cell.value).replace(/\s+/g, " ").trim()));
+      const repCol = [...headers].find(([, value]) => REP_HEADER.test(value))?.[0];
+      if (!repCol) continue;
+      const find = (match: (value: string) => boolean) => [...headers].find(([col, value]) => col !== repCol && match(value))?.[0] ?? null;
+      const slowCol = find((value) => SLOW_HEADER.test(value));
+      const digitalCol = find((value) => DIGITAL_HEADER.test(value));
+      const rangeCols = ["A", "B", "C"].map((key) => find((value) => new RegExp(`^(range|tier|شريحة|الشريحة|فئة)\\s*${key}$`, "i").test(value)));
+      const totalCol = find((value) => TARGET_HEADER.test(value) && !SLOW_HEADER.test(value) && !DIGITAL_HEADER.test(value));
+      const reps = new Map<string, SheetRep>();
+      for (let r = rowIndex + 1; r <= sheet.rowCount; r++) {
+        const row = sheet.getRow(r);
+        const name = text(row.getCell(repCol).value).replace(/\s+/g, " ").trim();
+        if (!name || /^(total|الاجمالي|الإجمالي|اجمالي|إجمالي)$/i.test(name)) continue;
+        const entry = reps.get(name) ?? { name, totalTarget: null, slowTarget: null, digitalTarget: null, rangeTargets: [] as (number | null)[] };
+        const addTo = (field: "totalTarget" | "slowTarget" | "digitalTarget", col: number | null) => {
+          const value = col ? numberOf(row.getCell(col).value) : null;
+          if (value != null) entry[field] = (entry[field] ?? 0) + value;
+        };
+        addTo("totalTarget", totalCol);
+        addTo("slowTarget", slowCol);
+        addTo("digitalTarget", digitalCol);
+        rangeCols.forEach((col, index) => {
+          const value = col ? numberOf(row.getCell(col).value) : null;
+          if (value != null) entry.rangeTargets[index] = (entry.rangeTargets[index] ?? 0) + value;
+        });
+        reps.set(name, entry);
+      }
+      return {
+        found: true,
+        path: objectPath,
+        reps: [...reps.values()],
+        columns: {
+          rep: headers.get(repCol) ?? null,
+          total: totalCol ? headers.get(totalCol)! : null,
+          slow: slowCol ? headers.get(slowCol)! : null,
+          digital: digitalCol ? headers.get(digitalCol)! : null,
+          ranges: rangeCols.map((col) => col ? headers.get(col) ?? null : null),
+        },
+      };
+    }
+  }
+  return empty;
 }
