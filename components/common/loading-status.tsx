@@ -42,8 +42,9 @@ export function LoadingStatus({ title, steps, hint }: { title: string; steps: st
         </div>
       </div>
       <div role="status" aria-label={title} aria-live="polite" className="loading-status-app hidden items-center justify-center">
-        <span aria-hidden className="loading-status-ring relative flex size-24 items-center justify-center rounded-full p-1">
-          <span className="brand-mask relative z-10 size-12 text-primary" style={{ maskImage: "url(/brand/ns-mark.png)" }} />
+        <span aria-hidden className="loading-status-indicator relative flex size-11 items-center justify-center">
+          <span className="loading-status-ring absolute inset-0 rounded-full" />
+          <span className="brand-mask relative z-10 size-6 text-primary" style={{ maskImage: "url(/brand/ns-mark.png)" }} />
         </span>
       </div>
       <style>{`@keyframes loading-slide { 0% { inset-inline-start: -33%; } 100% { inset-inline-start: 100%; } }`}</style>

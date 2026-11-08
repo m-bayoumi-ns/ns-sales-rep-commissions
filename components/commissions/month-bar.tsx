@@ -60,11 +60,6 @@ export function MonthBar({ months, month, live, keepRep, showStatus = true, show
           ))}
         </select>
       </label>
-      {showAppNotifications ? (
-        <div className="app-only app-home-notification">
-          <NotificationBell appHome />
-        </div>
-      ) : null}
       {live ? (
         <span className="inline-flex h-9 items-center gap-2 rounded-lg border bg-card px-3 text-xs text-muted-foreground">
           <span className="relative flex size-2.5">
@@ -86,6 +81,11 @@ export function MonthBar({ months, month, live, keepRep, showStatus = true, show
         </span>
       ) : showStatus ? (
         <span className="inline-flex h-9 items-center rounded-lg border bg-card px-3 text-xs text-muted-foreground">{t("closed")}</span>
+      ) : null}
+      {showAppNotifications ? (
+        <div className="app-only app-home-notification">
+          <NotificationBell appHome />
+        </div>
       ) : null}
     </div>
   );

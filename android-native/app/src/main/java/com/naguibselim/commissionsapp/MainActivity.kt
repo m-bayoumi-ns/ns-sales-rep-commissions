@@ -3,6 +3,7 @@ package com.naguibselim.commissionsapp
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
@@ -22,7 +23,12 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+        enableEdgeToEdge(
+            statusBarStyle = SystemBarStyle.auto(
+                lightScrim = 0xFFF6F5F3.toInt(),
+                darkScrim = 0xFF0D0F12.toInt(),
+            ),
+        )
         viewModel.openCommissionLink(intent?.data)
         Notifier.createChannels(this)
         setContent {
