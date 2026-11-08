@@ -2,7 +2,7 @@
 
 import { BellIcon, BellRingIcon } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { toast } from "sonner";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useRouter } from "@/i18n/navigation";
@@ -13,16 +13,20 @@ import { getMyNotifications, markNotificationsRead } from "@/lib/commissions/not
 import { formatDateTime, formatMonth } from "@/lib/format";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
+import { isStandalone, useDevice } from "./android-app";
 
 const CHANNEL = "ns-commissions-notify";
 const POLL_MS = 30_000;
+const noop = () => () => {};
 
 /**
  * Bell in the header: rate-change notifications, live. Listens on the Supabase Realtime channel
  * (an empty ping after every save) and also re-checks every 30 s. New arrivals pop up as a toast
  * and refresh the page so the new rates show at once.
  */
-export function NotificationBell() {
+export function NotificationBell({ appHome = false }: { appHome?: boolean }) {
+  const device = useDevice();
+  const standalone = useSyncExternalStore(noop, isStandalone, () => false);
   const t = useTranslations("notify");
   const locale = useLocale() as Locale;
   const router = useRouter();
@@ -30,6 +34,7 @@ export function NotificationBell() {
   const [unread, setUnread] = useState(0);
   const [lastRead, setLastRead] = useState("");
   const seen = useRef<Set<string> | null>(null);
+  const inAppShell = device === "app" || standalone;
 
   const load = useCallback(async () => {
     const data = await getMyNotifications();
@@ -45,6 +50,7 @@ export function NotificationBell() {
   }, [locale, router, t]);
 
   useEffect(() => {
+    if (inAppShell !== appHome) return;
     // eslint-disable-next-line react-hooks/set-state-in-effect
     void load();
     const timer = setInterval(() => document.visibilityState === "visible" && void load(), POLL_MS);
@@ -67,7 +73,9 @@ export function NotificationBell() {
       unsubscribe();
       window.removeEventListener("focus", onFocus);
     };
-  }, [load]);
+  }, [appHome, inAppShell, load]);
+
+  if (inAppShell !== appHome) return null;
 
   return (
     <Popover

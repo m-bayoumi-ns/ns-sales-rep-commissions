@@ -5,7 +5,7 @@ import { useTranslations } from "next-intl";
 import { useActionState } from "react";
 import { sendTestNotification, type TestState } from "@/lib/app/actions";
 
-/** Asks every phone of this account to show a test notification (open apps right away, others within ~15 min). */
+/** Asks every phone of this account to show a test notification. */
 export function TestNotificationButton({ disabled }: { disabled?: boolean }) {
   const t = useTranslations("phoneNotify");
   const [state, action, pending] = useActionState<TestState>(sendTestNotification, { status: "idle" });

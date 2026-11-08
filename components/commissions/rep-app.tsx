@@ -29,6 +29,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
 import { Link } from "@/i18n/navigation";
 import { AndroidBottomNav, type AppSection } from "@/components/layout/android-bottom-nav";
+import { NotificationBell } from "@/components/layout/notification-bell";
 import type { Locale } from "@/i18n/routing";
 import type { Adjustment } from "@/lib/commissions/engine";
 import type { Category, CommissionSettings } from "@/lib/commissions/schema";
@@ -73,6 +74,7 @@ export function RepApp({ detail, settings, clock, teamLink, initialTab = "summar
               <p className="text-xs text-white/70">{formatMonth(clock.month, locale)} · {clock.closed ? t("closed") : t("day", { day: clock.elapsedDays, days: clock.monthDays })}</p>
             </div>
             <LevelChip regime={r.regime} />
+            {tab === "summary" ? <span className="app-only"><NotificationBell appHome /></span> : null}
           </div>
 
           <div className="relative mt-6 flex flex-col items-center text-center">
@@ -124,7 +126,7 @@ export function RepApp({ detail, settings, clock, teamLink, initialTab = "summar
         </div>
       </div>
       <p className="rep-footer text-center text-xs text-muted-foreground">{t(clock.closed ? "footerClosed" : "footerLive")}</p>
-      <AndroidBottomNav active={tab} onSelect={setTab} />
+      <AndroidBottomNav active={tab} onSelect={setTab} month={clock.month} rep={rep.key} />
     </div>
   );
 }

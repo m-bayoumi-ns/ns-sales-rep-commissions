@@ -124,7 +124,7 @@ async function Commissions({ searchParams }: { searchParams: PageProps<"/[locale
       {view.reps.length === 0 ? (
         <StateCard title={t("empty.title")} body={t(user.branchFilterType === "sales_rep" && !admin ? "empty.notListed" : "empty.body", { month: monthName })} />
       ) : showDetail ? (
-        <RepApp detail={view.detail!} settings={view.settings} clock={view.clock} teamLink={view.reps.length > 1} initialTab={initialTab} />
+        <RepApp key={initialTab} detail={view.detail!} settings={view.settings} clock={view.clock} teamLink={view.reps.length > 1} initialTab={initialTab} />
       ) : (
         <TeamList view={view} locale={locale} canExport={admin} displayNames={appSettings.sellerDisplayNames} />
       )}

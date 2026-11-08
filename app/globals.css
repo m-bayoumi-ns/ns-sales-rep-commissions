@@ -289,9 +289,24 @@ tr:hover > .fin-sticky { background-color: color-mix(in oklab, var(--muted) 50%,
 html[data-app] .web-only { display: none !important; }
 html:not([data-app]) .app-only:not(.mobile-menu-preferences) { display: none !important; }
 html[data-app] #main:has(.android-bottom-nav) { padding-bottom: calc(6rem + env(safe-area-inset-bottom)); }
+html[data-app] .app-header { display: none !important; }
 html[data-app] .rep-app:not([data-app-section="summary"]) .rep-balance-header,
 html[data-app] .rep-app:not([data-app-section="summary"]) .rep-footer { display: none !important; }
 html[data-app] .android-sales-results[data-mobile-selected="false"] { display: none !important; }
+html[data-app] .account-linked-rep,
+html[data-app] .account-identity-default,
+html[data-app] .phone-notifications-web { display: none !important; }
+html:not([data-app]) .account-identity-seller,
+html:not([data-app]) .phone-notifications-android { display: none !important; }
+.android-home-button {
+  background: linear-gradient(135deg, #4a2d16, #9a6a3b, #5a3a1d, #b27b43);
+  background-size: 250% 250%;
+  animation: android-home-gradient 5s ease infinite;
+}
+@keyframes android-home-gradient {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
 .mobile-menu-preferences { display: none; }
 html[data-app] .mobile-menu-preferences { display: block !important; }
 @media (max-width: 767px) {
