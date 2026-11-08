@@ -62,12 +62,11 @@ Supabase → Authentication → URL configuration. Local demo mode (`NS_DEMO_DAT
 skips the login and keeps settings / target files in a local `.data` folder instead of Supabase.
 
 ## Seller accounts
-- **Register** (`/register`, linked from the sign-in page): name + email + password. The name must match a name in the
-  latest target sheet (`Wholesales_Target/target_YYYY_MM.xlsx`, this month or up to 3 months back); otherwise the page
-  says *"User not recognised by the system"*. One account per sales rep.
-- New accounts are written to the shared `profiles` table as `specific_branches` + `branch_filter_type = sales_rep` +
-  `sales_reps = [sheet name]` + `allowed_pages = ["sales-commissions"]`, so a seller sees **only their own commission**
-  (no team list, settings or accounts pages). They start inactive unless "Approve new accounts automatically" is on.
+- Self-service registration is disabled. Administrators create seller accounts for reps listed in the latest target
+  sheet (`Wholesales_Target/target_YYYY_MM.xlsx`) from **Accounts**. New accounts are written to the shared `profiles`
+  table as `specific_branches` + `branch_filter_type = sales_rep` + `sales_reps = [sheet name]` +
+  `allowed_pages = ["sales-commissions"]`, so a seller sees **only their own commission** (no team list, settings or
+  accounts pages).
 - **My account** (`/account`): change password (current password required).
 - **Accounts** (`/accounts`, administrators): approve / disable seller accounts and switch on *Force new password*.
   The flag lives in the Auth user's `app_metadata.must_change_password`; at the next sign-in every page sends the

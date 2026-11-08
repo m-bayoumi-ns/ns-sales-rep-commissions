@@ -4,7 +4,7 @@ import { connection } from "next/server";
 import { getTranslations } from "next-intl/server";
 import { Suspense } from "react";
 import { PageHeading, StateCard } from "@/components/finance/report-ui";
-import { DEFAULT_PASSWORD, listSellerAccounts, loadAppSettings, sheetRepAccounts } from "@/lib/accounts/server";
+import { DEFAULT_PASSWORD, listSellerAccounts, sheetRepAccounts } from "@/lib/accounts/server";
 import { SheetReps } from "./sheet-reps";
 import { requireReadyUser } from "@/lib/auth/dal";
 import { isAdmin } from "@/lib/auth/permissions";
@@ -30,9 +30,9 @@ async function Accounts() {
   const t = await getTranslations("accounts");
   let data;
   try {
-    const [accounts, settings] = await Promise.all([listSellerAccounts(), loadAppSettings()]);
+    const accounts = await listSellerAccounts();
     const sheet = await sheetRepAccounts(accounts);
-    data = { accounts, settings, sheet };
+    data = { accounts, sheet };
   } catch (error) {
     console.error("[accounts] load failed:", error);
     return <StateCard tone="error" title={t("errorTitle")} body={t("errorBody")} />;
@@ -41,7 +41,7 @@ async function Accounts() {
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-5">
       <PageHeading title={t("title")} eyebrow={t("eyebrow")} subtitle={t("description")} />
       {data.sheet ? <SheetReps month={data.sheet.month} reps={data.sheet.reps} defaultPassword={DEFAULT_PASSWORD} /> : null}
-      <AccountsTable accounts={data.accounts.filter((account) => !data.sheet?.reps.some((rep) => rep.account?.id === account.id))} autoApprove={data.settings.autoApprove} sheetMonth={data.sheet?.month ?? null} sheetCount={data.sheet?.reps.length ?? 0} />
+      <AccountsTable accounts={data.accounts.filter((account) => !data.sheet?.reps.some((rep) => rep.account?.id === account.id))} />
     </div>
   );
 }

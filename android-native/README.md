@@ -23,11 +23,11 @@ The tokens are stored encrypted on the phone (`EncryptedSharedPreferences`, Andr
 Administrator endpoints (bearer-authenticated and restricted to active administrators):
 
 - `GET/PUT /api/app/admin/settings` loads and saves monthly commission settings, product categories, Odoo links, and seller notifications. Sales targets are read-only from `Wholesales_Target/target_YYYY_MM.xlsx` in the `naguib-selim-db` bucket; target values are not written to monthly JSON settings. Product search uses `?search=<name or code>`.
-- `GET/PATCH /api/app/admin/accounts` manages seller accounts, sheet usernames and display names, approvals, password-change requirements, registration approval, and the website's Android download variant.
+- `GET/PATCH /api/app/admin/accounts` manages administrator-created seller accounts, sheet usernames and display names, approvals, password-change requirements, and the website's Android download variant.
 
 ## Screens
 
-- **Sign in**: email or username plus password, with a link to the website's seller registration.
+- **Sign in**: email or username plus password. Seller accounts are created by administrators from the target sheet.
 - **Commissions**: month and seller pickers, live / closed state, and notices (no rates, inherited rates, missing sheet, unlinked reps).
   - **Team summary** (managers): team sales, commission, collections, reps on track, reps below minimum, then a ranked card per rep.
   - **Statement** (one seller, the default view and the only one a seller sees), organized into Summary, Sales, Collections and Statement tabs:
@@ -61,7 +61,7 @@ app/src/main/java/com/naguibselim/commissionsapp/
   ui/RepDetail.kt            the seller statement
   ui/AdminScreens.kt         native administrator navigation
   ui/AdminSettingsScreen.kt  commission settings and product search
-  ui/AdminAccountsScreen.kt  seller accounts and registration controls
+  ui/AdminAccountsScreen.kt  seller accounts and app settings
   ui/Components.kt, Theme.kt shared UI, brand colours
   util/Format.kt             numbers, money, months (ar-EG / en-US)
 ```

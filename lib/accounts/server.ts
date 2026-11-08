@@ -2,7 +2,7 @@ import "server-only";
 import { isDemoMode } from "@/lib/dev";
 import { PROFILE_TABLE } from "@/lib/auth/profile";
 import { addMonths, currentMonth } from "@/lib/finance/core";
-import { findSheetName, normalizeName } from "@/lib/commissions/names";
+import { normalizeName } from "@/lib/commissions/names";
 import { loadMonthSetup } from "@/lib/commissions/view";
 import { usernameFor, usernameOf, loginEmail } from "./usernames";
 import { readTargetSheet } from "@/lib/commissions/storage";
@@ -36,7 +36,7 @@ export type SellerAccount = {
 type ProfileRow = { id: string; email: string | null; full_name: string | null; sales_reps: string[] | null; allowed_pages?: string[] | null; is_active: boolean | null; permission_type: string | null; branch_filter_type: string | null };
 
 /**
- * A seller account of this site: created here (registration / target sheet), or a sales-rep profile whose only page
+ * A seller account of this site: created by an administrator from the target sheet, or a sales-rep profile whose only page
  * is the commissions page. ns-home users who merely filter by sales rep (managers, analysts…) are not shown or changed.
  */
 function isSellerAccount(row: ProfileRow, appMetadata: Record<string, unknown> | undefined) {
@@ -119,15 +119,6 @@ export async function setMustChangePassword(userId: string, value: boolean, { ch
   if (updateError) throw new Error(updateError.message);
 }
 
-// ---------------------------------------------------------------- registration
-export type RegisterResult =
-  | { status: "created"; active: boolean }
-  | { status: "unknown" }
-  | { status: "exists" }
-  | { status: "emailTaken" }
-  | { status: "noSheet" }
-  | { status: "error" };
-
 /** The latest target sheet that exists (this month, else up to three months back). */
 export async function latestSheet() {
   let month = currentMonth();
@@ -136,58 +127,6 @@ export async function latestSheet() {
     if (sheet.found && sheet.reps.length) return { month, sheet };
   }
   return null;
-}
-
-export async function registerSeller(input: { name: string; email: string; password: string }): Promise<RegisterResult> {
-  const latest = await latestSheet();
-  if (!latest) return { status: "noSheet" };
-  const repName = findSheetName(input.name, latest.sheet.reps.map((rep) => rep.name));
-  if (!repName) return { status: "unknown" };
-  if (isDemoMode()) return { status: "created", active: false };
-
-  const admin = createSupabaseAdminClient();
-  // One account per sales rep.
-  const { data: existing, error: existingError } = await admin.from(PROFILE_TABLE).select("id").contains("sales_reps", [repName]).limit(1);
-  if (existingError) {
-    console.error("[register] profiles lookup failed:", existingError.message);
-    return { status: "error" };
-  }
-  if (existing?.length) return { status: "exists" };
-
-  const { autoApprove } = await loadAppSettings();
-  const { data: created, error: createError } = await admin.auth.admin.createUser({
-    email: input.email,
-    password: input.password,
-    email_confirm: true,
-    user_metadata: { full_name: repName },
-    app_metadata: { must_change_password: false, source: "ns-sales-rep-commissions" },
-  });
-  if (createError || !created.user) {
-    if (createError && /already|registered|exists/i.test(createError.message)) return { status: "emailTaken" };
-    console.error("[register] create user failed:", createError?.message);
-    return { status: "error" };
-  }
-  const { error: profileError } = await admin.from(PROFILE_TABLE).upsert(
-    {
-      id: created.user.id,
-      email: input.email,
-      full_name: repName,
-      job_title: "Sales representative",
-      permission_type: "specific_branches",
-      branch_filter_type: "sales_rep",
-      branches: [],
-      sales_reps: [repName],
-      allowed_pages: [SELLER_PAGE],
-      is_active: autoApprove,
-    },
-    { onConflict: "id" },
-  );
-  if (profileError) {
-    console.error("[register] profile insert failed:", profileError.message);
-    await admin.auth.admin.deleteUser(created.user.id);
-    return { status: "error" };
-  }
-  return { status: "created", active: autoApprove };
 }
 
 // ---------------------------------------------------------------- accounts from the target sheet

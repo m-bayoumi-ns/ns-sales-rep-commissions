@@ -12,8 +12,6 @@
     <string name="login_hide">Hide</string>
     <string name="login_submit">Sign in</string>
     <string name="login_submitting">Signing in…</string>
-    <string name="login_new_seller">Sales rep without an account?</string>
-    <string name="login_create_account">Create an account</string>
     <string name="login_help">Access is managed by the administrator. Forgot your password? Contact support for a new one.</string>
 
     <!-- Errors -->
@@ -307,9 +305,7 @@
     <string name="admin_notify_none">Do not notify</string>
     <string name="admin_notify_note">Message (optional)</string>
     <string name="admin_load_colors">Load colors</string>
-    <string name="admin_registration">Seller registration</string>
-    <string name="admin_auto_approve">Approve new registrations automatically</string>
-    <string name="admin_auto_approve_hint">Otherwise, new seller accounts wait for approval.</string>
+    <string name="admin_app_settings">App settings</string>
     <string name="admin_android_download">APK served by the website</string>
     <string name="admin_native_app">Native Android app</string>
     <string name="admin_web_app">WebView app</string>

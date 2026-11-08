@@ -2,13 +2,13 @@
 
 import { CheckCircle2Icon, Clock3Icon, KeyRoundIcon, Loader2Icon, UserRoundIcon } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
-import { useOptimistic, useState, useTransition } from "react";
+import { useOptimistic, useTransition } from "react";
 import { toast } from "sonner";
 import { useRouter } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
-import { setAccountActive, setAutoApprove, setForcePassword } from "@/lib/accounts/actions";
+import { setAccountActive, setForcePassword } from "@/lib/accounts/actions";
 import type { SellerAccount } from "@/lib/accounts/server";
-import { formatDateTime, formatMonth } from "@/lib/format";
+import { formatDateTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 export function Switch({ checked, onChange, label, disabled }: { checked: boolean; onChange: (value: boolean) => void; label: string; disabled?: boolean }) {
@@ -29,7 +29,7 @@ export function Switch({ checked, onChange, label, disabled }: { checked: boolea
 }
 
 /** Seller accounts: approve / disable, and force a password change at next sign-in (switches itself off once done). */
-export function AccountsTable({ accounts, autoApprove, sheetMonth, sheetCount }: { accounts: SellerAccount[]; autoApprove: boolean; sheetMonth: string | null; sheetCount: number }) {
+export function AccountsTable({ accounts }: { accounts: SellerAccount[] }) {
   const t = useTranslations("accounts");
   const locale = useLocale() as Locale;
   const router = useRouter();
@@ -37,8 +37,6 @@ export function AccountsTable({ accounts, autoApprove, sheetMonth, sheetCount }:
   const [rows, applyOptimistic] = useOptimistic(accounts, (current, change: { id: string; patch: Partial<SellerAccount> }) =>
     current.map((row) => (row.id === change.id ? { ...row, ...change.patch } : row)),
   );
-  const [auto, setAuto] = useState(autoApprove);
-
   const run = (id: string, patch: Partial<SellerAccount>, action: () => Promise<{ ok: boolean }>, message: string) =>
     start(async () => {
       applyOptimistic({ id, patch });
@@ -51,34 +49,6 @@ export function AccountsTable({ accounts, autoApprove, sheetMonth, sheetCount }:
   const pendingCount = rows.filter((row) => !row.active).length;
   return (
     <div className="flex flex-col gap-4">
-      <div className="grid gap-3 sm:grid-cols-2">
-        <div className="flex items-center justify-between gap-3 rounded-2xl border bg-card px-4 py-3">
-          <div>
-            <p className="text-sm font-semibold">{t("autoApprove")}</p>
-            <p className="text-xs text-muted-foreground">{t("autoApproveHint")}</p>
-          </div>
-          <Switch
-            checked={auto}
-            label={t("autoApprove")}
-            disabled={pending}
-            onChange={(value) =>
-              start(async () => {
-                setAuto(value);
-                const result = await setAutoApprove(value);
-                if (!result.ok) {
-                  setAuto(!value);
-                  toast.error(t("failed"));
-                }
-              })
-            }
-          />
-        </div>
-        <div className="flex flex-col justify-center rounded-2xl border bg-card px-4 py-3 text-sm">
-          <p className="font-semibold">{t("whoCanRegister")}</p>
-          <p className="text-xs text-muted-foreground">{sheetMonth ? t("sheetInfo", { month: formatMonth(sheetMonth, locale), count: sheetCount }) : t("noSheet")}</p>
-        </div>
-      </div>
-
       {pendingCount ? (
         <p className="flex items-center gap-2 rounded-2xl border border-warning/30 bg-warning-soft px-4 py-2.5 text-sm text-warning">
           <Clock3Icon aria-hidden className="size-4" />

@@ -12,8 +12,6 @@
     <string name="login_hide">إخفاء</string>
     <string name="login_submit">تسجيل الدخول</string>
     <string name="login_submitting">جارٍ تسجيل الدخول…</string>
-    <string name="login_new_seller">مندوب بدون حساب؟</string>
-    <string name="login_create_account">أنشئ حسابًا</string>
     <string name="login_help">تتم إدارة الصلاحيات من قِبل المسؤول. نسيت كلمة المرور؟ تواصل مع الدعم الفني للحصول على كلمة مرور جديدة.</string>
 
     <!-- الأخطاء -->
@@ -307,9 +305,7 @@
     <string name="admin_notify_none">بدون إخطار</string>
     <string name="admin_notify_note">رسالة (اختياري)</string>
     <string name="admin_load_colors">تحميل الألوان</string>
-    <string name="admin_registration">تسجيل المندوبين</string>
-    <string name="admin_auto_approve">الموافقة التلقائية على التسجيلات الجديدة</string>
-    <string name="admin_auto_approve_hint">وإلا ستظل حسابات المندوبين الجديدة بانتظار الموافقة.</string>
+    <string name="admin_app_settings">إعدادات التطبيق</string>
     <string name="admin_android_download">ملف APK الذي يقدمه الموقع</string>
     <string name="admin_native_app">تطبيق Android الأصلي</string>
     <string name="admin_web_app">تطبيق WebView</string>

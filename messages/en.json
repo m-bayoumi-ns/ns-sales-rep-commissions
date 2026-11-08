@@ -50,9 +50,7 @@
     },
     "sessionExpired": "Your session expired.",
     "sessionExpiredHint": "Sign in again to return to Customer Payments with the same filters.",
-    "forgotPasswordHelp": "Passwords are reset by your administrator. Contact IT support to get a new one.",
-    "newSeller": "Sales rep without an account?",
-    "createAccount": "Create one"
+    "forgotPasswordHelp": "Passwords are reset by your administrator. Contact IT support to get a new one."
   },
   "roles": {
     "super_admin": "Administrator",
@@ -694,37 +692,6 @@
     "daySales": "Sales",
     "egp": "EGP"
   },
-  "register": {
-    "title": "Create your seller account",
-    "subtitle": "For sales reps listed in this month's targets. You will see your own commission only.",
-    "name": "Your name (as in the targets sheet)",
-    "nameHint": "Write it exactly as in the \"Sales Rep\" column, e.g. NSR305_أحمد عادل شحاته.",
-    "email": "Email",
-    "password": "Password",
-    "passwordHint": "At least 8 characters.",
-    "confirm": "Confirm password",
-    "show": "Show passwords",
-    "submit": "Create account",
-    "submitting": "Creating…",
-    "haveAccount": "Already have an account?",
-    "toLogin": "Sign in",
-    "pendingTitle": "Account created",
-    "pendingBody": "An administrator will activate it shortly. You can sign in once it is approved.",
-    "unknownTitle": "User not recognised by the system",
-    "unknownBody": "This name is not in the latest sales targets sheet. Check the spelling, or ask your manager to add you.",
-    "errors": {
-      "invalid": "Check the fields: name, a valid email and a password of at least 8 characters.",
-      "mismatch": "The two passwords do not match.",
-      "exists": "An account already exists for this sales rep. Sign in, or ask an administrator.",
-      "emailTaken": "This email is already registered. Sign in instead.",
-      "noSheet": "Registration is closed: no targets sheet has been uploaded yet.",
-      "locked": "Too many attempts. Try again in 10 minutes.",
-      "error": "The account could not be created. Try again later.",
-      "unknown": "User not recognised by the system",
-      "idle": "",
-      "pending": ""
-    }
-  },
   "account": {
     "title": "My account",
     "preferences": "App preferences",
@@ -761,11 +728,6 @@
     "errorTitle": "Accounts could not be loaded",
     "errorBody": "Check the Supabase connection and try again.",
     "failed": "The change could not be saved.",
-    "autoApprove": "Approve new accounts automatically",
-    "autoApproveHint": "Off: new sellers wait for your approval before they can sign in.",
-    "whoCanRegister": "Who can register",
-    "sheetInfo": "Names in the {month} targets sheet ({count} reps).",
-    "noSheet": "No targets sheet found — registration is closed.",
     "pendingCount": "{count, plural, one {# account waits} other {# accounts wait}} for approval.",
     "active": "Active",
     "pending": "Waiting approval",

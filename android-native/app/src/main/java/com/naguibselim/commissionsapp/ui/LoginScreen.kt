@@ -41,7 +41,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -52,7 +51,6 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.naguibselim.commissionsapp.BuildConfig
 import com.naguibselim.commissionsapp.R
 
 @Composable
@@ -61,8 +59,6 @@ fun LoginScreen(viewModel: AppViewModel) {
     var identifier by rememberSaveable { mutableStateOf(viewModel.lastIdentifier) }
     var password by remember { mutableStateOf("") }
     var showPassword by rememberSaveable { mutableStateOf(false) }
-    val uri = LocalUriHandler.current
-    val registerUrl = "${BuildConfig.API_BASE_URL}/${langSegment()}/register"
     val canSubmit = identifier.trim().length >= 2 && password.isNotEmpty() && !state.busy
     val submit = { if (canSubmit) viewModel.signIn(identifier, password) }
 
@@ -136,10 +132,6 @@ fun LoginScreen(viewModel: AppViewModel) {
                 }
 
                 Spacer(Modifier.height(16.dp))
-                Text(stringResource(R.string.login_new_seller), color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
-                TextButton(onClick = { uri.openUri(registerUrl) }) {
-                    Text(stringResource(R.string.login_create_account), fontWeight = FontWeight.SemiBold)
-                }
                 Text(
                     stringResource(R.string.login_help),
                     style = MaterialTheme.typography.bodySmall,

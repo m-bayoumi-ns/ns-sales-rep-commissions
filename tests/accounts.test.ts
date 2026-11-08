@@ -3,7 +3,7 @@ import { rateChanges } from "@/lib/commissions/changes";
 import { findSheetName } from "@/lib/commissions/names";
 import { defaultSettings, settingsSchema } from "@/lib/commissions/schema";
 
-describe("registration name check", () => {
+describe("target-sheet seller name matching", () => {
   const sheet = ["NSR305_أحمد عادل شحاته", "أحمد مصطفى غريب", "NSR370_محمود احمد مرسي حنفى"];
   it("accepts the sheet name with or without the code and spelling variants", () => {
     expect(findSheetName("NSR305_أحمد عادل شحاته", sheet)).toBe("NSR305_أحمد عادل شحاته");

@@ -155,7 +155,6 @@ data class AdminSettingsResponse(
 data class AdminAccountsResponse(
     val accounts: List<AdminAccount> = emptyList(),
     val sheet: AdminSheetAccounts? = null,
-    val autoApprove: Boolean = false,
     val androidDownload: String = "native",
     val defaultPassword: String = "",
 )

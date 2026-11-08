@@ -29,6 +29,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
 import { Link } from "@/i18n/navigation";
 import { AndroidBottomNav, type AppSection } from "@/components/layout/android-bottom-nav";
+import { MonthBar } from "@/components/commissions/month-bar";
 import type { Locale } from "@/i18n/routing";
 import type { Adjustment } from "@/lib/commissions/engine";
 import type { Category, CommissionSettings } from "@/lib/commissions/schema";
@@ -44,7 +45,7 @@ type Tab = AppSection;
  * the next level, then four tabs of plain lists — summary, sales, collections, and the statement that
  * shows how the amount is built. No dashboard tiles.
  */
-export function RepApp({ detail, settings, clock, teamLink, initialTab = "summary" }: { detail: RepDetail; settings: CommissionSettings; clock: MonthClock; teamLink: boolean; initialTab?: Tab }) {
+export function RepApp({ detail, settings, clock, months, teamLink, initialTab = "summary" }: { detail: RepDetail; settings: CommissionSettings; clock: MonthClock; months: string[]; teamLink: boolean; initialTab?: Tab }) {
   const t = useTranslations("app2");
   const locale = useLocale() as Locale;
   const [tab, setTab] = useState<Tab>(initialTab);
@@ -53,6 +54,9 @@ export function RepApp({ detail, settings, clock, teamLink, initialTab = "summar
 
   return (
     <div data-app-section={tab} className="rep-app mx-auto flex w-full max-w-3xl flex-col gap-4">
+      <div className="flex flex-wrap items-center gap-2">
+        <MonthBar months={months} month={clock.month} live={!clock.closed} keepRep={rep.key} showStatus={tab === "summary"} showAppNotifications />
+      </div>
       {teamLink ? (
         <Link href={{ pathname: "/commissions", query: { month: clock.month, rep: "all" } }} className="inline-flex w-fit items-center gap-1 text-sm font-medium text-muted-foreground hover:text-foreground">
           <ChevronLeftIcon aria-hidden className="size-4 rtl:rotate-180" />

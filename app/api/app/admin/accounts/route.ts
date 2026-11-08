@@ -26,7 +26,6 @@ export async function GET(request: NextRequest) {
     return json({
       accounts: accounts.filter((account) => !sheet?.reps.some((rep) => rep.account?.id === account.id)),
       sheet,
-      autoApprove: settings.autoApprove,
       androidDownload: settings.androidDownload ?? "native",
       defaultPassword: DEFAULT_PASSWORD,
     });
@@ -39,7 +38,6 @@ export async function GET(request: NextRequest) {
 const actionSchema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("active"), userId: z.string().min(1).max(64), value: z.boolean() }),
   z.object({ action: z.literal("forcePassword"), userId: z.string().min(1).max(64), value: z.boolean() }),
-  z.object({ action: z.literal("autoApprove"), value: z.boolean() }),
   z.object({ action: z.literal("createSheetAccounts"), names: z.array(z.string().trim().min(1).max(200)).max(500).default([]) }),
   z.object({ action: z.literal("username"), repName: z.string().trim().min(1).max(200), userId: z.string().min(1).max(64).nullable().default(null), username: z.string().max(64) }),
   z.object({ action: z.literal("displayName"), repName: z.string().trim().min(1).max(200), value: z.string().trim().max(120) }),
@@ -69,11 +67,6 @@ export async function PATCH(request: NextRequest) {
         await setMustChangePassword(action.userId, action.value);
         after(() => logActivity({ action: "force_password_change", userId: user.id, email: user.email, details: { target: action.userId, value: action.value } }));
         break;
-      case "autoApprove": {
-        const settings = await loadAppSettings();
-        await saveAppSettings({ ...settings, autoApprove: action.value });
-        break;
-      }
       case "createSheetAccounts": {
         const results = await createSheetAccounts(action.names);
         after(() => logActivity({ action: "approve_account", userId: user.id, email: user.email, details: { created: results.filter((row) => row.status === "created").map((row) => row.username) } }));

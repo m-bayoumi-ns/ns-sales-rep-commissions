@@ -104,7 +104,7 @@ async function Commissions({ searchParams }: { searchParams: PageProps<"/[locale
     <ScrollReveal className="flex flex-col gap-5">
       <div className="mx-auto flex w-full max-w-3xl flex-wrap items-center gap-2">
         {options.length > 1 ? <RepPicker reps={options} value={showDetail ? view.detail!.rep.key : ALL_REPS} month={month} allowAll={options.length > 1} /> : null}
-        <MonthBar months={view.months} month={month} live={!view.clock.closed} keepRep={showDetail ? view.detail!.rep.key : ALL_REPS} showStatus={initialTab === "summary"} showAppNotifications={showDetail} />
+        {!showDetail ? <MonthBar months={view.months} month={month} live={!view.clock.closed} keepRep={ALL_REPS} /> : null}
       </div>
       {notices.map((notice) => (
         <p
@@ -124,7 +124,7 @@ async function Commissions({ searchParams }: { searchParams: PageProps<"/[locale
       {view.reps.length === 0 ? (
         <StateCard title={t("empty.title")} body={t(user.branchFilterType === "sales_rep" && !admin ? "empty.notListed" : "empty.body", { month: monthName })} />
       ) : showDetail ? (
-        <RepApp key={initialTab} detail={view.detail!} settings={view.settings} clock={view.clock} teamLink={view.reps.length > 1} initialTab={initialTab} />
+        <RepApp key={initialTab} detail={view.detail!} settings={view.settings} clock={view.clock} months={view.months} teamLink={view.reps.length > 1} initialTab={initialTab} />
       ) : (
         <TeamList view={view} locale={locale} canExport={admin} displayNames={appSettings.sellerDisplayNames} />
       )}

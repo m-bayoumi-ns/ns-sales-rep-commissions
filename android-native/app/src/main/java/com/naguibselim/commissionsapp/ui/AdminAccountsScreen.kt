@@ -127,19 +127,7 @@ fun AdminAccountsScreen(viewModel: AppViewModel) {
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     item {
-                        SectionCard(stringResource(R.string.admin_registration)) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Column(Modifier.weight(1f)) {
-                                    Text(stringResource(R.string.admin_auto_approve), fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold)
-                                    Text(stringResource(R.string.admin_auto_approve_hint), style = androidx.compose.material3.MaterialTheme.typography.bodySmall)
-                                }
-                                Switch(
-                                    checked = current.autoApprove,
-                                    onCheckedChange = { perform(AdminAccountAction("autoApprove", value = JsonPrimitive(it))) },
-                                    enabled = !busy,
-                                )
-                            }
-                            Spacer(Modifier.height(8.dp))
+                        SectionCard(stringResource(R.string.admin_app_settings)) {
                             AdminSelectField(
                                 stringResource(R.string.admin_android_download),
                                 current.androidDownload,

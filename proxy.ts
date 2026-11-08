@@ -23,8 +23,8 @@ export default async function proxy(request: NextRequest) {
 
   const [, segment, ...rest] = request.nextUrl.pathname.split("/");
   const locale = isLocale(segment) ? segment : routing.defaultLocale;
-  // Public pages: sign-in and seller self-registration.
-  const isLoginPage = rest[0] === "login" || rest[0] === "register";
+  // Public page: sign-in. Seller accounts are provisioned by administrators.
+  const isLoginPage = rest[0] === "login";
   // Open to everyone, signed in or not: the mobile app download page.
   const isOpenPage = rest[0] === "get-app";
 
