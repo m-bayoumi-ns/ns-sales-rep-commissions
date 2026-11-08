@@ -3,12 +3,13 @@ import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import type { CommissionsView } from "@/lib/commissions/view";
+import { normalizeName } from "@/lib/commissions/names";
 import { formatCompactCurrency, formatNumber, formatPercent } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { RepsExport } from "./reps-export";
 
 /** Team summary (managers): one plain list row per seller, opening the seller's screen. */
-export function TeamList({ view, locale, canExport }: { view: CommissionsView; locale: Locale; canExport: boolean }) {
+export function TeamList({ view, locale, canExport, displayNames = {} }: { view: CommissionsView; locale: Locale; canExport: boolean; displayNames?: Record<string, string> }) {
   const t = useTranslations("app2");
   const { totals, clock } = view;
   const target = clock.closed ? totals.target : totals.targetToDate;
@@ -31,11 +32,12 @@ export function TeamList({ view, locale, canExport }: { view: CommissionsView; l
           const r = rep.result;
           const flagged = r.belowMinimum || rep.minimumRisk;
           const pct = r.achievement;
+          const displayName = displayNames[normalizeName(rep.name)] ?? rep.name;
           return (
             <li key={rep.key}>
               <Link href={{ pathname: "/commissions", query: { month: clock.month, rep: rep.key } }} className="flex items-center gap-3 px-4 py-3.5 transition-colors hover:bg-muted/60 focus-visible:bg-muted focus-visible:outline-none">
                 <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-accent text-sm font-bold text-primary">
-                  {rep.name
+                  {displayName
                     .split(/\s+/)
                     .filter(Boolean)
                     .slice(0, 2)
@@ -44,7 +46,7 @@ export function TeamList({ view, locale, canExport }: { view: CommissionsView; l
                 </span>
                 <div className="flex min-w-0 flex-1 flex-col gap-1.5">
                   <span className="flex items-center gap-2">
-                    <bdi className="truncate text-sm font-semibold">{rep.name}</bdi>
+                    <bdi className="truncate text-sm font-semibold">{displayName}</bdi>
                     {flagged ? <FlagIcon aria-label={t("flagged")} className="size-3.5 shrink-0 text-destructive" /> : null}
                     {rep.odooUserId == null ? <span className="text-[11px] text-destructive">{t("notLinked")}</span> : null}
                   </span>

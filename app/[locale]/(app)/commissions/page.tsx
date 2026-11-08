@@ -20,6 +20,7 @@ import { requireReadyUser } from "@/lib/auth/dal";
 import { canAccessPage, isAdmin } from "@/lib/auth/permissions";
 import { hasRates } from "@/lib/commissions/schema";
 import { ALL_REPS, getCommissionsView, repOptions, resolveMonth } from "@/lib/commissions/view";
+import { loadAppSettings } from "@/lib/accounts/app-settings";
 import { isOdooConfigured } from "@/lib/env";
 import { formatMonth } from "@/lib/format";
 
@@ -94,7 +95,8 @@ async function Commissions({ searchParams }: { searchParams: PageProps<"/[locale
   if (view.unlinked.length && admin) notices.push({ key: "unlinked", tone: "warn", icon: <UnlinkIcon aria-hidden className="size-4" />, text: t("notices.unlinked", { names: view.unlinked.join("، ") }), action: settingsLink });
 
   const showDetail = view.detail != null;
-  const options = repOptions(view.reps);
+  const appSettings = await loadAppSettings();
+  const options = repOptions(view.reps, appSettings.sellerDisplayNames);
   return (
     <ScrollReveal className="flex flex-col gap-5">
       <div className="mx-auto flex w-full max-w-3xl flex-wrap items-center gap-2">
@@ -121,7 +123,7 @@ async function Commissions({ searchParams }: { searchParams: PageProps<"/[locale
       ) : showDetail ? (
         <RepApp detail={view.detail!} settings={view.settings} clock={view.clock} teamLink={view.reps.length > 1} />
       ) : (
-        <TeamList view={view} locale={locale} canExport={admin} />
+        <TeamList view={view} locale={locale} canExport={admin} displayNames={appSettings.sellerDisplayNames} />
       )}
     </ScrollReveal>
   );

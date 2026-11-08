@@ -187,7 +187,7 @@ export function calculate(settings: CommissionSettings, targets: RepTargets, dat
   add({
     key: "slowDeduction",
     met: slowAchievement != null && slowAchievement < rules.slowMinPct,
-    applies: fullRules,
+    applies: true,
     value: -(base * rules.slowDeductionPct) / 100,
     current: slowAchievement,
     threshold: rules.slowMinPct,

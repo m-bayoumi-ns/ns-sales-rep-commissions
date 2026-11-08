@@ -275,12 +275,26 @@ function Summary({ detail, settings, clock }: { detail: RepDetail; settings: Com
             label={t(`cat.${key}`)}
             sub={categoryText(key)}
             value={r.categories[key].targetToDate ? formatPercent(r.categories[key].achievement) : "—"}
+            valueSub={
+              r.categories[key].targetToDate == null
+                ? undefined
+                : r.categories[key].achieved >= r.categories[key].targetToDate
+                  ? t("targetMet")
+                  : t("remainingTarget", {
+                      amount:
+                        r.categories[key].unit === "amount"
+                          ? formatCompactCurrency(r.categories[key].targetToDate - r.categories[key].achieved, locale)
+                          : `${formatNumber(Math.ceil(r.categories[key].targetToDate - r.categories[key].achieved))} ${qtyUnit}`,
+                    })
+            }
             progress={r.categories[key].targetToDate ? r.categories[key].achievement : null}
           />
         ))}
         {r.tiers
           .filter((range) => range.targetToDate != null)
           .map((range) => {
+            const target = range.targetToDate;
+            if (target == null) return null;
             const fmt = (value: number | null) => (value == null ? "—" : range.unit === "amount" ? formatCompactCurrency(value, locale) : `${formatNumber(value)} ${qtyUnit}`);
             return (
               <Row
@@ -289,6 +303,16 @@ function Summary({ detail, settings, clock }: { detail: RepDetail; settings: Com
                 label={t("range", { key: range.key })}
                 sub={`${fmt(range.achieved)} / ${fmt(range.targetToDate)}`}
                 value={formatPercent(range.achievement)}
+                valueSub={
+                  range.achieved >= target
+                    ? t("targetMet")
+                    : t("remainingTarget", {
+                        amount:
+                          range.unit === "amount"
+                            ? formatCompactCurrency(target - range.achieved, locale)
+                            : `${formatNumber(Math.ceil(target - range.achieved))} ${qtyUnit}`,
+                      })
+                }
                 progress={range.achievement}
               />
             );
@@ -313,9 +337,12 @@ function Summary({ detail, settings, clock }: { detail: RepDetail; settings: Com
       <Group title={t("earnMore")} footer={t("earnMoreHint")}>
         {tips.length ? (
           tips.map((tip) => (
-            <li key={tip.key} className={cn("flex items-start gap-3 px-4 py-3 text-sm", tip.tone === "good" && "bg-success-soft text-success", tip.tone === "warn" && "bg-warning-soft text-warning")}>
+            <li key={tip.key} className={cn("flex items-start gap-3 px-4 py-3 text-sm", tip.tone === "warn" && tip.key !== "slowMin" && "bg-warning-soft text-warning", tip.condition && "bg-warning-soft font-semibold text-warning")}>
               <LightbulbIcon aria-hidden className="mt-0.5 size-4 shrink-0" />
-              <span>{tip.text}</span>
+              <span>
+                {tip.rewardAmount ? <strong className="me-1 font-bold text-success">{tip.rewardAmount}</strong> : null}
+                {tip.text}
+              </span>
             </li>
           ))
         ) : (
@@ -332,7 +359,7 @@ function Summary({ detail, settings, clock }: { detail: RepDetail; settings: Com
   );
 }
 
-type Tip = { key: string; text: string; tone: "good" | "todo" | "warn" };
+type Tip = { key: string; text: string; tone: "good" | "todo" | "warn"; rewardAmount?: string; condition?: boolean };
 
 function useTips(detail: RepDetail, settings: CommissionSettings): Tip[] {
   const t = useTranslations("cm.next");
@@ -342,35 +369,89 @@ function useTips(detail: RepDetail, settings: CommissionSettings): Tip[] {
   const money = (value: number) => formatCurrency(Math.ceil(value), locale);
   const tips: Tip[] = [];
   const target = r.totalTargetToDate;
+  let hasUnmetTargets = false;
+  const uom = t("qtyUnit");
   if (target) {
     if (r.regime === "low") tips.push({ key: "low", tone: "warn", text: t("toOld", { amount: money((target * rules.lowAchievementPct) / 100 - r.sales), pct: rules.lowAchievementPct }) });
-    if (r.regime === "low" || r.regime === "old") tips.push({ key: "full", tone: "todo", text: t("toFull", { amount: money((target * rules.oldSystemUntilPct) / 100 - r.sales), pct: rules.oldSystemUntilPct }) });
-    if (r.sales < target) tips.push({ key: "target", tone: "todo", text: t("toTarget", { amount: money(target - r.sales), pct: rules.allTargetsBonusPct }) });
+    if (r.regime === "low" || r.regime === "old") tips.push({ key: "full", tone: "warn", text: t("toFull", { amount: money((target * rules.oldSystemUntilPct) / 100 - r.sales), pct: rules.oldSystemUntilPct }) });
+    if (r.sales < target) hasUnmetTargets = true;
   } else tips.push({ key: "noTarget", tone: "warn", text: t("noTarget") });
-  const uom = t("qtyUnit");
+  for (const key of ["slow", "digital"] as const) {
+    const category = r.categories[key];
+    if (category.targetToDate != null && category.achieved < category.targetToDate) {
+      hasUnmetTargets = true;
+    }
+  }
+  r.tiers.forEach((range) => {
+    if (range.targetToDate != null && range.achieved < range.targetToDate) {
+      hasUnmetTargets = true;
+    }
+  });
+  if (hasUnmetTargets) {
+    tips.push({
+      key: "target",
+      tone: "todo",
+      text: t("toTarget", { pct: rules.allTargetsBonusPct }),
+      condition: true,
+    });
+  }
   const slow = r.categories.slow;
   if (slow.targetToDate && slow.achievement != null && slow.achievement < rules.slowMinPct) {
     const need = (slow.targetToDate * rules.slowMinPct) / 100 - slow.achieved;
-    tips.push({ key: "slowMin", tone: "warn", text: t("slowMin", { gap: slow.unit === "amount" ? money(need) : `${formatNumber(Math.ceil(need))} ${uom}`, pct: rules.slowDeductionPct, min: rules.slowMinPct }) });
-  }
-  for (const key of ["slow", "digital"] as const) {
-    const c = r.categories[key];
-    if (!c.targetToDate || c.achieved >= c.targetToDate) continue;
-    const gap = c.targetToDate - c.achieved;
-    tips.push({ key, tone: "todo", text: t("category", { name: t(`cat.${key}`), gap: c.unit === "amount" ? money(gap) : `${formatNumber(Math.ceil(gap))} ${uom}` }) });
-  }
-  for (const range of r.tiers) {
-    if (!range.targetToDate || range.achieved >= range.targetToDate) continue;
-    const gap = range.targetToDate - range.achieved;
-    tips.push({ key: `range-${range.key}`, tone: "todo", text: t("category", { name: t("rangeName", { key: range.key }), gap: range.unit === "amount" ? money(gap) : `${formatNumber(Math.ceil(gap))} ${uom}` }) });
+    const deduction = r.adjustments.find((item) => item.key === "slowDeduction")?.amount ?? 0;
+    tips.push({
+      key: "slowMin",
+      tone: "warn",
+      text: t("slowMinRecovery", {
+        gap: slow.unit === "amount" ? money(need) : `${formatNumber(Math.ceil(need))} ${uom}`,
+        pct: rules.slowDeductionPct,
+        min: rules.slowMinPct,
+      }),
+      rewardAmount: deduction < 0 ? money(Math.abs(deduction)) : undefined,
+    });
   }
   if (r.sales > 0) {
-    if ((r.cashShare ?? 0) < rules.cashSharePct) tips.push({ key: "cash", tone: "todo", text: t("cash", { pct: formatPercent(r.cashShare), need: rules.cashSharePct, bonus: formatNumber(rules.cashBonus) }) });
+    if (r.collectionFactor < 100) {
+      const collectionAdjustment = r.adjustments.find((item) => item.key === "collectionShare");
+      if (collectionAdjustment) {
+        tips.push({
+          key: "commissionAtFullCollection",
+          tone: "todo",
+          text: t("commissionAtFullCollection", { amount: money(r.sales - r.collections) }),
+          rewardAmount: money(Math.abs(collectionAdjustment.amount)),
+        });
+      }
+    }
+    if ((r.cashShare ?? 0) < rules.cashSharePct) {
+      tips.push({
+        key: "cash",
+        tone: "todo",
+        text: t("cash", { pct: formatPercent(r.cashShare), need: rules.cashSharePct }),
+        rewardAmount: money(rules.cashBonus),
+      });
+    }
     const collectNeed = (r.sales * rules.collectionPct) / 100 - r.collections;
-    if (collectNeed >= 0) tips.push({ key: "collect", tone: "todo", text: t("collect", { amount: money(collectNeed + 1), bonus: formatNumber(rules.collectionBonus) }) });
+    if (collectNeed >= 0) {
+      tips.push({
+        key: "collect",
+        tone: "todo",
+        text: t("collect", { amount: money(collectNeed + 1) }),
+        rewardAmount: money(rules.collectionBonus),
+      });
+    }
   }
   const ladder = r.adjustments.find((item) => item.key === "salesLadder");
-  if (ladder?.threshold) tips.push({ key: "ladder", tone: "todo", text: t("ladder", { amount: money(ladder.threshold - r.sales), at: formatCompactCurrency(ladder.threshold, locale) }) });
+  if (ladder?.threshold) {
+    const nextBonus = rules.salesBonuses
+      .filter((step) => step.from === ladder.threshold)
+      .reduce((highest, step) => Math.max(highest, step.amount), 0);
+    tips.push({
+      key: "ladder",
+      tone: "todo",
+      text: t("ladder", { amount: money(ladder.threshold - r.sales), at: formatCompactCurrency(ladder.threshold, locale) }),
+      rewardAmount: nextBonus > 0 ? money(nextBonus) : undefined,
+    });
+  }
   if (r.allTargetsMet) tips.unshift({ key: "great", tone: "good", text: t("allMet", { pct: rules.allTargetsBonusPct }) });
   return tips;
 }
@@ -689,7 +770,7 @@ function Statement({ detail, settings }: { detail: RepDetail; settings: Commissi
             </li>
           );
         })}
-        <li className={cn("flex items-baseline gap-2 pt-1 text-sm font-semibold", replaced && "opacity-50")}>
+        <li className={cn("flex items-baseline gap-2 rounded-lg bg-accent/60 px-2 py-2 text-sm font-bold text-foreground", replaced && "opacity-50")}>
           <span>{t("lineCommission")}</span>
           <span aria-hidden className="mb-1 flex-1 border-b border-dotted" />
           <span dir="ltr" className="tabular-nums">{formatNumber(r.base)}</span>
@@ -705,13 +786,6 @@ function Statement({ detail, settings }: { detail: RepDetail; settings: Commissi
           <li className="flex items-baseline gap-2 rounded-lg bg-warning-soft px-2 py-1.5 text-sm text-warning">
             <span>{r.regime === "low" ? tb("lowRate", { rate: rules.lowRate }) : tb("oldRate", { rate: rules.oldRate })}</span>
             <span aria-hidden className="mb-1 flex-1" />
-            <span dir="ltr" className="font-semibold tabular-nums">{formatNumber(r.beforeCollection)}</span>
-          </li>
-        ) : null}
-        {!replaced ? (
-          <li className="flex items-baseline gap-2 border-t border-dashed pt-2 text-sm">
-            <span>{t("beforeCollection")}</span>
-            <span aria-hidden className="mb-1 flex-1 border-b border-dotted" />
             <span dir="ltr" className="font-semibold tabular-nums">{formatNumber(r.beforeCollection)}</span>
           </li>
         ) : null}
@@ -777,8 +851,8 @@ function BucketProducts({ rows }: { rows: RepDetail["products"] }) {
 function StatementAdjustment({ item, rules, replaced }: { item: Adjustment; rules: CommissionSettings["rules"]; replaced: boolean }) {
   const t = useTranslations("cm.build");
   const locale = useLocale() as Locale;
-  // Cash and collections bonuses follow their own minimum achievement, not the commission system.
-  const independent = item.key === "cash" || item.key === "collection";
+  // Cash and collections bonuses, plus the slow-moving deduction, are independent of the commission regime.
+  const independent = item.key === "cash" || item.key === "collection" || item.key === "slowDeduction";
   const earned = item.key === "collectionShare" ? item.applies : item.met && item.applies && (independent || !replaced);
   const Icon = earned ? (item.amount < 0 ? CircleMinusIcon : BadgeCheckIcon) : CircleDashedIcon;
   const label = {

@@ -70,7 +70,7 @@ describe("calculate", () => {
     expect(result.regime).toBe("noTarget");
   });
   it("below 50% pays 0.1% of sales only", () => {
-    const result = calculate(settings, targets, { lines: [line({ qty: 1000, amount: 400_000, cash: true })], collections: 900_000 }, { monthClosed: true });
+    const result = calculate(settings, { ...targets, slowTarget: null }, { lines: [line({ qty: 1000, amount: 400_000, cash: true })], collections: 900_000 }, { monthClosed: true });
     expect(result.regime).toBe("low");
     expect(result.beforeCollection).toBeCloseTo(400);
     expect(result.collectionFactor).toBe(225);
@@ -141,7 +141,7 @@ describe("calculate", () => {
     expect(closed.achievement).toBe(25);
   });
   it("between 50% and 70% uses the old system (line commission only)", () => {
-    const result = calculate(settings, targets, { lines: [line({ qty: 1000, amount: 600_000, cash: true })], collections: 900_000 }, { monthClosed: false });
+    const result = calculate(settings, { ...targets, slowTarget: null }, { lines: [line({ qty: 1000, amount: 600_000, cash: true })], collections: 900_000 }, { monthClosed: false });
     expect(result.regime).toBe("old");
     expect(result.collectionFactor).toBe(150);
     expect(result.total).toBeCloseTo(result.base * 1.5);
@@ -164,6 +164,15 @@ describe("calculate", () => {
     const result = calculate(settings, { ...targets, slowTarget: 100_000 }, { lines, collections: 0 }, { monthClosed: false });
     const deduction = result.adjustments.find((item) => item.key === "slowDeduction")!;
     expect(deduction.met).toBe(true);
+    expect(deduction.amount).toBeCloseTo(-0.15 * result.base);
+  });
+  it("applies the slow-moving deduction even when the total sales target is below 50%", () => {
+    const lines = [line({ qty: 1000, amount: 400_000 }), line({ templateId: 10, qty: 100, amount: 5_000 })];
+    const result = calculate(settings, { ...targets, slowTarget: 100_000 }, { lines, collections: 0 }, { monthClosed: true });
+    const deduction = result.adjustments.find((item) => item.key === "slowDeduction")!;
+    expect(result.regime).toBe("low");
+    expect(deduction.met).toBe(true);
+    expect(deduction.applies).toBe(true);
     expect(deduction.amount).toBeCloseTo(-0.15 * result.base);
   });
   it("compares slow-moving sales value against the rep's explicit target", () => {

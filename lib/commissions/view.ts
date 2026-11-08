@@ -304,9 +304,12 @@ export async function getCommissionsView(user: AppUser, month: string, repKey: s
 export const ALL_REPS = "all";
 
 /** The seller filter: every rep the user may see, by name. */
-export function repOptions(reps: { key: string; name: string; odooUserId: number | null }[]) {
+export function repOptions(
+  reps: { key: string; name: string; odooUserId: number | null }[],
+  displayNames: Record<string, string> = {},
+) {
   return [...reps]
-    .map(({ key, name, odooUserId }) => ({ key, name, linked: odooUserId != null }))
+    .map(({ key, name, odooUserId }) => ({ key, name: displayNames[normalizeName(name)] ?? name, linked: odooUserId != null }))
     .sort((a, b) => a.name.localeCompare(b.name, "ar"));
 }
 
