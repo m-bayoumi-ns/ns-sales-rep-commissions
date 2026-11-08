@@ -17,6 +17,7 @@ export type ActivityAction =
   | "notify"
   | "username_changed"
   | "seller_display_name_changed"
+  | "save_commission_settings"
   | "android_download_changed";
 
 /**

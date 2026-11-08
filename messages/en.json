@@ -476,6 +476,8 @@
       "sheetFound": "{count, plural, one {# rep} other {# reps}} read from",
       "sheetMissing": "Target sheet not found:",
       "sheetColumns": "Targets prefilled from: {columns}",
+      "sheetChanges": "The target sheet has changed for {count, plural, one {# rep} other {# reps}}. Your saved values are unchanged until you apply the sheet values.",
+      "applySheetTargets": "Load targets from sheet",
       "rep": "Sales rep",
       "odoo": "Odoo user",
       "total": "Total target",

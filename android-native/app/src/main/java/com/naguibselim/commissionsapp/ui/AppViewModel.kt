@@ -7,7 +7,14 @@ import androidx.lifecycle.viewModelScope
 import com.naguibselim.commissionsapp.BuildConfig
 import com.naguibselim.commissionsapp.data.Api
 import com.naguibselim.commissionsapp.data.ApiException
+import com.naguibselim.commissionsapp.data.AdminAccountAction
+import com.naguibselim.commissionsapp.data.AdminActionResponse
+import com.naguibselim.commissionsapp.data.AdminAccountsResponse
+import com.naguibselim.commissionsapp.data.AdminSettingsResponse
+import com.naguibselim.commissionsapp.data.AdminSettingsSaved
+import com.naguibselim.commissionsapp.data.AdminSettingsUpdate
 import com.naguibselim.commissionsapp.data.CommissionsResponse
+import com.naguibselim.commissionsapp.data.ProductSearchResult
 import com.naguibselim.commissionsapp.data.SessionStore
 import com.naguibselim.commissionsapp.notify.FeedWorker
 import kotlinx.coroutines.Job
@@ -51,6 +58,16 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     val lastIdentifier: String get() = store.lastIdentifier
 
     private var loadJob: Job? = null
+
+    suspend fun adminSettings(month: String? = null): AdminSettingsResponse = api.adminSettings(month)
+
+    suspend fun searchAdminProducts(query: String): List<ProductSearchResult> = api.searchAdminProducts(query)
+
+    suspend fun saveAdminSettings(update: AdminSettingsUpdate): AdminSettingsSaved = api.saveAdminSettings(update)
+
+    suspend fun adminAccounts(): AdminAccountsResponse = api.adminAccounts()
+
+    suspend fun adminAccountAction(action: AdminAccountAction): AdminActionResponse = api.adminAccountAction(action)
 
     fun signIn(identifier: String, password: String) {
         if (_signIn.value.busy) return

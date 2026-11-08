@@ -5,6 +5,8 @@ import { readBearerUser } from "@/lib/auth/bearer";
 import { canAccessPage, isAdmin, isSeller } from "@/lib/auth/permissions";
 import { hasRates } from "@/lib/commissions/schema";
 import { ALL_REPS, getCommissionsView, repOptions, resolveMonth } from "@/lib/commissions/view";
+import { loadAppSettings } from "@/lib/accounts/app-settings";
+import { normalizeName } from "@/lib/commissions/names";
 import { isOdooConfigured } from "@/lib/env";
 
 export const maxDuration = 60;
@@ -26,8 +28,12 @@ export async function GET(request: NextRequest) {
   const month = resolveMonth(params.get("month") ?? undefined);
   const repKey = params.get("rep") ?? undefined;
   let view;
+  let sellerDisplayNames: Record<string, string>;
   try {
-    view = await getCommissionsView(user, month, repKey);
+    [view, sellerDisplayNames] = await Promise.all([
+      getCommissionsView(user, month, repKey),
+      loadAppSettings().then((settings) => settings.sellerDisplayNames ?? {}),
+    ]);
   } catch (error) {
     console.error("[app commissions] failed to load:", error);
     return json({ error: "load_failed" }, 502);
@@ -42,6 +48,10 @@ export async function GET(request: NextRequest) {
   if (view.unlinked.length && admin) notices.push({ key: "unlinked", tone: "warn", names: view.unlinked });
 
   const { tiers, categoryRates, rules } = view.settings;
+  const reps = view.reps.map((rep) => ({
+    ...rep,
+    name: sellerDisplayNames[normalizeName(rep.name)] ?? rep.name,
+  }));
   return json({
     user: { name: user.name, email: user.email, admin, seller: isSeller(user), salesRepLimited: user.branchFilterType === "sales_rep" && !admin },
     fetchedAt: view.fetchedAt,
@@ -50,8 +60,8 @@ export async function GET(request: NextRequest) {
     settings: { tiers, categoryRates, rules },
     notices,
     allReps: ALL_REPS,
-    repOptions: repOptions(view.reps),
-    reps: view.reps,
+    repOptions: repOptions(view.reps, sellerDisplayNames),
+    reps,
     totals: view.totals,
     detail: view.detail,
   });

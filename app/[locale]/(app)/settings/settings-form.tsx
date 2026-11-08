@@ -7,8 +7,9 @@ import { Button } from "@/components/ui/button";
 import { useRouter } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import { rateChanges } from "@/lib/commissions/changes";
-import { matchRep } from "@/lib/commissions/names";
+import { matchRep, normalizeName } from "@/lib/commissions/names";
 import type { ProductSearchResult } from "@/lib/commissions/odoo";
+import type { SheetRep } from "@/lib/commissions/storage";
 import { CATEGORIES, type Category, type CommissionSettings, type ProductRule, type RepSetting, type Rules } from "@/lib/commissions/schema";
 import type { RepEntry } from "@/lib/commissions/view";
 import { formatDateTime, formatMonth, formatNumber } from "@/lib/format";
@@ -20,7 +21,8 @@ type Props = {
   initial: CommissionSettings;
   source: "saved" | "inherited" | "default";
   inheritedFrom: string | null;
-  sheet: { found: boolean; path: string; count: number; columns: { rep: string | null; total: string | null; slow: string | null; digital: string | null } };
+  sheet: { found: boolean; path: string; count: number; columns: { rep: string | null; total: string | null; slow: string | null; digital: string | null; ranges?: (string | null)[] } };
+  sheetReps: SheetRep[];
   reps: RepEntry[];
   candidates: { id: number; name: string }[];
   /** Active seller accounts that can be notified. */
@@ -91,7 +93,7 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
   );
 }
 
-export function SettingsForm({ month, initial, source, inheritedFrom, sheet, reps: monthReps, candidates, accounts }: Props) {
+export function SettingsForm({ month, initial, source, inheritedFrom, sheet, sheetReps, reps: monthReps, candidates, accounts }: Props) {
   const t = useTranslations("settings");
   const locale = useLocale() as Locale;
   const router = useRouter();
@@ -106,6 +108,20 @@ export function SettingsForm({ month, initial, source, inheritedFrom, sheet, rep
   const [saving, startSaving] = useTransition();
   const [notify, setNotify] = useState<NotifyState>({ mode: "all", userIds: [], note: "" });
   const changes = useMemo(() => rateChanges(initial, settings), [initial, settings]);
+  const sheetChangedReps = useMemo(() => {
+    if (!sheet.found) return [];
+    const currentByName = new Map(settings.reps.map((rep) => [normalizeName(rep.name), rep]));
+    return sheetReps.filter((row) => {
+      const current = currentByName.get(normalizeName(row.name));
+      if (!current) return true;
+      return (
+        (sheet.columns.total != null && current.totalTarget !== row.totalTarget) ||
+        (sheet.columns.slow != null && current.slowTarget !== row.slowTarget) ||
+        (sheet.columns.digital != null && current.digitalTarget !== row.digitalTarget) ||
+        (sheet.columns.ranges ?? []).some((column, index) => column != null && (current.rangeTargets?.[index] ?? null) !== (row.rangeTargets[index] ?? null))
+      );
+    });
+  }, [settings.reps, sheet, sheetReps]);
 
   const update = (change: (current: CommissionSettings) => CommissionSettings) => {
     setSettings(change);
@@ -170,7 +186,7 @@ export function SettingsForm({ month, initial, source, inheritedFrom, sheet, rep
       <TiersCard settings={settings} update={update} />
       <ProductsCard settings={settings} update={update} />
       <RulesCard rules={settings.rules} setRule={setRule} />
-      <RepsCard settings={settings} update={update} sheet={sheet} monthName={monthName} candidates={candidates} monthReps={monthReps} />
+      <RepsCard settings={settings} update={update} sheet={sheet} sheetReps={sheetReps} sheetChangedReps={sheetChangedReps} monthName={monthName} candidates={candidates} monthReps={monthReps} />
       <NotifyCard notify={notify} setNotify={setNotify} accounts={accounts} changes={changes.length} />
 
       <div className="fixed inset-x-0 bottom-0 z-30 border-t bg-card/95 backdrop-blur supports-backdrop-filter:bg-card/80">
@@ -651,6 +667,8 @@ function RepsCard({
   settings,
   update,
   sheet,
+  sheetReps,
+  sheetChangedReps,
   monthName,
   candidates,
   monthReps,
@@ -658,12 +676,15 @@ function RepsCard({
   settings: CommissionSettings;
   update: Updater;
   sheet: Props["sheet"];
+  sheetReps: SheetRep[];
+  sheetChangedReps: SheetRep[];
   monthName: string;
   candidates: { id: number; name: string }[];
   monthReps: RepEntry[];
 }) {
   const t = useTranslations("settings.reps");
   const units = settings.rules.categoryUnits;
+  const sheetRangeColumns = sheet.columns.ranges ?? [];
   const setRep = (index: number, patch: Partial<RepSetting>) => update((current) => ({ ...current, reps: current.reps.map((rep, i) => (i === index ? { ...rep, ...patch } : rep)) }));
   const autoOf = useMemo(() => new Map(monthReps.map((rep) => [rep.name, matchRep(rep.name, candidates)?.id ?? null])), [monthReps, candidates]);
   const total = settings.reps.reduce((sum, rep) => sum + (rep.totalTarget ?? 0), 0);
@@ -681,6 +702,27 @@ function RepsCard({
         return { ...rep, rangeTargets: next };
       }),
     }));
+  const applySheetTargets = () =>
+    update((current) => {
+      const sheetByName = new Map(sheetReps.map((rep) => [normalizeName(rep.name), rep]));
+      return {
+        ...current,
+        reps: current.reps.map((rep) => {
+          const sheetRep = sheetByName.get(normalizeName(rep.name));
+          if (!sheetRep) return rep;
+          const next: RepSetting = { ...rep };
+          if (sheet.columns.total) next.totalTarget = sheetRep.totalTarget;
+          if (sheet.columns.slow) next.slowTarget = sheetRep.slowTarget;
+          if (sheet.columns.digital) next.digitalTarget = sheetRep.digitalTarget;
+          const rangeTargets = [...(rep.rangeTargets ?? [])];
+          sheetRangeColumns.forEach((column, index) => {
+            if (column) rangeTargets[index] = sheetRep.rangeTargets[index] ?? null;
+          });
+          next.rangeTargets = rangeTargets;
+          return next;
+        }),
+      };
+    });
   const rangeTotal = (index: number) => settings.reps.reduce((sum, rep) => sum + (rep.rangeTargets?.[index] ?? 0), 0);
   return (
     <Card title={t("title")} description={t("description", { month: monthName })}>
@@ -688,10 +730,21 @@ function RepsCard({
         {sheet.found ? <CheckCircle2Icon aria-hidden className="size-4 text-success" /> : <TriangleAlertIcon aria-hidden className="size-4" />}
         {sheet.found ? t("sheetFound", { count: sheet.count }) : t("sheetMissing")}
         <code dir="ltr" className="rounded bg-muted px-1.5 py-0.5 text-xs">naguib-selim-db/{sheet.path}</code>
-        {sheet.found && (sheet.columns.total || sheet.columns.slow || sheet.columns.digital) ? (
-          <span className="text-xs">{t("sheetColumns", { columns: [sheet.columns.total, sheet.columns.slow, sheet.columns.digital].filter(Boolean).join("، ") })}</span>
+        {sheet.found && (sheet.columns.total || sheet.columns.slow || sheet.columns.digital || sheetRangeColumns.some(Boolean)) ? (
+          <span className="text-xs">{t("sheetColumns", { columns: [sheet.columns.total, ...sheetRangeColumns, sheet.columns.slow, sheet.columns.digital].filter(Boolean).join("، ") })}</span>
         ) : null}
       </p>
+      {sheetChangedReps.length ? (
+        <div className="flex flex-col gap-2 rounded-lg border border-warning/30 bg-warning-soft p-3 text-sm text-warning sm:flex-row sm:items-center sm:justify-between">
+          <p className="flex items-center gap-2">
+            <TriangleAlertIcon aria-hidden className="size-4 shrink-0" />
+            {t("sheetChanges", { count: sheetChangedReps.length })}
+          </p>
+          <Button type="button" variant="outline" onClick={applySheetTargets} className="shrink-0">
+            {t("applySheetTargets")}
+          </Button>
+        </div>
+      ) : null}
       <label className="flex w-fit items-center gap-2 text-sm">
         <span className="text-muted-foreground">{t("rangeUnit")}</span>
         <select

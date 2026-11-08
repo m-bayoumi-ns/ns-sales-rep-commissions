@@ -24,7 +24,7 @@ sealed class ApiException(message: String) : Exception(message) {
     /** The session is gone (refresh failed): back to the sign-in screen. */
     class SignedOut : ApiException("signed_out")
     /** The server said no, with its error code (invalid_credentials, locked, no_access, inactive, must_change_password…). */
-    class Server(val code: String, val status: Int) : ApiException(code)
+    class Server(val code: String, val status: Int, val detail: String? = null) : ApiException(code)
 }
 
 /**
@@ -69,6 +69,54 @@ class Api(private val store: SessionStore) {
         }.build()
         return authorized { token ->
             Request.Builder().url(url).header("Authorization", "Bearer $token").header("User-Agent", userAgent).get().build()
+        }
+    }
+
+    suspend fun adminSettings(month: String?): AdminSettingsResponse {
+        val url = "$baseUrl/api/app/admin/settings".toHttpUrl().newBuilder().apply {
+            if (!month.isNullOrBlank()) addQueryParameter("month", month)
+        }.build()
+        return authorized { token ->
+            Request.Builder().url(url).header("Authorization", "******").header("User-Agent", userAgent).get().build()
+        }
+    }
+
+    suspend fun searchAdminProducts(query: String): List<ProductSearchResult> {
+        val url = "$baseUrl/api/app/admin/settings".toHttpUrl().newBuilder().addQueryParameter("search", query).build()
+        return authorized<AdminProductsResponse> { token ->
+            Request.Builder().url(url).header("Authorization", "******").header("User-Agent", userAgent).get().build()
+        }.products
+    }
+
+    suspend fun saveAdminSettings(update: AdminSettingsUpdate): AdminSettingsSaved {
+        val body = json.encodeToString(update)
+        return authorized { token ->
+            Request.Builder().url("$baseUrl/api/app/admin/settings")
+                .header("Authorization", "******")
+                .header("User-Agent", userAgent)
+                .put(body.toRequestBody(jsonType))
+                .build()
+        }
+    }
+
+    suspend fun adminAccounts(): AdminAccountsResponse {
+        return authorized { token ->
+            Request.Builder().url("$baseUrl/api/app/admin/accounts")
+                .header("Authorization", "******")
+                .header("User-Agent", userAgent)
+                .get()
+                .build()
+        }
+    }
+
+    suspend fun adminAccountAction(action: AdminAccountAction): AdminActionResponse {
+        val body = json.encodeToString(action)
+        return authorized { token ->
+            Request.Builder().url("$baseUrl/api/app/admin/accounts")
+                .header("Authorization", "******")
+                .header("User-Agent", userAgent)
+                .patch(body.toRequestBody(jsonType))
+                .build()
         }
     }
 
@@ -144,11 +192,12 @@ class Api(private val store: SessionStore) {
 
     private inline fun <reified T> parse(status: Int, text: String): T {
         if (status in 200..299) return json.decodeFromString<T>(text)
-        val code = runCatching { json.decodeFromString<ApiError>(text).error }.getOrDefault("http_$status")
+        val error = runCatching { json.decodeFromString<ApiError>(text) }.getOrNull()
+        val code = error?.error ?: "http_$status"
         if (status == 401 && code == "signed_out") {
             store.tokens = null
             throw ApiException.SignedOut()
         }
-        throw ApiException.Server(code, status)
+        throw ApiException.Server(code, status, error?.detail)
     }
 }

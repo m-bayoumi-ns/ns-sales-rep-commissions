@@ -174,7 +174,7 @@ export async function saveSettings(settings: CommissionSettings) {
 
 // ---------------------------------------------------------------- target sheet
 export type SheetRep = { name: string; totalTarget: number | null; slowTarget: number | null; digitalTarget: number | null; rangeTargets: (number | null)[] };
-export type TargetSheet = { found: boolean; path: string; reps: SheetRep[]; columns: { rep: string | null; total: string | null; slow: string | null; digital: string | null } };
+export type TargetSheet = { found: boolean; path: string; reps: SheetRep[]; columns: { rep: string | null; total: string | null; slow: string | null; digital: string | null; ranges: (string | null)[] } };
 
 const text = (value: ExcelJS.CellValue): string => {
   if (value == null) return "";
@@ -200,7 +200,7 @@ const TARGET_HEADER = /target|تارجت|المستهدف|الهدف|تارجي�
 export function readTargetSheet(month: string): Promise<TargetSheet> {
   return cached(`target-sheet:${month}`, 10 * MINUTE, async () => {
     const objectPath = targetPath(month);
-    const empty: TargetSheet = { found: false, path: objectPath, reps: [], columns: { rep: null, total: null, slow: null, digital: null } };
+    const empty: TargetSheet = { found: false, path: objectPath, reps: [], columns: { rep: null, total: null, slow: null, digital: null, ranges: [null, null, null] } };
     const buffer = await download(objectPath);
     if (!buffer) return empty;
     const workbook = new ExcelJS.Workbook();
@@ -241,7 +241,13 @@ export function readTargetSheet(month: string): Promise<TargetSheet> {
           found: true,
           path: objectPath,
           reps: [...reps.values()],
-          columns: { rep: headers.get(repCol) ?? null, total: totalCol ? headers.get(totalCol)! : null, slow: slowCol ? headers.get(slowCol)! : null, digital: digitalCol ? headers.get(digitalCol)! : null },
+          columns: {
+            rep: headers.get(repCol) ?? null,
+            total: totalCol ? headers.get(totalCol)! : null,
+            slow: slowCol ? headers.get(slowCol)! : null,
+            digital: digitalCol ? headers.get(digitalCol)! : null,
+            ranges: rangeCols.map((col) => col ? headers.get(col) ?? null : null),
+          },
         };
       }
     }

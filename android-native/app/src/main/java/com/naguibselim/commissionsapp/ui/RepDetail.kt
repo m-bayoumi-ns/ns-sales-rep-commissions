@@ -55,6 +55,7 @@ import com.naguibselim.commissionsapp.data.RepDetail
 import com.naguibselim.commissionsapp.data.Rules
 import com.naguibselim.commissionsapp.data.TargetBucket
 import kotlin.math.max
+import kotlin.math.ceil
 
 /** The seller's commission statement: the same sections as the website's rep page. */
 enum class RepSection { Summary, Sales, Collections, Statement }
@@ -79,7 +80,10 @@ fun LazyListScope.repDetailItems(
     item(key = "header-$key") { HeaderCard(data, detail) }
     item(key = "tabs-$key") { DetailTabs(section, onSection) }
     when (section) {
-        RepSection.Summary -> item(key = "targets-$key") { TargetsCard(data, detail) }
+        RepSection.Summary -> {
+            item(key = "targets-$key") { TargetsCard(data, detail) }
+            item(key = "opportunities-$key") { OpportunitiesCard(data, detail) }
+        }
         RepSection.Sales -> {
             item(key = "chart-$key") { ChartCard(data, detail) }
             item(key = "tiers-$key") { TiersCard(data, detail) }
@@ -174,35 +178,37 @@ private fun TargetsCard(data: CommissionsResponse, detail: RepDetail) {
         if (r.totalTarget == null) {
             Text(stringResource(R.string.no_total_target), color = MaterialTheme.colorScheme.onSurfaceVariant)
             LabelValue(stringResource(R.string.sales), f.money(r.sales), bold = true)
-            return@SectionCard
+        } else {
+            Row(verticalAlignment = Alignment.Bottom) {
+                Text(stringResource(R.string.total_target), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
+                Text(f.pct(r.achievement), style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, color = achievementColor(r.achievement))
+            }
+            Spacer(Modifier.height(6.dp))
+            ProgressBar(r.achievement, projected = if (closed) null else rep.projectedAchievement, height = 12)
+            Spacer(Modifier.height(8.dp))
+            LabelValue(stringResource(R.string.sales), f.money(r.sales), bold = true)
+            LabelValue(stringResource(R.string.total_target), f.money(r.totalTarget))
+            if (!closed) r.totalTargetToDate?.let { LabelValue(stringResource(R.string.target_to_date), f.money(it)) }
+            if (!closed) LabelValue(stringResource(R.string.projected), "${f.money(rep.projectedSales)} · ${f.pct(rep.projectedAchievement)}")
+            val left = r.totalTarget - r.sales
+            if (left > 0) LabelValue(stringResource(R.string.left_to_target), f.money(left))
+            else LabelValue(stringResource(R.string.left_to_target), stringResource(R.string.target_reached), valueColor = LocalStatus.current.success)
+            rep.perDayToTarget?.let { LabelValue(stringResource(R.string.per_day), f.money(it)) }
+            if (!closed) LabelValue(stringResource(R.string.days_remaining), pluralStringResource(R.plurals.days_left, data.clock.remainingDays, data.clock.remainingDays))
         }
-        Row(verticalAlignment = Alignment.Bottom) {
-            Text(stringResource(R.string.total_target), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
-            Text(f.pct(r.achievement), style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, color = achievementColor(r.achievement))
-        }
-        Spacer(Modifier.height(6.dp))
-        ProgressBar(r.achievement, projected = if (closed) null else rep.projectedAchievement, height = 12)
-        Spacer(Modifier.height(8.dp))
-        LabelValue(stringResource(R.string.sales), f.money(r.sales), bold = true)
-        LabelValue(stringResource(R.string.total_target), f.money(r.totalTarget))
-        if (!closed) r.totalTargetToDate?.let { LabelValue(stringResource(R.string.target_to_date), f.money(it)) }
-        if (!closed) LabelValue(stringResource(R.string.projected), "${f.money(rep.projectedSales)} · ${f.pct(rep.projectedAchievement)}")
-        val left = r.totalTarget - r.sales
-        if (left > 0) LabelValue(stringResource(R.string.left_to_target), f.money(left))
-        else LabelValue(stringResource(R.string.left_to_target), stringResource(R.string.target_reached), valueColor = LocalStatus.current.success)
-        rep.perDayToTarget?.let { LabelValue(stringResource(R.string.per_day), f.money(it)) }
-        if (!closed) LabelValue(stringResource(R.string.days_remaining), pluralStringResource(R.plurals.days_left, data.clock.remainingDays, data.clock.remainingDays))
-
-        val extra = buildList {
-            r.categories["slow"]?.takeIf { it.target != null }?.let { add(stringResource(R.string.cat_slow) to it) }
-            r.categories["digital"]?.takeIf { it.target != null }?.let { add(stringResource(R.string.cat_digital) to it) }
-            r.tiers.filter { it.target != null }.forEach { add(stringResource(R.string.range_name, it.key) to it) }
+        val extra = mutableListOf<Pair<String, TargetBucket>>()
+        val slow = r.categories["slow"]
+        if (slow != null && slow.target != null) extra.add(stringResource(R.string.cat_slow) to slow)
+        val digital = r.categories["digital"]
+        if (digital != null && digital.target != null) extra.add(stringResource(R.string.cat_digital) to digital)
+        for (bucket in r.tiers) {
+            if (bucket.target != null) extra.add(stringResource(R.string.range_name, bucket.key) to bucket)
         }
         if (extra.isNotEmpty()) {
             Spacer(Modifier.height(10.dp))
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
             Spacer(Modifier.height(10.dp))
-            extra.forEach { (name, bucket) -> SubTarget(name, bucket, closed) }
+            for ((name, bucket) in extra) SubTarget(name, bucket, closed)
         }
     }
 }
@@ -222,6 +228,121 @@ private fun SubTarget(name: String, bucket: TargetBucket, closed: Boolean) {
         Spacer(Modifier.height(2.dp))
         val target = (if (closed) bucket.target else bucket.targetToDate) ?: 0.0
         Text("${show(bucket.achieved)} / ${show(target)}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        val remaining = target - bucket.achieved
+        Text(
+            if (remaining > 0) stringResource(R.string.target_remaining, show(ceil(remaining)))
+            else stringResource(R.string.target_reached),
+            style = MaterialTheme.typography.bodySmall,
+            fontWeight = FontWeight.Medium,
+            color = if (remaining > 0) MaterialTheme.colorScheme.onSurfaceVariant else LocalStatus.current.success,
+        )
+    }
+}
+
+private data class EarningsOpportunity(val reward: String?, val instruction: String, val condition: Boolean = false)
+
+@Composable
+private fun OpportunitiesCard(data: CommissionsResponse, detail: RepDetail) {
+    val f = LocalFormat.current
+    val r = detail.rep.result
+    val rules = data.settings.rules
+    val status = LocalStatus.current
+    val opportunities = mutableListOf<EarningsOpportunity>()
+    val target = r.totalTargetToDate
+    if (target != null) {
+        if (r.regime == "low") {
+            val gap = max(0.0, target * rules.lowAchievementPct / 100 - r.sales)
+            opportunities.add(EarningsOpportunity(null, stringResource(R.string.earn_to_old, f.money(ceil(gap)), f.number(rules.lowAchievementPct)), condition = true))
+        }
+        if (r.regime == "low" || r.regime == "old") {
+            val gap = max(0.0, target * rules.oldSystemUntilPct / 100 - r.sales)
+            opportunities.add(EarningsOpportunity(null, stringResource(R.string.earn_to_full, f.money(ceil(gap)), f.number(rules.oldSystemUntilPct)), condition = true))
+        }
+        if (!r.allTargetsMet) {
+            opportunities.add(EarningsOpportunity(null, stringResource(R.string.earn_all_targets, f.number(rules.allTargetsBonusPct)), condition = true))
+        }
+    }
+
+    val slow = r.categories["slow"]
+    if (slow?.targetToDate != null && slow.achievement != null && slow.achievement < rules.slowMinPct) {
+        val gap = max(0.0, slow.targetToDate * rules.slowMinPct / 100 - slow.achieved)
+        val gapText = if (slow.unit == "qty") "${f.qty(ceil(gap))} ${stringResource(R.string.unit_m)}" else f.money(ceil(gap))
+        val deduction = r.adjustments.firstOrNull { it.key == "slowDeduction" }?.amount ?: 0.0
+        opportunities.add(
+            EarningsOpportunity(
+                reward = deduction.takeIf { it < 0 }?.let { f.money(kotlin.math.abs(it)) },
+                instruction = stringResource(R.string.earn_slow_recovery, gapText, f.number(rules.slowMinPct)),
+            )
+        )
+    }
+
+    if (r.sales > 0 && r.collectionFactor < 100) {
+        val adjustment = r.adjustments.firstOrNull { it.key == "collectionShare" }
+        if (adjustment != null && adjustment.amount < 0) {
+            opportunities.add(
+                EarningsOpportunity(
+                    reward = f.money(kotlin.math.abs(adjustment.amount)),
+                    instruction = stringResource(R.string.earn_collection_recovery, f.money(ceil(max(0.0, r.sales - r.collections)))),
+                ),
+            )
+        }
+    }
+
+    if ((r.cashShare ?: 0.0) < rules.cashSharePct) {
+        opportunities.add(
+            EarningsOpportunity(
+                reward = f.money(rules.cashBonus),
+                instruction = stringResource(R.string.earn_cash, f.pct(r.cashShare), f.number(rules.cashSharePct)),
+            ),
+        )
+    }
+    val collectionNeed = r.sales * rules.collectionPct / 100 - r.collections
+    if (r.sales > 0 && collectionNeed >= 0) {
+        opportunities.add(
+            EarningsOpportunity(
+                reward = f.money(rules.collectionBonus),
+                instruction = stringResource(R.string.earn_collections, f.money(ceil(collectionNeed + 1))),
+            ),
+        )
+    }
+
+    val nextStep = r.adjustments.firstOrNull { it.key == "salesLadder" }?.threshold
+    if (nextStep != null && nextStep > r.sales) {
+        val bonus = rules.salesBonuses.filter { it.from == nextStep }.maxOfOrNull { it.amount } ?: 0.0
+        opportunities.add(
+            EarningsOpportunity(
+                reward = bonus.takeIf { it > 0 }?.let { f.money(it) },
+                instruction = stringResource(R.string.earn_ladder, f.money(ceil(nextStep - r.sales)), f.money(nextStep)),
+            ),
+        )
+    }
+
+    SectionCard(stringResource(R.string.earn_more_title), stringResource(R.string.earn_more_description)) {
+        if (opportunities.isEmpty()) {
+            Text(stringResource(R.string.earn_more_none), color = MaterialTheme.colorScheme.onSurfaceVariant)
+        } else {
+            opportunities.forEachIndexed { index, opportunity ->
+                if (index > 0) HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                Column(
+                    Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(if (opportunity.condition) status.warningSoft else MaterialTheme.colorScheme.surface)
+                        .padding(horizontal = 12.dp, vertical = 10.dp),
+                    verticalArrangement = Arrangement.spacedBy(3.dp),
+                ) {
+                    opportunity.reward?.let {
+                        Text(it, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, color = status.success)
+                    }
+                    Text(
+                        opportunity.instruction,
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = if (opportunity.condition) FontWeight.SemiBold else FontWeight.Normal,
+                        color = if (opportunity.condition) status.warning else MaterialTheme.colorScheme.onSurface,
+                    )
+                }
+            }
+        }
     }
 }
 
@@ -497,6 +618,20 @@ private fun CollectionsCard(data: CommissionsResponse, detail: RepDetail) {
         LabelValue(stringResource(R.string.coll_cheque), f.money(c.cheque))
         LabelValue(stringResource(R.string.coll_manual), f.money(c.manual))
         LabelValue(stringResource(R.string.coll_refund), f.money(c.refund), valueColor = if (c.refund != 0.0) LocalStatus.current.danger else null)
+        val collectionDays = detail.daily.filter { it.collections != 0.0 }.asReversed().take(10)
+        if (collectionDays.isNotEmpty()) {
+            Spacer(Modifier.height(8.dp))
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+            Text(
+                stringResource(R.string.latest_collection_days),
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.padding(top = 10.dp),
+            )
+            collectionDays.forEach { day ->
+                LabelValue(f.day(day.day), f.money(day.collections))
+            }
+        }
     }
 }
 

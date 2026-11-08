@@ -1,6 +1,7 @@
 package com.naguibselim.commissionsapp.data
 
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonElement
 
 /**
  * JSON of GET /api/app/commissions on the website (app/api/app/commissions/route.ts).
@@ -69,10 +70,136 @@ data class Rules(
     val minimumSales: Double = 478_000.0,
     val salesBonuses: List<BonusStep> = emptyList(),
     val rangeUnit: String = "amount",
+    val categoryUnits: CategoryUnits = CategoryUnits(),
+    val statementDetails: StatementDetails = StatementDetails(),
 )
 
 @Serializable
+data class CategoryUnits(val slow: String = "amount", val digital: String = "amount")
+
+@Serializable
+data class StatementDetails(val A: Boolean = true, val B: Boolean = true, val C: Boolean = true, val slow: Boolean = true, val digital: Boolean = true)
+
+@Serializable
 data class Settings(val tiers: List<Tier> = emptyList(), val categoryRates: CategoryRates = CategoryRates(), val rules: Rules = Rules())
+
+@Serializable
+data class ProductRule(
+    val key: String,
+    val templateId: Long,
+    val templateName: String,
+    val code: String? = null,
+    val variantId: Long? = null,
+    val color: String? = null,
+    val category: String,
+)
+
+@Serializable
+data class RepSetting(
+    val name: String,
+    val odooUserId: Long? = null,
+    val totalTarget: Double? = null,
+    val slowTarget: Double? = null,
+    val digitalTarget: Double? = null,
+    val rangeTargets: List<Double?> = emptyList(),
+)
+
+@Serializable
+data class CommissionEditSettings(
+    val version: Int = 1,
+    val month: String,
+    val tiers: List<Tier> = emptyList(),
+    val products: List<ProductRule> = emptyList(),
+    val categoryRates: CategoryRates = CategoryRates(),
+    val rules: Rules = Rules(),
+    val reps: List<RepSetting> = emptyList(),
+    val updatedAt: String? = null,
+    val updatedBy: String? = null,
+)
+
+@Serializable
+data class AdminRepCandidate(val id: Long, val name: String)
+
+@Serializable
+data class AdminSheet(val found: Boolean, val path: String, val count: Int, val columns: SheetColumns)
+
+@Serializable
+data class SheetColumns(val rep: String? = null, val total: String? = null, val slow: String? = null, val digital: String? = null)
+
+@Serializable
+data class AdminAccount(val id: String, val name: String, val email: String, val username: String? = null, val rep: String? = null, val active: Boolean, val mustChangePassword: Boolean, val lastSignIn: String? = null, val createdAt: String? = null)
+
+@Serializable
+data class AdminAccountOption(val id: String, val name: String, val email: String)
+
+@Serializable
+data class AdminSheetRep(val name: String, val displayName: String, val odooUserId: Long? = null, val account: AdminAccount? = null, val username: String)
+
+@Serializable
+data class AdminSheetAccounts(val month: String, val reps: List<AdminSheetRep>)
+
+@Serializable
+data class AdminSettingsResponse(
+    val month: String,
+    val months: List<String> = emptyList(),
+    val settings: CommissionEditSettings,
+    val source: String,
+    val inheritedFrom: String? = null,
+    val sheet: AdminSheet,
+    val candidates: List<AdminRepCandidate> = emptyList(),
+    val accounts: List<AdminAccountOption> = emptyList(),
+    val androidDownload: String = "native",
+)
+
+@Serializable
+data class AdminAccountsResponse(
+    val accounts: List<AdminAccount> = emptyList(),
+    val sheet: AdminSheetAccounts? = null,
+    val autoApprove: Boolean = false,
+    val androidDownload: String = "native",
+    val defaultPassword: String = "",
+)
+
+@Serializable
+data class AdminCreateResult(val name: String, val username: String, val status: String, val detail: String? = null)
+
+@Serializable
+data class AdminActionResponse(
+    val ok: Boolean = false,
+    val error: String? = null,
+    val reason: String? = null,
+    val detail: String? = null,
+    val username: String? = null,
+    val results: List<AdminCreateResult> = emptyList(),
+)
+
+@Serializable
+data class AdminProductsResponse(val products: List<ProductSearchResult> = emptyList())
+
+@Serializable
+data class ProductSearchResult(val templateId: Long, val name: String, val code: String? = null, val variants: List<ProductVariant> = emptyList())
+
+@Serializable
+data class ProductVariant(val id: Long, val color: String? = null)
+
+@Serializable
+data class AdminNotify(val mode: String = "none", val userIds: List<String> = emptyList(), val note: String? = null)
+
+@Serializable
+data class AdminSettingsUpdate(val settings: CommissionEditSettings, val notify: AdminNotify = AdminNotify())
+
+@Serializable
+data class AdminSettingsSaved(val savedAt: String, val notified: Int = 0)
+
+@Serializable
+data class AdminAccountAction(
+    val action: String,
+    val userId: String? = null,
+    val value: JsonElement? = null,
+    val names: List<String>? = null,
+    val repName: String? = null,
+    val username: String? = null,
+)
 
 @Serializable
 data class Notice(val key: String, val tone: String = "info", val from: String? = null, val names: List<String> = emptyList())
@@ -224,4 +351,4 @@ data class FeedResponse(val items: List<FeedItem> = emptyList())
 data class SessionTokens(val accessToken: String, val refreshToken: String, val expiresAt: Long)
 
 @Serializable
-data class ApiError(val error: String = "error")
+data class ApiError(val error: String = "error", val detail: String? = null)

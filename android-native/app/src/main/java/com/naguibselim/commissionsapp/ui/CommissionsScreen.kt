@@ -2,7 +2,6 @@ package com.naguibselim.commissionsapp.ui
 
 import android.Manifest
 import android.content.Intent
-import android.net.Uri
 import android.os.Build
 import android.provider.Settings
 import androidx.activity.compose.BackHandler
@@ -97,11 +96,12 @@ fun CommissionsScreen(viewModel: AppViewModel) {
     val context = LocalContext.current
     val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()
+    var adminPage by rememberSaveable { mutableStateOf<AdminPage?>(null) }
     var detailSection by rememberSaveable(state.data?.detail?.rep?.key) { mutableStateOf(RepSection.Summary) }
     val selectedDetail = state.data?.detail
     val canReturnToTeam = (state.data?.repOptions?.size ?: 0) > 1
 
-    BackHandler(enabled = selectedDetail != null && (detailSection != RepSection.Summary || canReturnToTeam)) {
+    BackHandler(enabled = adminPage == null && selectedDetail != null && (detailSection != RepSection.Summary || canReturnToTeam)) {
         if (detailSection != RepSection.Summary) detailSection = RepSection.Summary
         else viewModel.selectRep(state.data?.allReps ?: "all")
     }
@@ -138,6 +138,11 @@ fun CommissionsScreen(viewModel: AppViewModel) {
         }
     }
 
+    if (adminPage != null) {
+        AdminScreens(viewModel, adminPage!!, state.data?.clock?.month) { adminPage = null }
+        return
+    }
+
     CompositionLocalProvider(LocalFormat provides format) {
         Scaffold(
             containerColor = MaterialTheme.colorScheme.background,
@@ -165,12 +170,10 @@ fun CommissionsScreen(viewModel: AppViewModel) {
                                         text = { Text(stringResource(R.string.commission_settings)) },
                                         onClick = {
                                             menu = false
-                                            val url = Uri.parse("$website/settings").buildUpon()
-                                            state.data?.clock?.month?.let { url.appendQueryParameter("month", it) }
-                                            uri.openUri(url.build().toString())
+                                            adminPage = AdminPage.Settings
                                         },
                                     )
-                                    DropdownMenuItem(text = { Text(stringResource(R.string.manage_accounts)) }, onClick = { menu = false; uri.openUri("$website/accounts") })
+                                    DropdownMenuItem(text = { Text(stringResource(R.string.manage_accounts)) }, onClick = { menu = false; adminPage = AdminPage.Accounts })
                                 }
                                 DropdownMenuItem(text = { Text(stringResource(R.string.my_account)) }, onClick = { menu = false; uri.openUri("$website/account") })
                                 HorizontalDivider()
