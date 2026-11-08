@@ -4,6 +4,7 @@ import { CalendarDaysIcon, RadioIcon, RefreshCwIcon } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useState, useTransition } from "react";
 import { usePathname, useRouter } from "@/i18n/navigation";
+import { NotificationBell } from "@/components/layout/notification-bell";
 import type { Locale } from "@/i18n/routing";
 import { formatMonth } from "@/lib/format";
 
@@ -13,7 +14,7 @@ const REFRESH_MS = 5 * 60_000;
  * Month choice (kept in the URL) and, for the open month, a live indicator that re-reads the figures every
  * five minutes while the page is visible, so each rep sees their progress move through the day.
  */
-export function MonthBar({ months, month, live, keepRep, showStatus = true }: { months: string[]; month: string; live: boolean; keepRep?: string; showStatus?: boolean }) {
+export function MonthBar({ months, month, live, keepRep, showStatus = true, showAppNotifications = false }: { months: string[]; month: string; live: boolean; keepRep?: string; showStatus?: boolean; showAppNotifications?: boolean }) {
   const t = useTranslations("cm.month");
   const locale = useLocale() as Locale;
   const router = useRouter();
@@ -59,6 +60,11 @@ export function MonthBar({ months, month, live, keepRep, showStatus = true }: { 
           ))}
         </select>
       </label>
+      {showAppNotifications ? (
+        <div className="app-only app-home-notification">
+          <NotificationBell appHome />
+        </div>
+      ) : null}
       {live ? (
         <span className="inline-flex h-9 items-center gap-2 rounded-lg border bg-card px-3 text-xs text-muted-foreground">
           <span className="relative flex size-2.5">

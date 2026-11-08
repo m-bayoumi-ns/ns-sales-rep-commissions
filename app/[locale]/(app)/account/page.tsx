@@ -59,7 +59,7 @@ async function Account({ searchParams }: { searchParams: PageProps<"/[locale]/ac
             <bdi className="account-identity-default web-only block truncate font-semibold">{user.name}</bdi>
             <div className="app-only flex min-w-0 items-center gap-2">
               <bdi className="account-identity-seller min-w-0 truncate font-semibold">{sellerDisplayName ?? user.name}</bdi>
-              <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[11px] font-semibold text-muted-foreground">{role}</span>
+              <span className="shrink-0 rounded-full bg-[#5a3a1d] px-2 py-0.5 text-[11px] font-semibold text-white">{role}</span>
             </div>
             <bdi className="block truncate text-xs text-muted-foreground">{user.email}</bdi>
           </div>

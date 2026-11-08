@@ -70,7 +70,7 @@ export function LoginForm({ next, reason }: { next?: string; reason?: string }) 
   })();
 
   return (
-    <form noValidate action={formAction} onSubmit={validate} aria-busy={pending} className="flex flex-col gap-5">
+    <form noValidate action={formAction} onSubmit={validate} aria-busy={pending} className="login-form flex flex-col gap-5">
       <input type="hidden" name="locale" value={locale} />
       <input type="hidden" name="next" value={next ?? ""} />
 
@@ -161,7 +161,7 @@ export function LoginForm({ next, reason }: { next?: string; reason?: string }) 
         ) : null}
       </div>
 
-      <Button type="submit" size="lg" disabled={pending} className="w-full">
+      <Button type="submit" size="lg" disabled={pending} className="login-submit w-full">
         {pending ? (
           <>
             <Loader2Icon aria-hidden className="animate-spin" />

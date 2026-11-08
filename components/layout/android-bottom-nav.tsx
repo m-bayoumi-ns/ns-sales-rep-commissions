@@ -56,11 +56,11 @@ export function AndroidBottomNav({
           <span aria-hidden className="absolute -top-4 left-1/2 z-0 size-[4.5rem] -translate-x-1/2 rounded-t-full border-x border-t bg-card" />
           {onSelect ? (
             <button type="button" aria-label={t("summary")} aria-current={active === "summary" ? "page" : undefined} onClick={() => onSelect("summary")} className="android-home-button absolute -top-7 z-10 flex size-14 items-center justify-center rounded-full border-4 border-background shadow-md">
-              <Image src="/logos/ns-mark.png" alt="" width={36} height={36} className="size-9 rounded-full object-cover" />
+              <Image src="/brand/ns-mark.png" alt="" width={36} height={36} className="size-9 object-contain" />
             </button>
           ) : (
             <Link href={sectionLink("summary")} aria-label={t("summary")} aria-current={active === "summary" ? "page" : undefined} className="android-home-button absolute -top-7 z-10 flex size-14 items-center justify-center rounded-full border-4 border-background shadow-md">
-              <Image src="/logos/ns-mark.png" alt="" width={36} height={36} className="size-9 rounded-full object-cover" />
+              <Image src="/brand/ns-mark.png" alt="" width={36} height={36} className="size-9 object-contain" />
             </Link>
           )}
           <span className={cn("relative z-10 mb-1 whitespace-nowrap text-[10px] font-semibold leading-none", active === "summary" ? "text-primary" : "text-muted-foreground")}>{t("home")}</span>

@@ -29,7 +29,6 @@ import { useLocale, useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
 import { Link } from "@/i18n/navigation";
 import { AndroidBottomNav, type AppSection } from "@/components/layout/android-bottom-nav";
-import { NotificationBell } from "@/components/layout/notification-bell";
 import type { Locale } from "@/i18n/routing";
 import type { Adjustment } from "@/lib/commissions/engine";
 import type { Category, CommissionSettings } from "@/lib/commissions/schema";
@@ -54,11 +53,6 @@ export function RepApp({ detail, settings, clock, teamLink, initialTab = "summar
 
   return (
     <div data-app-section={tab} className="rep-app mx-auto flex w-full max-w-3xl flex-col gap-4">
-      {tab === "summary" ? (
-        <div className="app-only flex justify-end">
-          <NotificationBell appHome />
-        </div>
-      ) : null}
       {teamLink ? (
         <Link href={{ pathname: "/commissions", query: { month: clock.month, rep: "all" } }} className="inline-flex w-fit items-center gap-1 text-sm font-medium text-muted-foreground hover:text-foreground">
           <ChevronLeftIcon aria-hidden className="size-4 rtl:rotate-180" />
