@@ -310,18 +310,13 @@ html[data-app] .loading-status-ring {
 @media (prefers-reduced-motion: reduce) {
   html[data-app] .loading-status-ring { animation: none; }
 }
-.login-shell {
-  background: var(--background);
-}
-.login-texture,
-.login-vignette {
-  display: none !important;
-}
+.login-shell { background: var(--background); }
 .login-header {
   border-color: var(--border);
   background: var(--card);
 }
 .login-card {
+  max-width: 26rem;
   border-color: var(--border);
   border-radius: 1.5rem;
   background: var(--card);
@@ -342,6 +337,13 @@ html[data-app] .loading-status-ring {
 html[data-app] .login-top-rule,
 html[data-app] .login-header,
 html[data-app] .login-footer { display: none !important; }
+html[data-app] .login-shell {
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(196, 154, 108, 0.2), transparent 48%),
+    linear-gradient(160deg, #f8f6f2 0%, #efe9e1 100%);
+}
+html[data-app] .login-texture,
+html[data-app] .login-vignette { display: none !important; }
 html[data-app] #main.login-main {
   width: 100%;
   max-width: none;
@@ -351,8 +353,9 @@ html[data-app] .login-card {
   max-width: 26rem;
   border-color: rgba(116, 76, 39, 0.12);
   border-radius: 1.75rem;
+  background: var(--card);
   padding: clamp(1.5rem, 7vw, 2rem);
-  box-shadow: 0 12px 36px rgb(28 25 23 / 0.08);
+  box-shadow: 0 24px 64px rgba(55, 38, 20, 0.14), 0 3px 10px rgba(55, 38, 20, 0.06);
 }
 html[data-app] .login-app-brand {
   display: flex !important;
@@ -362,6 +365,32 @@ html[data-app] .login-app-brand {
 }
 html[data-app] .login-app-brand .brand-mask:first-child { width: 2.5rem; height: 2.5rem; }
 html[data-app] .login-app-brand .brand-mask:last-child { width: 5rem; height: 1.5rem; }
+html[data-app] .login-title {
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.25rem;
+  text-align: center;
+  font-size: 1.25rem;
+  line-height: 1.4;
+}
+html[data-app] .login-form { gap: 1.125rem; }
+html[data-app] .login-card [data-slot="input"] {
+  height: 3rem;
+  border-radius: 0.75rem;
+  background: var(--background);
+}
+html[data-app] .login-submit {
+  height: 3.125rem;
+  border-radius: 0.75rem;
+  font-weight: 700;
+  box-shadow: 0 4px 10px rgba(116, 76, 39, 0.16);
+}
+html[data-app] .login-card > p { line-height: 1.6; }
+.dark[data-app] .login-shell {
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(116, 76, 39, 0.24), transparent 48%),
+    linear-gradient(160deg, #171513 0%, #0d0f12 100%);
+}
 html[data-app] .rep-app:not([data-app-section="summary"]) .rep-balance-header,
 html[data-app] .rep-app:not([data-app-section="summary"]) .rep-footer { display: none !important; }
 html[data-app] #main:has(.rep-app:not([data-app-section="summary"])) .app-home-notification { display: none !important; }
