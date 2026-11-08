@@ -43,10 +43,6 @@ export default function LoginPage() {
           <div className="login-app-brand app-only">
             <BrandLogo label={t("app.company")} />
           </div>
-          <h1 className="login-title flex items-center justify-start gap-2 text-lg font-bold tracking-tight">
-            <span>{t("login.titlePrefix")}</span>
-            <span className="text-primary dark:text-white">{t("app.name")}</span>
-          </h1>
           <div className="mt-5">
             <Suspense fallback={<LoginForm />}>
               <LoginFormWithParams />
