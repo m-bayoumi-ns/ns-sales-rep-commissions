@@ -25,8 +25,9 @@ the page re-reads them every 5 minutes while it is open.
 2. **Target achievement** compares MTD sales with the monthly target prorated by elapsed calendar days while the month
    is open; closed months use the full target. Total, category and price-range targets follow the same rule:
    - below 50 % → 0.1 % of total sales, nothing else;
-   - 50 % to under 70 % → **old system**: by default the line commission without bonuses or deductions
-     (Settings can switch it to a fixed % of sales);
+   - 50 % to under 70 % → **old system**: separate configurable unit-price tiers for regular products
+     (slow-moving and digital products keep their category rates; Settings can instead use the current line tiers
+     or a fixed % of sales);
    - 70 % and above → line commission + bonuses / deductions below.
 3. + 20 % of the line commission when every target is met (total + each category that has a target);
    − 15 % when slow-moving achievement is under 60 %; + 2,000 when cash sales ≥ 60 % of sales; + 2,000 when collections
@@ -83,4 +84,3 @@ plus a toast); pages also re-check every 30 seconds. Read markers are in `notifi
 [`android-native/`](android-native/README.md) is a native (Kotlin + Compose) version of the Commissions page. It signs in
 through `POST /api/app/session` and reads `GET /api/app/commissions` (Bearer token), and it is built by
 `.github/workflows/android-native-apk.yml`. The WebView app in `android/` is unchanged.
-

@@ -27,6 +27,11 @@ describe("price tiers and products", () => {
     });
     expect(legacy.rules.categoryUnits).toEqual({ slow: "amount", digital: "qty" });
   });
+  it("uses the current price tiers as old-system tiers for settings saved before the feature", () => {
+    const migrated = settingsSchema.parse({ month: "2026-11", tiers: settings.tiers, rules: {} });
+    expect(migrated.rules.oldSystemMode).toBe("tiers");
+    expect(migrated.rules.oldSystemTiers).toEqual(settings.tiers);
+  });
   it("keeps product classification while ignoring legacy product rates and targets", () => {
     const migrated = settingsSchema.parse({
       ...settings,
@@ -141,10 +146,41 @@ describe("calculate", () => {
     expect(closed.achievement).toBe(25);
   });
   it("between 50% and 70% uses the old system (line commission only)", () => {
-    const result = calculate(settings, { ...targets, slowTarget: null }, { lines: [line({ qty: 1000, amount: 600_000, cash: true })], collections: 900_000 }, { monthClosed: false });
+    const legacy = settingsSchema.parse({ ...settings, rules: { ...settings.rules, oldSystemMode: "base" } });
+    const result = calculate(legacy, { ...targets, slowTarget: null }, { lines: [line({ qty: 1000, amount: 600_000, cash: true })], collections: 900_000 }, { monthClosed: false });
     expect(result.regime).toBe("old");
     expect(result.collectionFactor).toBe(150);
     expect(result.total).toBeCloseTo(result.base * 1.5);
+  });
+  it("uses separate old-system price tiers for regular products and keeps category rates", () => {
+    const oldSettings = settingsSchema.parse({
+      ...settings,
+      rules: {
+        ...settings.rules,
+        oldSystemMode: "tiers",
+        oldSystemTiers: [
+          { from: 0, to: 200, rate: 0.2 },
+          { from: 200, to: null, rate: 0.4 },
+        ],
+      },
+    });
+    const result = calculate(
+      oldSettings,
+      { totalTarget: 1_000_000, slowTarget: null, digitalTarget: null },
+      {
+        lines: [
+          line({ amount: 300_000, qty: 1_000 }),
+          line({ templateId: 10, amount: 100_000, qty: 100 }),
+          line({ productId: 201, templateId: 20, amount: 200_000, qty: 200 }),
+        ],
+        collections: 600_000,
+      },
+      { monthClosed: true },
+    );
+    expect(result.regime).toBe("old");
+    expect(result.base).toBe(12_500);
+    expect(result.total).toBe(9_200);
+    expect(result.adjustments.find((item) => item.key === "oldTiers")?.amount).toBe(9_200);
   });
   it("full system with every bonus", () => {
     const lines = [

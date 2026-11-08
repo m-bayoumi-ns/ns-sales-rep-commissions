@@ -6,6 +6,7 @@ import type { CommissionSettings, Rules } from "./schema";
  */
 export type RateChange =
   | { kind: "tier"; key: string; from: string; to: string }
+  | { kind: "oldTier"; key: string; from: string; to: string }
   | { kind: "categoryRate"; key: "slow" | "digital"; from: number; to: number }
   | { kind: "productAdded" | "productRemoved"; name: string; category: string }
   | { kind: "productMoved"; name: string; from: string; to: string }
@@ -13,6 +14,7 @@ export type RateChange =
   | { kind: "ladder"; from: string; to: string };
 
 const tierText = (tier: CommissionSettings["tiers"][number]) => `${tier.from}–${tier.to ?? "∞"} @ ${tier.rate}%`;
+const oldTierText = (tier: Rules["oldSystemTiers"][number]) => `${tier.from}–${tier.to ?? "∞"} @ ${tier.rate}%`;
 const ladderText = (rules: Rules) => rules.salesBonuses.map((step) => `${step.from}–${step.to ?? "∞"}: ${step.amount}`).join(" · ") || "—";
 const productName = (product: CommissionSettings["products"][number]) => `${product.templateName}${product.color ? ` · ${product.color}` : ""}`;
 const productKey = (product: CommissionSettings["products"][number]) => `${product.templateId}:${product.variantId ?? "*"}`;
@@ -41,6 +43,14 @@ export function rateChanges(before: CommissionSettings, after: CommissionSetting
       changes.push({ kind: "tier", key: String.fromCharCode(65 + index), from: old ? tierText(old) : "—", to: tierText(tier) });
     }
   });
+  const oldTierCount = Math.max(before.rules.oldSystemTiers.length, after.rules.oldSystemTiers.length);
+  for (let index = 0; index < oldTierCount; index++) {
+    const old = before.rules.oldSystemTiers[index];
+    const tier = after.rules.oldSystemTiers[index];
+    if (!old || !tier || old.from !== tier.from || old.to !== tier.to || old.rate !== tier.rate) {
+      changes.push({ kind: "oldTier", key: String.fromCharCode(65 + index), from: old ? oldTierText(old) : "—", to: tier ? oldTierText(tier) : "—" });
+    }
+  }
   for (const key of ["slow", "digital"] as const) {
     const from = before.categoryRates?.[key] ?? 0;
     const to = after.categoryRates?.[key] ?? 0;

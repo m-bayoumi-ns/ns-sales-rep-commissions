@@ -759,14 +759,14 @@ function Statement({ detail, settings }: { detail: RepDetail; settings: Commissi
   const locale = useLocale() as Locale;
   const r = detail.rep.result;
   const { rules } = settings;
-  const replaced = r.regime === "low" || (r.regime === "old" && rules.oldSystemMode === "rate");
+  const replaced = r.regime === "low" || (r.regime === "old" && rules.oldSystemMode !== "base");
   const lines = [
     ...r.tiers.map((bucket, index) => ({ key: bucket.key, label: t("range", { key: bucket.key }), sub: settings.tiers[index].to == null ? t("priceFrom", { from: formatNumber(settings.tiers[index].from) }) : t("priceBetween", { from: formatNumber(settings.tiers[index].from), to: formatNumber(settings.tiers[index].to) }), amount: bucket.amount, rate: formatRate(bucket.rate), commission: bucket.commission })),
     ...(["slow", "digital"] as const).map((key) => ({ key, label: t(`cat.${key}`), sub: t("ownRates"), amount: r.categories[key].amount, rate: formatRate(settings.categoryRates[key]), commission: r.categories[key].commission })),
   ].filter((line) => line.amount !== 0 || line.commission !== 0);
   const [openKey, setOpenKey] = useState<string | null>(null);
   const canOpen = (key: string) => rules.statementDetails[key as keyof typeof rules.statementDetails] !== false && detail.products.some((row) => row.bucket === key);
-  const adjustments = r.adjustments.filter((item) => item.key !== "lowRate" && item.key !== "oldRate" && item.key !== "collectionShare");
+  const adjustments = r.adjustments.filter((item) => item.key !== "lowRate" && item.key !== "oldRate" && item.key !== "oldTiers" && item.key !== "collectionShare");
   const collectionShare = r.adjustments.find((item) => item.key === "collectionShare");
 
   return (
@@ -825,7 +825,7 @@ function Statement({ detail, settings }: { detail: RepDetail; settings: Commissi
         ))}
         {replaced ? (
           <li className="flex items-baseline gap-2 rounded-lg bg-warning-soft px-2 py-1.5 text-sm text-warning">
-            <span>{r.regime === "low" ? tb("lowRate", { rate: rules.lowRate }) : tb("oldRate", { rate: rules.oldRate })}</span>
+            <span>{r.regime === "low" ? tb("lowRate", { rate: rules.lowRate }) : rules.oldSystemMode === "tiers" ? tb("oldTiers") : tb("oldRate", { rate: rules.oldRate })}</span>
             <span aria-hidden className="mb-1 flex-1" />
             <span dir="ltr" className="font-semibold tabular-nums">{formatNumber(r.beforeCollection)}</span>
           </li>
@@ -839,6 +839,7 @@ function Statement({ detail, settings }: { detail: RepDetail; settings: Commissi
         </span>
       </div>
       {r.regime === "old" && rules.oldSystemMode === "base" ? <p className="mt-3 text-xs text-muted-foreground">{tb("oldNote", { low: rules.lowAchievementPct, old: rules.oldSystemUntilPct })}</p> : null}
+      {r.regime === "old" && rules.oldSystemMode === "tiers" ? <p className="mt-3 text-xs text-muted-foreground">{tb("oldTiersNote")}</p> : null}
     </div>
   );
 }
@@ -905,6 +906,7 @@ function StatementAdjustment({ item, rules, replaced }: { item: Adjustment; rule
     collectionShare: t("collectionShare"),
     lowRate: "",
     oldRate: "",
+    oldTiers: "",
   }[item.key];
   const status =
     item.key === "salesLadder"

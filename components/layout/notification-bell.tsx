@@ -144,6 +144,8 @@ function ChangeText({ change }: { change: RateChange }) {
   switch (change.kind) {
     case "tier":
       return <>{t("tier", { key: change.key })}: {arrow(change.from, change.to)}</>;
+    case "oldTier":
+      return <>{t("oldTier", { key: change.key })}: {arrow(change.from, change.to)}</>;
     case "categoryRate":
       return <>{t(`category.${change.key}`)}: {arrow(`${change.from}%`, `${change.to}%`)}</>;
     case "productAdded":

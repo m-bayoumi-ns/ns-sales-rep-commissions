@@ -39,7 +39,7 @@ export type RepData = {
 export type Regime = "noTarget" | "low" | "old" | "full";
 
 export type Adjustment = {
-  key: "allTargets" | "slowDeduction" | "cash" | "collection" | "salesLadder" | "lowRate" | "oldRate" | "collectionShare";
+  key: "allTargets" | "slowDeduction" | "cash" | "collection" | "salesLadder" | "lowRate" | "oldRate" | "oldTiers" | "collectionShare";
   /** Condition met (the bonus is earned / the deduction applies). */
   met: boolean;
   /** Counts toward the total under the current system. */
@@ -114,6 +114,7 @@ export function slowTargetOf(targets: RepTargets): number | null {
 export function calculate(settings: CommissionSettings, targets: RepTargets, data: RepData, options: { monthClosed: boolean; targetProgress?: number }): RepResult {
   const { tiers, products, rules } = settings;
   const tierBuckets: BucketResult[] = tiers.map((tier, index) => ({ key: String.fromCharCode(65 + index), qty: 0, amount: 0, commission: 0, rate: tier.rate }));
+  const oldTierBuckets: BucketResult[] = rules.oldSystemTiers.map((tier, index) => ({ key: String.fromCharCode(65 + index), qty: 0, amount: 0, commission: 0, rate: tier.rate }));
   const unpriced: BucketResult = { key: "none", qty: 0, amount: 0, commission: 0, rate: null };
   const cat = (key: Category) => ({ key, qty: 0, amount: 0, commission: 0, rate: null });
   const categoryBuckets: Record<Category, BucketResult> = { slow: cat("slow"), digital: cat("digital") };
@@ -132,14 +133,25 @@ export function calculate(settings: CommissionSettings, targets: RepTargets, dat
     const rate = rule ? settings.categoryRates[rule.category] : index >= 0 ? tiers[index].rate : 0;
     if (rule) {
       bucket = categoryBuckets[rule.category];
+      bucket.qty += line.qty;
+      bucket.amount += line.amount;
+      bucket.commission += (line.amount * rate) / 100;
     } else {
       bucket = index >= 0 ? tierBuckets[index] : unpriced;
+      bucket.qty += line.qty;
+      bucket.amount += line.amount;
+      bucket.commission += (line.amount * rate) / 100;
+      const oldIndex = tierIndex(rules.oldSystemTiers, unitPrice);
+      if (oldIndex >= 0) {
+        const oldBucket = oldTierBuckets[oldIndex];
+        oldBucket.qty += line.qty;
+        oldBucket.amount += line.amount;
+        oldBucket.commission += (line.amount * rules.oldSystemTiers[oldIndex].rate) / 100;
+      }
     }
-    bucket.qty += line.qty;
-    bucket.amount += line.amount;
-    bucket.commission += (line.amount * rate) / 100;
   }
   const base = round2([...tierBuckets, ...Object.values(categoryBuckets)].reduce((sum, bucket) => sum + bucket.commission, 0));
+  const oldBase = round2([...oldTierBuckets, ...Object.values(categoryBuckets)].reduce((sum, bucket) => sum + bucket.commission, 0));
 
   // Achievement per category and in total.
   const targetProgress = options.monthClosed ? 1 : Math.min(1, Math.max(0, options.targetProgress ?? 1));
@@ -222,11 +234,14 @@ export function calculate(settings: CommissionSettings, targets: RepTargets, dat
   } else if (regime === "old" && rules.oldSystemMode === "rate") {
     commissionComponent = round2(Math.max(0, (sales * rules.oldRate) / 100));
     adjustments.push({ key: "oldRate", met: true, applies: true, amount: commissionComponent, current: achievement, threshold: rules.oldSystemUntilPct });
+  } else if (regime === "old" && rules.oldSystemMode === "tiers") {
+    commissionComponent = oldBase;
+    adjustments.push({ key: "oldTiers", met: true, applies: true, amount: commissionComponent, current: achievement, threshold: rules.oldSystemUntilPct });
   } else {
     commissionComponent = base;
   }
   const bonusesAndDeductions = adjustments.reduce(
-    (sum, item) => sum + (item.key === "lowRate" || item.key === "oldRate" ? 0 : item.amount),
+    (sum, item) => sum + (item.key === "lowRate" || item.key === "oldRate" || item.key === "oldTiers" ? 0 : item.amount),
     0,
   );
   const beforeCollection = round2(Math.max(0, commissionComponent + bonusesAndDeductions));

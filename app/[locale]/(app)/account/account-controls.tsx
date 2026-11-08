@@ -52,8 +52,8 @@ export function AccountControls() {
           <button type="button" lang="en" aria-pressed={locale === "en"} onClick={() => changeLocale("en")} className={choiceClass(locale === "en")}>English</button>
         </div>
       </details>
-      <Button type="button" variant="ghost" disabled={pending} onClick={() => startTransition(() => signOut(locale))} className="h-20 w-full justify-center gap-4 rounded-2xl bg-destructive-soft text-2xl font-medium text-destructive hover:bg-destructive-soft/80">
-        {pending ? <Loader2Icon aria-hidden className="size-8 animate-spin" /> : <LogOutIcon aria-hidden className="size-8 rtl:-scale-x-100" />}
+      <Button type="button" variant="ghost" disabled={pending} onClick={() => startTransition(() => signOut(locale))} className="h-14 w-full justify-center gap-2 rounded-xl bg-destructive-soft text-base font-semibold text-destructive hover:bg-destructive-soft/80">
+        {pending ? <Loader2Icon aria-hidden className="size-5 animate-spin" /> : <LogOutIcon aria-hidden className="size-5 rtl:-scale-x-100" />}
         {t("signOut")}
       </Button>
     </section>

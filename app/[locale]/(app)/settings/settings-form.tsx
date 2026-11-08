@@ -169,6 +169,7 @@ export function SettingsForm({ month, initial, source, inheritedFrom, sheet, rep
       ) : null}
 
       <TiersCard settings={settings} update={update} />
+      <OldSystemTiersCard settings={settings} setRule={setRule} />
       <ProductsCard settings={settings} update={update} />
       <RulesCard rules={settings.rules} setRule={setRule} />
       <RepsCard settings={settings} update={update} sheet={sheet} monthName={monthName} candidates={candidates} monthReps={monthReps} />
@@ -291,6 +292,99 @@ function TiersCard({ settings, update }: { settings: CommissionSettings; update:
         </p>
       ) : null}
       <p className="text-xs text-muted-foreground">{t("hint")}</p>
+    </Card>
+  );
+}
+
+function OldSystemTiersCard({
+  settings,
+  setRule,
+}: {
+  settings: CommissionSettings;
+  setRule: <K extends keyof Rules>(key: K, value: Rules[K]) => void;
+}) {
+  const t = useTranslations("settings.oldTiers");
+  const { rules } = settings;
+  const setTier = (index: number, patch: Partial<CommissionSettings["tiers"][number]>) =>
+    setRule("oldSystemTiers", rules.oldSystemTiers.map((tier, i) => (i === index ? { ...tier, ...patch } : tier)));
+  const overlaps = rules.oldSystemTiers.some((a, i) =>
+    rules.oldSystemTiers.some((b, j) => i < j && a.rate + b.rate > 0 && a.from < (b.to ?? Infinity) && b.from < (a.to ?? Infinity)),
+  );
+  const addTier = () => {
+    if (rules.oldSystemTiers.length >= 6) return;
+    setRule("oldSystemTiers", [...rules.oldSystemTiers, { from: 0, to: null, rate: 0 }]);
+  };
+  const removeTier = (index: number) => {
+    if (rules.oldSystemTiers.length <= 1) return;
+    setRule("oldSystemTiers", rules.oldSystemTiers.filter((_, i) => i !== index));
+  };
+
+  return (
+    <Card
+      title={t("title")}
+      description={t("description", { from: rules.lowAchievementPct, to: rules.oldSystemUntilPct })}
+      actions={
+        rules.oldSystemMode === "tiers" ? (
+          <Button type="button" variant="outline" onClick={addTier} disabled={rules.oldSystemTiers.length >= 6}>
+            <PlusIcon aria-hidden />
+            {t("add")}
+          </Button>
+        ) : null
+      }
+    >
+      <Field label={t("mode")}>
+        <select
+          value={rules.oldSystemMode}
+          onChange={(event) => setRule("oldSystemMode", event.target.value as Rules["oldSystemMode"])}
+          className={inputClass}
+        >
+          <option value="tiers">{t("modeTiers")}</option>
+          <option value="base">{t("modeBase")}</option>
+          <option value="rate">{t("modeRate")}</option>
+        </select>
+      </Field>
+      {rules.oldSystemMode === "rate" ? (
+        <Field label={t("rate")}>
+          <NumberInput label={t("rate")} value={rules.oldRate} onChange={(value) => setRule("oldRate", value ?? 0)} suffix="%" />
+        </Field>
+      ) : null}
+      {rules.oldSystemMode === "tiers" ? (
+        <>
+          <div className="grid gap-3 md:grid-cols-3">
+            {rules.oldSystemTiers.map((tier, index) => (
+              <div key={index} className="flex flex-col gap-3 rounded-lg border bg-muted/30 p-3">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="flex items-center gap-2 text-sm font-semibold">
+                    <span className="flex size-6 items-center justify-center rounded-md bg-primary text-xs text-primary-foreground">{String.fromCharCode(65 + index)}</span>
+                    {t("range", { key: String.fromCharCode(65 + index) })}
+                  </span>
+                  <Button type="button" variant="ghost" size="icon" aria-label={t("remove")} onClick={() => removeTier(index)} disabled={rules.oldSystemTiers.length <= 1}>
+                    <Trash2Icon aria-hidden className="size-4" />
+                  </Button>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <Field label={t("from")}>
+                    <NumberInput label={t("from")} value={tier.from} onChange={(value) => setTier(index, { from: value ?? 0 })} suffix={t("perUnit")} />
+                  </Field>
+                  <Field label={t("to")}>
+                    <NumberInput label={t("to")} value={tier.to} onChange={(value) => setTier(index, { to: value })} placeholder={t("noLimit")} suffix={t("perUnit")} />
+                  </Field>
+                </div>
+                <Field label={t("rate")}>
+                  <NumberInput label={t("rate")} value={tier.rate} onChange={(value) => setTier(index, { rate: value ?? 0 })} suffix="%" />
+                </Field>
+              </div>
+            ))}
+          </div>
+          {overlaps ? (
+            <p className="flex items-center gap-2 text-sm text-warning">
+              <TriangleAlertIcon aria-hidden className="size-4" />
+              {t("overlap")}
+            </p>
+          ) : null}
+          <p className="text-xs text-muted-foreground">{t("hint")}</p>
+        </>
+      ) : null}
     </Card>
   );
 }
@@ -583,17 +677,6 @@ function RulesCard({ rules, setRule }: { rules: Rules; setRule: <K extends keyof
             <Field label={t("oldUntil")} hint={t("oldHint", { from: rules.lowAchievementPct })}>
               <NumberInput label={t("oldUntil")} value={rules.oldSystemUntilPct} onChange={n("oldSystemUntilPct")} suffix="%" />
             </Field>
-            <Field label={t("oldMode")}>
-              <select value={rules.oldSystemMode} onChange={(event) => setRule("oldSystemMode", event.target.value as Rules["oldSystemMode"])} className={inputClass}>
-                <option value="base">{t("oldModeBase")}</option>
-                <option value="rate">{t("oldModeRate")}</option>
-              </select>
-            </Field>
-            {rules.oldSystemMode === "rate" ? (
-              <Field label={t("oldRate")}>
-                <NumberInput label={t("oldRate")} value={rules.oldRate} onChange={n("oldRate")} suffix="%" />
-              </Field>
-            ) : null}
             <Field label={t("minimum")} hint={t("minimumHint")}>
               <NumberInput label={t("minimum")} value={rules.minimumSales} onChange={n("minimumSales")} suffix={t("egp")} />
             </Field>

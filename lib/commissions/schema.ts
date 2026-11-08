@@ -77,8 +77,10 @@ export const rulesSchema = z.object({
   lowRate: pct.default(0.1),
   /** From lowAchievementPct up to this % → the old commission system. */
   oldSystemUntilPct: pct.default(70),
-  /** Old system: "base" = line commission with no bonuses or deductions; "rate" = oldRate % of sales. */
-  oldSystemMode: z.enum(["base", "rate"]).default("base"),
+  /** Old system: separate unit-price tiers, the existing line commission, or a fixed rate of sales. */
+  oldSystemMode: z.enum(["tiers", "base", "rate"]).default("tiers"),
+  /** Used by the old system for regular products; classified products keep their category rates. */
+  oldSystemTiers: z.array(tierSchema).min(1).max(6),
   oldRate: pct.default(0),
   /** A note is flagged when month-end sales are below this amount. */
   minimumSales: nonNeg.default(478_000),
@@ -102,7 +104,7 @@ export const rulesSchema = z.object({
     .transform(({ digital }) => ({ slow: "amount" as const, digital })),
 });
 
-export const settingsSchema = z.object({
+const settingsObjectSchema = z.object({
   version: z.literal(1).default(1),
   month: z.string().regex(/^\d{4}-\d{2}$/),
   tiers: z.array(tierSchema).min(1).max(6),
@@ -114,6 +116,21 @@ export const settingsSchema = z.object({
   updatedAt: z.string().nullable().default(null),
   updatedBy: z.string().nullable().default(null),
 });
+
+export const settingsSchema = z.preprocess((value) => {
+  if (typeof value !== "object" || value === null || !("tiers" in value)) return value;
+  const input = value as { tiers: unknown; rules?: unknown };
+  const rules = typeof input.rules === "object" && input.rules !== null ? input.rules : {};
+  const currentRules = rules as Record<string, unknown>;
+  return {
+    ...value,
+    rules: {
+      ...currentRules,
+      oldSystemMode: currentRules.oldSystemMode ?? "tiers",
+      oldSystemTiers: currentRules.oldSystemTiers ?? input.tiers,
+    },
+  };
+}, settingsObjectSchema);
 
 export type Tier = z.infer<typeof tierSchema>;
 export type ProductRule = z.infer<typeof productRuleSchema>;

@@ -195,6 +195,8 @@
       "lowRate": "Below 50%: {rate}% of total sales replaces the above",
       "oldRate": "Old system: {rate}% of total sales",
       "oldNote": "Old system ({low}%–{old}% of target): the line commission is paid without bonuses or deductions.",
+      "oldTiers": "Old system: separate price-tier commission",
+      "oldTiersNote": "Regular products use the old-system tiers; slow-moving and digital products keep their category rates.",
       "allTargets": "All targets met: +{pct}% of the line commission",
       "slowDeduction": "Slow-moving under {min}% of target: −{pct}%",
       "cash": "Cash sales ≥ {pct}% of sales",
@@ -387,6 +389,24 @@
       "rate": "Commission rate",
       "overlap": "Some ranges overlap: a price in two ranges uses the first one.",
       "hint": "Leave a range's rate at 0 to switch it off. Products listed below use their category rate instead of the matching range rate."
+    },
+    "oldTiers": {
+      "title": "Old-system commission tiers",
+      "description": "Used from {from}% to below {to}% of target. These rates apply to regular products only; slow-moving and digital products keep their configured category rates.",
+      "mode": "Old-system calculation",
+      "modeTiers": "Separate price tiers for regular products",
+      "modeBase": "Use the current line commission",
+      "modeRate": "Fixed percentage of total sales",
+      "add": "Add tier",
+      "remove": "Remove tier",
+      "range": "Tier {key}",
+      "from": "Unit price from",
+      "to": "To (exclusive)",
+      "perUnit": "EGP",
+      "noLimit": "No limit",
+      "rate": "Commission rate",
+      "overlap": "Some old-system tiers overlap: a price in two tiers uses the first.",
+      "hint": "Regular products use these rates instead of the main price tiers; classified products keep their category rates."
     },
     "products": {
       "title": "2 · Product categories",
@@ -807,6 +827,7 @@
     "toSome": "{count, plural, one {to # seller} other {to # sellers}}",
     "change": {
       "tier": "Range {key}",
+      "oldTier": "Old-system range {key}",
       "category": {
         "slow": "Slow-moving rate",
         "digital": "Digital rate"
@@ -827,6 +848,7 @@
         "oldSystemUntilPct": "Old system up to %",
         "oldSystemMode": "Old system pays",
         "oldRate": "Old system rate %",
+        "oldSystemTiers": "Old-system commission tiers",
         "minimumSales": "Monthly minimum (EGP)"
       }
     }

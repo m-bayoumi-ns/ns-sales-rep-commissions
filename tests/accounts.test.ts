@@ -25,11 +25,12 @@ describe("rate changes for notifications", () => {
   it("lists tier, category, rule and product changes", () => {
     const after = structuredClone(before);
     after.tiers[1].rate = 0.2;
+    after.rules.oldSystemTiers[0].rate = 0.3;
     after.categoryRates.slow = 1;
     after.rules.cashBonus = 3000;
     after.products.push({ key: "x", templateId: 5, templateName: "BLOOM", code: null, variantId: null, color: null, category: "slow" });
     const kinds = rateChanges(before, after).map((change) => change.kind);
-    expect(kinds).toEqual(["tier", "categoryRate", "productAdded", "rule"]);
+    expect(kinds).toEqual(["tier", "oldTier", "categoryRate", "productAdded", "rule"]);
   });
 });
 

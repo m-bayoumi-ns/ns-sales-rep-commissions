@@ -225,8 +225,8 @@ function BuildUp({ view, detail, locale }: { view: CommissionsView; detail: Deta
   const t = useTranslations("cm.build");
   const r = detail.rep.result;
   const { rules } = view.settings;
-  const replaced = r.regime === "low" || (r.regime === "old" && rules.oldSystemMode === "rate");
-  const items = r.adjustments.filter((item) => item.key !== "lowRate" && item.key !== "oldRate" && item.key !== "collectionShare");
+  const replaced = r.regime === "low" || (r.regime === "old" && rules.oldSystemMode !== "base");
+  const items = r.adjustments.filter((item) => item.key !== "lowRate" && item.key !== "oldRate" && item.key !== "oldTiers" && item.key !== "collectionShare");
   const collectionShare = r.adjustments.find((item) => item.key === "collectionShare");
   return (
     <Section title={t("title")} description={t("description")}>
@@ -248,7 +248,7 @@ function BuildUp({ view, detail, locale }: { view: CommissionsView; detail: Deta
           <li className="flex items-center justify-between gap-3 bg-warning-soft p-3 text-warning">
             <span className="flex items-center gap-2 text-sm font-medium">
               <AlertTriangleIcon aria-hidden className="size-4" />
-              {r.regime === "low" ? t("lowRate", { rate: rules.lowRate }) : t("oldRate", { rate: rules.oldRate })}
+              {r.regime === "low" ? t("lowRate", { rate: rules.lowRate }) : rules.oldSystemMode === "tiers" ? t("oldTiers") : t("oldRate", { rate: rules.oldRate })}
             </span>
             <span dir="ltr" className="font-semibold tabular-nums">
               {formatCurrency(r.beforeCollection, locale)}
@@ -269,6 +269,7 @@ function BuildUp({ view, detail, locale }: { view: CommissionsView; detail: Deta
         </li>
       </ol>
       {r.regime === "old" && rules.oldSystemMode === "base" ? <Note>{t("oldNote", { low: rules.lowAchievementPct, old: rules.oldSystemUntilPct })}</Note> : null}
+      {r.regime === "old" && rules.oldSystemMode === "tiers" ? <Note>{t("oldTiersNote")}</Note> : null}
     </Section>
   );
 }
@@ -286,6 +287,7 @@ function AdjustmentRow({ item, rules, locale, replaced }: { item: Adjustment; ru
     collectionShare: t("collectionShare"),
     lowRate: "",
     oldRate: "",
+    oldTiers: "",
   }[item.key];
   const status =
     item.key === "salesLadder"
