@@ -104,7 +104,7 @@ async function Commissions({ searchParams }: { searchParams: PageProps<"/[locale
     <ScrollReveal className="flex flex-col gap-5">
       <div className="mx-auto flex w-full max-w-3xl flex-wrap items-center gap-2">
         {options.length > 1 ? <RepPicker reps={options} value={showDetail ? view.detail!.rep.key : ALL_REPS} month={month} allowAll={options.length > 1} /> : null}
-        <MonthBar months={view.months} month={month} live={!view.clock.closed} keepRep={showDetail ? view.detail!.rep.key : ALL_REPS} showAppNotifications={showDetail} />
+        <MonthBar months={view.months} month={month} live={!view.clock.closed} keepRep={showDetail ? view.detail!.rep.key : ALL_REPS} showStatus={initialTab === "summary"} showAppNotifications={showDetail} />
       </div>
       {notices.map((notice) => (
         <p

@@ -60,7 +60,7 @@ export function MonthBar({ months, month, live, keepRep, showStatus = true, show
           ))}
         </select>
       </label>
-      {live ? (
+      {live && showStatus ? (
         <span className="inline-flex h-9 items-center gap-2 rounded-lg border bg-card px-3 text-xs text-muted-foreground">
           <span className="relative flex size-2.5">
             <span className="absolute inline-flex size-full animate-ping rounded-full bg-success opacity-60" />
