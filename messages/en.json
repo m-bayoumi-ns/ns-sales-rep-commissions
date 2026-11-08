@@ -396,6 +396,8 @@
         "digital": "Digital product"
       },
       "all": "All ({count})",
+      "more": "Show {count} more",
+      "less": "Show fewer",
       "tab": {
         "slow": "Slow-moving ({count})",
         "digital": "Digital ({count})"
@@ -564,7 +566,9 @@
       "summary": "Summary",
       "sales": "Sales",
       "collections": "Collections",
-      "statement": "Statement"
+      "statement": "Statement",
+      "account": "Account",
+      "navigation": "App navigation"
     },
     "footerLive": "Updates automatically every few minutes as invoices and payments are posted.",
     "footerClosed": "Final figures for a closed month.",
@@ -701,6 +705,10 @@
   },
   "account": {
     "title": "My account",
+    "preferences": "App preferences",
+    "appearance": "Appearance",
+    "language": "Language",
+    "signOut": "Sign out",
     "forced": "An administrator asked you to choose a new password before continuing.",
     "roleAdmin": "Administrator",
     "roleSeller": "Sales rep",

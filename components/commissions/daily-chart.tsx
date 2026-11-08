@@ -97,7 +97,7 @@ export function DailyChart({ points, target, closedOrToday }: { points: Point[];
     grain === "day" ? formatDay(point.first, locale) : `${formatDay(point.first, locale)} – ${formatDay(point.last, locale)}`;
 
   return (
-    <section aria-labelledby="daily-chart-title" className="flex flex-col gap-3 rounded-xl border bg-card p-4 shadow-sm sm:p-5">
+    <section aria-labelledby="daily-chart-title" className="flex flex-col gap-2 rounded-xl border bg-card p-3 shadow-sm sm:gap-3 sm:p-5">
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="flex flex-col gap-1.5">
           <h2 id="daily-chart-title" className="text-base font-semibold">
@@ -136,7 +136,7 @@ export function DailyChart({ points, target, closedOrToday }: { points: Point[];
         </div>
       </div>
       <div dir="ltr">
-        <ChartContainer config={config} className="aspect-auto h-[300px] w-full">
+        <ChartContainer config={config} className="aspect-auto h-[200px] w-full sm:h-[300px]">
           <ComposedChart data={data} margin={{ top: 12, right: 4, bottom: 4, left: 4 }} accessibilityLayer>
             <defs>
               <pattern id="cm-future" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">

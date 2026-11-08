@@ -26,6 +26,7 @@ import {
 import { useLocale, useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
 import { Link } from "@/i18n/navigation";
+import { AndroidBottomNav, type AppSection } from "@/components/layout/android-bottom-nav";
 import type { Locale } from "@/i18n/routing";
 import type { Adjustment } from "@/lib/commissions/engine";
 import type { Category, CommissionSettings } from "@/lib/commissions/schema";
@@ -34,17 +35,17 @@ import { formatCompactCurrency, formatCurrency, formatMonth, formatNumber, forma
 import { cn } from "@/lib/utils";
 import { DailyChart } from "./daily-chart";
 
-type Tab = "summary" | "sales" | "collections" | "statement";
+type Tab = AppSection;
 
 /**
  * The seller's commission app: one screen per seller. A balance header (what they earn now), the road to
  * the next level, then four tabs of plain lists — summary, sales, collections, and the statement that
  * shows how the amount is built. No dashboard tiles.
  */
-export function RepApp({ detail, settings, clock, teamLink }: { detail: RepDetail; settings: CommissionSettings; clock: MonthClock; teamLink: boolean }) {
+export function RepApp({ detail, settings, clock, teamLink, initialTab = "summary" }: { detail: RepDetail; settings: CommissionSettings; clock: MonthClock; teamLink: boolean; initialTab?: Tab }) {
   const t = useTranslations("app2");
   const locale = useLocale() as Locale;
-  const [tab, setTab] = useState<Tab>("summary");
+  const [tab, setTab] = useState<Tab>(initialTab);
   const { rep } = detail;
   const r = rep.result;
 
@@ -93,7 +94,7 @@ export function RepApp({ detail, settings, clock, teamLink }: { detail: RepDetai
         </header>
 
         {/* Tabs */}
-        <nav aria-label={t("tabs")} className="sticky top-16 z-10 border-b bg-card/95 px-3 py-2 backdrop-blur sm:px-5">
+        <nav aria-label={t("tabs")} className="web-only sticky top-16 z-10 border-b bg-card/95 px-3 py-2 backdrop-blur sm:px-5">
           <div role="tablist" className="grid grid-cols-4 gap-1 rounded-xl bg-muted p-1">
             {(["summary", "sales", "collections", "statement"] as Tab[]).map((key) => (
               <button
@@ -121,6 +122,7 @@ export function RepApp({ detail, settings, clock, teamLink }: { detail: RepDetai
         </div>
       </div>
       <p className="text-center text-xs text-muted-foreground">{t(clock.closed ? "footerClosed" : "footerLive")}</p>
+      <AndroidBottomNav active={tab} onSelect={setTab} />
     </div>
   );
 }
@@ -213,28 +215,30 @@ function Row({
   progress?: number | null;
 }) {
   return (
-    <li className="flex items-center gap-3 px-4 py-3">
-      {icon ? <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-accent text-primary">{icon}</span> : null}
-      <div className="flex min-w-0 flex-1 flex-col gap-1">
-        {/* Full name, wrapping onto a second line on narrow screens rather than cut with "…". */}
-        <span className="text-sm font-medium leading-snug break-words">{label}</span>
-        {sub ? <span className="text-xs text-muted-foreground">{sub}</span> : null}
-        {progress !== undefined ? (
+    <li className={cn("flex px-4 py-3", progress !== undefined ? "flex-col gap-2" : "items-center gap-3")}>
+      <div className={cn("flex min-w-0 items-center gap-3", progress !== undefined && "w-full")}>
+        {icon ? <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-accent text-primary">{icon}</span> : null}
+        <div className="flex min-w-0 flex-1 flex-col gap-1">
+          {/* Full name, wrapping onto a second line on narrow screens rather than cut with "…". */}
+          <span className="text-sm font-medium leading-snug break-words">{label}</span>
+          {sub ? <span className="text-xs text-muted-foreground">{sub}</span> : null}
+        </div>
+        {value !== undefined ? (
+          <div className={cn("flex min-w-0 shrink-0 flex-col items-end text-end", progress !== undefined ? "w-[42%]" : "max-w-[42%]")}>
+            <span dir="ltr" className={cn("text-sm font-semibold tabular-nums", tone === "good" && "text-success", tone === "bad" && "text-destructive", tone === "muted" && "text-muted-foreground")}>
+              {value}
+            </span>
+            {valueSub ? <span className="text-[11px] leading-snug text-muted-foreground">{valueSub}</span> : null}
+          </div>
+        ) : null}
+      </div>
+      {progress !== undefined ? (
           <span className="h-1.5 overflow-hidden rounded-full bg-muted" dir="ltr">
             <span
               className={cn("block h-full rounded-full", progress == null ? "" : progress >= 100 ? "bg-success" : progress >= 70 ? "bg-warning" : "bg-destructive")}
               style={{ width: `${Math.min(100, Math.max(0, progress ?? 0))}%` }}
             />
           </span>
-        ) : null}
-      </div>
-      {value !== undefined ? (
-        <div className="flex max-w-[42%] shrink-0 flex-col items-end text-end">
-          <span dir="ltr" className={cn("text-sm font-semibold tabular-nums", tone === "good" && "text-success", tone === "bad" && "text-destructive", tone === "muted" && "text-muted-foreground")}>
-            {value}
-          </span>
-          {valueSub ? <span className="text-[11px] leading-snug text-muted-foreground">{valueSub}</span> : null}
-        </div>
       ) : null}
     </li>
   );

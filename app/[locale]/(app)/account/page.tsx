@@ -9,7 +9,9 @@ import { AndroidAppCard } from "@/components/layout/android-app";
 import { ANDROID_APPS } from "@/lib/android-app";
 import { chosenAndroidVariant } from "@/lib/app/download";
 import { PhoneNotifications } from "@/components/layout/phone-notifications";
+import { AndroidBottomNav } from "@/components/layout/android-bottom-nav";
 import { PasswordForm } from "./password-form";
+import { AccountControls } from "./account-controls";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("account");
@@ -71,6 +73,8 @@ async function Account({ searchParams }: { searchParams: PageProps<"/[locale]/ac
           <PhoneNotifications user={user} />
         </Suspense>
       )}
+      {user.mustChangePassword ? null : <AccountControls />}
+      {user.mustChangePassword ? null : <AndroidBottomNav active="account" />}
     </div>
   );
 }

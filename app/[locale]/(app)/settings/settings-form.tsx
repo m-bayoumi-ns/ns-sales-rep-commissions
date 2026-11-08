@@ -299,6 +299,7 @@ function TiersCard({ settings, update }: { settings: CommissionSettings; update:
 function ProductsCard({ settings, update }: { settings: CommissionSettings; update: Updater }) {
   const t = useTranslations("settings.products");
   const [filter, setFilter] = useState<Category | "all">("all");
+  const [showAllProducts, setShowAllProducts] = useState(false);
   const setCategoryRate = (category: Category, rate: number | null) =>
     update((current) => ({ ...current, categoryRates: { ...current.categoryRates, [category]: rate ?? 0 } }));
   const add = (category: Category) =>
@@ -309,7 +310,9 @@ function ProductsCard({ settings, update }: { settings: CommissionSettings; upda
   const setProduct = (key: string, patch: Partial<ProductRule>) =>
     update((current) => ({ ...current, products: current.products.map((product) => (product.key === key ? { ...product, ...patch } : product)) }));
   const remove = (key: string) => update((current) => ({ ...current, products: current.products.filter((product) => product.key !== key) }));
-  const shown = settings.products.filter((product) => filter === "all" || product.category === filter);
+  const filteredProducts = settings.products.filter((product) => filter === "all" || product.category === filter);
+  const shown = showAllProducts ? filteredProducts : filteredProducts.slice(-3);
+  const hiddenProductCount = filteredProducts.length - shown.length;
   const count = (category: Category) => settings.products.filter((product) => product.category === category).length;
 
   return (
@@ -346,7 +349,10 @@ function ProductsCard({ settings, update }: { settings: CommissionSettings; upda
             type="button"
             role="tab"
             aria-selected={filter === key}
-            onClick={() => setFilter(key)}
+            onClick={() => {
+              setFilter(key);
+              setShowAllProducts(false);
+            }}
             className={cn("rounded-full border px-3 py-1 text-xs font-medium", filter === key ? "border-primary bg-primary text-primary-foreground" : "hover:bg-muted")}
           >
             {key === "all" ? t("all", { count: settings.products.length }) : t(`tab.${key}`, { count: count(key) })}
@@ -364,6 +370,15 @@ function ProductsCard({ settings, update }: { settings: CommissionSettings; upda
           {shown.map((product) => (
             <ProductRow key={product.key} product={product} onChange={(patch) => setProduct(product.key, patch)} onRemove={() => remove(product.key)} />
           ))}
+          {filteredProducts.length > 3 ? (
+            <button
+              type="button"
+              onClick={() => setShowAllProducts((current) => !current)}
+              className="self-center text-sm font-medium text-primary hover:underline"
+            >
+              {showAllProducts ? t("less") : t("more", { count: hiddenProductCount })}
+            </button>
+          ) : null}
         </div>
       ) : (
         <div className="flex flex-col items-center gap-2 rounded-lg border border-dashed py-8 text-center text-sm text-muted-foreground">
@@ -669,6 +684,8 @@ function RepsCard({
   const setRep = (index: number, patch: Partial<RepSetting>) => update((current) => ({ ...current, reps: current.reps.map((rep, i) => (i === index ? { ...rep, ...patch } : rep)) }));
   const autoOf = useMemo(() => new Map(monthReps.map((rep) => [rep.name, matchRep(rep.name, candidates)?.id ?? null])), [monthReps, candidates]);
   const total = settings.reps.reduce((sum, rep) => sum + (rep.totalTarget ?? 0), 0);
+  const slowTotal = settings.reps.reduce((sum, rep) => sum + (rep.slowTarget ?? 0), 0);
+  const digitalTotal = settings.reps.reduce((sum, rep) => sum + (rep.digitalTarget ?? 0), 0);
   const unitLabel = (key: "slow" | "digital") => (units[key] === "qty" ? t("qty") : t("egp"));
   const rangeUnit = settings.rules.rangeUnit === "qty" ? t("qty") : t("egp");
   const ranges = settings.tiers.map((tier, index) => ({ index, key: String.fromCharCode(65 + index), active: tier.rate > 0 || tier.from > 0 || tier.to != null }));
@@ -774,7 +791,12 @@ function RepsCard({
                     {formatNumber(rangeTotal(range.index))}
                   </td>
                 ))}
-                <td colSpan={2} />
+                <td dir="ltr" className="px-3 py-2 text-start tabular-nums">
+                  {formatNumber(slowTotal)}
+                </td>
+                <td dir="ltr" className="px-3 py-2 text-start tabular-nums">
+                  {formatNumber(digitalTotal)}
+                </td>
               </tr>
             </tfoot>
           </table>

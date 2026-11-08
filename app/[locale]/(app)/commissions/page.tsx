@@ -8,6 +8,7 @@ import { Suspense } from "react";
 import { LoadingStatus } from "@/components/common/loading-status";
 import { MonthBar } from "@/components/commissions/month-bar";
 import { RepApp } from "@/components/commissions/rep-app";
+import type { AppSection } from "@/components/layout/android-bottom-nav";
 import { TeamList } from "@/components/commissions/team-list";
 import { RepPicker } from "@/components/commissions/rep-picker";
 import { StateCard } from "@/components/finance/report-ui";
@@ -69,6 +70,8 @@ async function Commissions({ searchParams }: { searchParams: PageProps<"/[locale
   await connection();
   const month = resolveMonth(first(raw.month));
   const repKey = first(raw.rep);
+  const requestedSection = first(raw.section);
+  const initialTab: AppSection = requestedSection === "sales" || requestedSection === "collections" || requestedSection === "statement" ? requestedSection : "summary";
   let view;
   try {
     view = await getCommissionsView(user, month, repKey);
@@ -121,7 +124,7 @@ async function Commissions({ searchParams }: { searchParams: PageProps<"/[locale
       {view.reps.length === 0 ? (
         <StateCard title={t("empty.title")} body={t(user.branchFilterType === "sales_rep" && !admin ? "empty.notListed" : "empty.body", { month: monthName })} />
       ) : showDetail ? (
-        <RepApp detail={view.detail!} settings={view.settings} clock={view.clock} teamLink={view.reps.length > 1} />
+        <RepApp detail={view.detail!} settings={view.settings} clock={view.clock} teamLink={view.reps.length > 1} initialTab={initialTab} />
       ) : (
         <TeamList view={view} locale={locale} canExport={admin} displayNames={appSettings.sellerDisplayNames} />
       )}

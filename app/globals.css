@@ -288,6 +288,7 @@ tr:hover > .fin-sticky { background-color: color-mix(in oklab, var(--muted) 50%,
 /* Android app (html[data-app], set by the inline script in the root layout): hide browser-only controls. */
 html[data-app] .web-only { display: none !important; }
 html:not([data-app]) .app-only:not(.mobile-menu-preferences) { display: none !important; }
+html[data-app] #main:has(.android-bottom-nav) { padding-bottom: calc(6rem + env(safe-area-inset-bottom)); }
 .mobile-menu-preferences { display: none; }
 html[data-app] .mobile-menu-preferences { display: block !important; }
 @media (max-width: 767px) {
