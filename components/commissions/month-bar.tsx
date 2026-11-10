@@ -41,8 +41,8 @@ export function MonthBar({ months, month, live, keepRep, showStatus = true, show
   const minutes = Math.max(0, Math.round((now - lastRefresh) / 60_000));
 
   return (
-    <div data-no-print className={showAppNotifications ? "flex w-full flex-wrap items-center justify-between gap-2" : "flex flex-wrap items-center gap-2"}>
-      <div className="flex flex-wrap items-center gap-2">
+    <div data-no-print className={showAppNotifications ? "flex w-full flex-nowrap items-start justify-between gap-2" : "flex flex-wrap items-center gap-2"}>
+      <div className="flex min-w-0 flex-wrap items-center gap-2">
         <label className="relative flex items-center">
           <span className="sr-only">{t("label")}</span>
           <CalendarDaysIcon aria-hidden className="pointer-events-none absolute start-2.5 size-4 text-muted-foreground" />
@@ -85,7 +85,7 @@ export function MonthBar({ months, month, live, keepRep, showStatus = true, show
         ) : null}
       </div>
       {showAppNotifications ? (
-        <div className="app-only app-home-notification ms-auto">
+        <div className="app-only app-home-notification shrink-0">
           <NotificationBell appHome />
         </div>
       ) : null}

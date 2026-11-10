@@ -300,7 +300,6 @@ html[data-app] .loading-status-app {
   justify-content: center;
   background: var(--background);
 }
-html[data-app] .app-home-notification { margin-inline-start: auto; }
 html[data-app] .loading-status-ring {
   border: 2px solid color-mix(in oklab, var(--primary) 16%, transparent);
   border-top-color: var(--primary);
