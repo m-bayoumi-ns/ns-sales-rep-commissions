@@ -41,49 +41,51 @@ export function MonthBar({ months, month, live, keepRep, showStatus = true, show
   const minutes = Math.max(0, Math.round((now - lastRefresh) / 60_000));
 
   return (
-    <div data-no-print className="flex flex-wrap items-center gap-2">
-      <label className="relative flex items-center">
-        <span className="sr-only">{t("label")}</span>
-        <CalendarDaysIcon aria-hidden className="pointer-events-none absolute start-2.5 size-4 text-muted-foreground" />
-        <select
-          value={month}
-          disabled={pending}
-          onChange={(event) =>
-            startTransition(() => router.push({ pathname, query: { month: event.target.value, ...(keepRep ? { rep: keepRep } : {}) } }))
-          }
-          className="h-9 rounded-lg border border-input bg-card ps-8 pe-3 text-sm font-medium shadow-xs outline-none focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30"
-        >
-          {months.map((item) => (
-            <option key={item} value={item}>
-              {formatMonth(item, locale)}
-            </option>
-          ))}
-        </select>
-      </label>
-      {live && showStatus ? (
-        <span className="inline-flex h-9 items-center gap-2 rounded-lg border bg-card px-3 text-xs text-muted-foreground">
-          <span className="relative flex size-2.5">
-            <span className="absolute inline-flex size-full animate-ping rounded-full bg-success opacity-60" />
-            <span className="relative inline-flex size-2.5 rounded-full bg-success" />
-          </span>
-          <RadioIcon aria-hidden className="size-3.5" />
-          {t("live", { minutes })}
-          <button
-            type="button"
-            onClick={refresh}
+    <div data-no-print className="flex w-full flex-wrap items-center justify-between gap-2">
+      <div className="flex flex-wrap items-center gap-2">
+        <label className="relative flex items-center">
+          <span className="sr-only">{t("label")}</span>
+          <CalendarDaysIcon aria-hidden className="pointer-events-none absolute start-2.5 size-4 text-muted-foreground" />
+          <select
+            value={month}
             disabled={pending}
-            aria-label={t("refresh")}
-            title={t("refresh")}
-            className="ms-1 rounded p-0.5 text-foreground hover:bg-muted disabled:opacity-50"
+            onChange={(event) =>
+              startTransition(() => router.push({ pathname, query: { month: event.target.value, ...(keepRep ? { rep: keepRep } : {}) } }))
+            }
+            className="h-9 rounded-lg border border-input bg-card ps-8 pe-3 text-sm font-medium shadow-xs outline-none focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30"
           >
-            <RefreshCwIcon aria-hidden className={`size-3.5 ${pending ? "animate-spin" : ""}`} />
-          </button>
-        </span>
-      ) : showStatus ? (
-        <span className="inline-flex h-9 items-center rounded-lg border bg-card px-3 text-xs text-muted-foreground">{t("closed")}</span>
-      ) : null}
+            {months.map((item) => (
+              <option key={item} value={item}>
+                {formatMonth(item, locale)}
+              </option>
+            ))}
+          </select>
+        </label>
+        {live && showStatus ? (
+          <span className="inline-flex h-9 items-center gap-2 rounded-lg border bg-card px-3 text-xs text-muted-foreground">
+            <span className="relative flex size-2.5">
+              <span className="absolute inline-flex size-full animate-ping rounded-full bg-success opacity-60" />
+              <span className="relative inline-flex size-2.5 rounded-full bg-success" />
+            </span>
+            <RadioIcon aria-hidden className="size-3.5" />
+            {t("live", { minutes })}
+            <button
+              type="button"
+              onClick={refresh}
+              disabled={pending}
+              aria-label={t("refresh")}
+              title={t("refresh")}
+              className="ms-1 rounded p-0.5 text-foreground hover:bg-muted disabled:opacity-50"
+            >
+              <RefreshCwIcon aria-hidden className={`size-3.5 ${pending ? "animate-spin" : ""}`} />
+            </button>
+          </span>
+        ) : showStatus ? (
+          <span className="inline-flex h-9 items-center rounded-lg border bg-card px-3 text-xs text-muted-foreground">{t("closed")}</span>
+        ) : null}
+      </div>
       {showAppNotifications ? (
-        <div className="app-only app-home-notification">
+        <div className="app-only app-home-notification ms-auto">
           <NotificationBell appHome />
         </div>
       ) : null}
