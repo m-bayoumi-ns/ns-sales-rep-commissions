@@ -1,5 +1,6 @@
 package com.naguibselim.commissionsapp.ui
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -80,14 +81,15 @@ fun NoticeBanner(text: String, warn: Boolean, modifier: Modifier = Modifier) {
     }
 }
 
-/** A rounded white card with an optional title and subtitle. */
+/** A rounded themed card with an optional title and subtitle. */
 @Composable
 fun SectionCard(title: String? = null, subtitle: String? = null, modifier: Modifier = Modifier, content: @Composable () -> Unit) {
     Card(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(22.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.5.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
     ) {
         Column(Modifier.padding(16.dp)) {
             if (title != null) {

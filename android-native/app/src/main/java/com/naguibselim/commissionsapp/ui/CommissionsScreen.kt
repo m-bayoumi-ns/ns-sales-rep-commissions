@@ -531,14 +531,33 @@ private fun LazyListScope.teamItems(data: CommissionsResponse, format: Format, o
         val totals = data.totals
         val closed = data.clock.closed
         val target = if (closed) totals.target else totals.targetToDate
-        Column(Modifier.fillMaxWidth().padding(vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-            Text(stringResource(R.string.kpi_label), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Text(format.money(totals.commission), style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.onSurface)
+        val progress = if (target > 0) (totals.sales / target).coerceIn(0.0, 1.0).toFloat() else 0f
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .padding(vertical = 6.dp)
+                .clip(RoundedCornerShape(24.dp))
+                .background(Brush.linearGradient(listOf(Color(0xFF5A3A1D), Color(0xFF2E1D0F))))
+                .padding(horizontal = 20.dp, vertical = 18.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Icon(Icons.Filled.AccountBalanceWallet, contentDescription = null, tint = Color.White.copy(alpha = 0.8f), modifier = Modifier.size(18.dp))
+                Text(stringResource(R.string.kpi_label), style = MaterialTheme.typography.labelLarge, color = Color.White.copy(alpha = 0.8f))
+            }
+            Text(format.money(totals.commission), style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.ExtraBold, color = Color.White, maxLines = 1)
             Text(
                 stringResource(if (closed) R.string.team_sales_total else R.string.team_sales_to_date, format.compactMoney(totals.sales), if (target > 0) format.compactMoney(target) else "—"),
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = Color.White.copy(alpha = 0.8f),
             )
+            Box(
+                Modifier.fillMaxWidth().padding(top = 5.dp).height(7.dp).clip(CircleShape).background(Color.White.copy(alpha = 0.18f)),
+            ) {
+                if (progress > 0f) {
+                    Box(Modifier.fillMaxWidth(progress).height(7.dp).background(Brush.horizontalGradient(listOf(Color(0xFFFCD34D), Color(0xFF6FD39A)))))
+                }
+            }
         }
     }
     item(key = "reps") {
@@ -570,12 +589,7 @@ private fun RepRow(rep: RepSummary, closed: Boolean, format: Format, onClick: ()
             Modifier.size(40.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primaryContainer),
             contentAlignment = Alignment.Center,
         ) {
-            Text(
-                rep.name.split(Regex("\\s+")).filter(String::isNotBlank).take(2).joinToString("") { it.take(1) },
-                color = MaterialTheme.colorScheme.primary,
-                style = MaterialTheme.typography.labelLarge,
-                fontWeight = FontWeight.Bold,
-            )
+            Icon(Icons.Filled.Person, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(22.dp))
         }
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {

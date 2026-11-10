@@ -4,6 +4,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -18,6 +19,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -113,12 +115,11 @@ private fun HeaderCard(data: CommissionsResponse, detail: RepDetail, section: Re
             .padding(horizontal = 20.dp, vertical = 22.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            val initials = rep.name.split(Regex("\\s+")).filter(String::isNotBlank).take(2).joinToString("") { it.take(1) }
             Box(
                 Modifier.size(44.dp).clip(CircleShape).background(white.copy(alpha = 0.15f)),
                 contentAlignment = Alignment.Center,
             ) {
-                Text(initials, color = white, fontWeight = FontWeight.Bold)
+                Icon(Icons.Filled.Person, contentDescription = null, tint = white, modifier = Modifier.size(24.dp))
             }
             Column(Modifier.weight(1f)) {
                 Text(rep.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = white, maxLines = 1, overflow = TextOverflow.Ellipsis)
@@ -144,18 +145,43 @@ private fun HeaderCard(data: CommissionsResponse, detail: RepDetail, section: Re
         if (r.achievement != null) {
             val achievement = r.achievement.coerceAtLeast(0.0)
             val projected = if (closed) achievement else (rep.projectedAchievement ?: achievement).coerceAtLeast(achievement)
-            Box(
-                Modifier.fillMaxWidth().padding(top = 20.dp).height(9.dp).clip(RoundedCornerShape(50)).background(white.copy(alpha = 0.16f)),
-            ) {
-                if (projected > achievement) {
-                    Box(Modifier.fillMaxWidth((projected / 100).coerceIn(0.0, 1.0).toFloat()).height(9.dp).background(white.copy(alpha = 0.24f)))
-                }
+            val achievementFraction = (achievement / 100).coerceIn(0.0, 1.0).toFloat()
+            val projectedFraction = (projected / 100).coerceIn(0.0, 1.0).toFloat()
+            BoxWithConstraints(Modifier.fillMaxWidth().padding(top = 20.dp).height(34.dp)) {
                 Box(
-                    Modifier
-                        .fillMaxWidth((achievement / 100).coerceIn(0.0, 1.0).toFloat())
-                        .height(9.dp)
-                        .background(Brush.horizontalGradient(listOf(Color(0xFFFCD34D), Color(0xFF6FD39A)))),
+                    Modifier.fillMaxWidth().height(9.dp).clip(RoundedCornerShape(50)).background(white.copy(alpha = 0.16f)),
                 )
+                if (projectedFraction > achievementFraction) {
+                    Box(
+                        Modifier.fillMaxWidth(projectedFraction).height(9.dp)
+                            .background(white.copy(alpha = 0.24f)),
+                    )
+                }
+                if (achievementFraction > 0f) {
+                    Box(Modifier.fillMaxWidth(achievementFraction).height(9.dp)) {
+                        Box(
+                            Modifier.fillMaxWidth().height(9.dp)
+                                .background(Brush.horizontalGradient(listOf(Color(0xFFFCD34D), Color(0xFF6FD39A)))),
+                        )
+                        Box(
+                            Modifier.align(Alignment.CenterEnd).size(13.dp).clip(CircleShape)
+                                .background(white),
+                        )
+                    }
+                }
+                listOf(0.5f to "50%", 0.7f to "70%", 1f to "100%").forEach { (position, label) ->
+                    Box(
+                        Modifier.align(Alignment.TopStart).offset(x = maxWidth * position - 1.dp)
+                            .size(width = 2.dp, height = 11.dp).background(white.copy(alpha = 0.75f)),
+                    )
+                    Box(
+                        Modifier.align(Alignment.TopStart).offset(x = maxWidth * position - 14.dp, y = 13.dp)
+                            .size(width = 28.dp, height = 16.dp),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(label, style = MaterialTheme.typography.labelSmall, color = white.copy(alpha = 0.8f), maxLines = 1)
+                    }
+                }
             }
         }
 
