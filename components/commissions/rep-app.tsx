@@ -724,13 +724,46 @@ function Collections({ detail, clock }: { detail: RepDetail; clock: MonthClock }
   const r = detail.rep.result;
   const c = detail.collections;
   const recent = [...detail.daily].filter((day) => day.collections !== 0).reverse().slice(0, 10);
+  const collectionProgress = r.collectionRatio == null ? 0 : Math.min(Math.max(r.collectionRatio, 0), 100);
   return (
     <>
-      <div className="flex flex-col items-center gap-1 rounded-2xl border bg-accent/50 px-4 py-5 text-center">
-        <span className="text-xs text-muted-foreground">{t("collectedMonth")}</span>
-        <span dir="ltr" className="text-3xl font-extrabold tabular-nums">{formatCurrency(r.collections, locale)}</span>
-        <span className="text-xs text-muted-foreground">{t("ofSales", { pct: formatPercent(r.collectionRatio) })}</span>
-      </div>
+      <section aria-label={t("collectedMonth")} className="relative isolate overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-[#5a3a1d] via-[#4a2d16] to-[#2e1d0f] p-5 text-white shadow-lg shadow-[#4a2d16]/15 sm:p-6">
+        <div aria-hidden className="pointer-events-none absolute -end-16 -top-20 size-56 rounded-full bg-amber-300/15 blur-3xl" />
+        <div className="relative flex items-center gap-3">
+          <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-white/10 text-amber-100 ring-1 ring-white/15">
+            <HandCoinsIcon aria-hidden className="size-5" />
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-semibold text-white/80">{t("collectedMonth")}</p>
+            <p dir="ltr" className="mt-1 text-start text-3xl font-extrabold tracking-tight tabular-nums sm:text-4xl">
+              {formatCurrency(r.collections, locale)}
+            </p>
+          </div>
+          <span dir="ltr" className="shrink-0 rounded-full border border-emerald-200/20 bg-emerald-300/15 px-3 py-1.5 text-xs font-bold text-emerald-100 tabular-nums">
+            {formatPercent(r.collectionRatio)}
+          </span>
+        </div>
+        <div className="relative mt-5">
+          <div className="mb-2 flex items-center justify-between gap-3 text-xs">
+            <span className="text-white/70">{t("collectedOfSales")}</span>
+            <span className="font-semibold text-white/90">{t("collectionRate")}</span>
+          </div>
+          <div
+            role="progressbar"
+            aria-label={t("collectionRate")}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={collectionProgress}
+            className="h-2 overflow-hidden rounded-full bg-white/15"
+          >
+            <div className="h-full rounded-full bg-gradient-to-r from-[#f3d9b2] via-[#dfb37d] to-[#f8e9d4] transition-[width]" style={{ width: `${collectionProgress}%` }} />
+          </div>
+        </div>
+        <div className="relative mt-4 flex items-center justify-between gap-3 border-t border-white/15 pt-3 text-xs">
+          <span className="text-white/65">{t("sales")}</span>
+          <span dir="ltr" className="font-semibold text-white/90 tabular-nums">{formatCurrency(r.sales, locale)}</span>
+        </div>
+      </section>
       <Group title={t("bySource")}>
         <Row icon={<WalletIcon aria-hidden className="size-4" />} label={t("payments")} value={formatNumber(c.payment)} />
         <Row icon={<ReceiptTextIcon aria-hidden className="size-4" />} label={t("cheques")} value={formatNumber(c.cheque)} />
