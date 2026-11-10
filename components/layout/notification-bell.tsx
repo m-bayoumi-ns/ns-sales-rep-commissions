@@ -88,7 +88,10 @@ export function NotificationBell({ appHome = false }: { appHome?: boolean }) {
     >
       <PopoverTrigger
         aria-label={unread ? t("labelUnread", { count: unread }) : t("label")}
-        className="relative flex size-9 items-center justify-center rounded-full border border-border bg-card text-muted-foreground shadow-sm outline-none hover:bg-muted hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50"
+        className={cn(
+          "relative flex size-9 items-center justify-center text-muted-foreground outline-none hover:bg-muted hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50",
+          appHome ? "rounded-full border border-border bg-card shadow-sm" : "rounded-lg",
+        )}
       >
         {unread ? <BellRingIcon aria-hidden className="size-5 text-primary" /> : <BellIcon aria-hidden className="size-5" />}
         {unread ? (

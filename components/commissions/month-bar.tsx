@@ -41,7 +41,7 @@ export function MonthBar({ months, month, live, keepRep, showStatus = true, show
   const minutes = Math.max(0, Math.round((now - lastRefresh) / 60_000));
 
   return (
-    <div data-no-print className="flex w-full flex-wrap items-center justify-between gap-2">
+    <div data-no-print className={showAppNotifications ? "flex w-full flex-wrap items-center justify-between gap-2" : "flex flex-wrap items-center gap-2"}>
       <div className="flex flex-wrap items-center gap-2">
         <label className="relative flex items-center">
           <span className="sr-only">{t("label")}</span>
