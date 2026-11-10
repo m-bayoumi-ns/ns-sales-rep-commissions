@@ -62,7 +62,7 @@ export const rulesSchema = z.object({
   /** Slow-moving achievement below this % → − slowDeductionPct % of the commission. */
   slowMinPct: pct.default(60),
   slowDeductionPct: pct.default(15),
-  /** Cash sales ≥ this % of the month's sales → flat bonus. */
+  /** Invoice sales paid this month ≥ this % of the month's sales → flat bonus. */
   cashSharePct: pct.default(60),
   cashBonus: nonNeg.default(2000),
   /** Target achievement (%) needed before the cash bonus is paid; empty = the target must be met (100 %). */

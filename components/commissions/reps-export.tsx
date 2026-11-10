@@ -52,5 +52,5 @@ export function RepsExport({ reps, month }: { reps: RepSummary[]; month: string 
       flag: r.belowMinimum ? t("belowMinimum") : rep.minimumRisk ? t("minimumRisk") : "",
     };
   });
-  return <ExcelExportButton columns={columns} rows={rows} fileName={`commissions-${month}`} sheetName={month} label={t("button")} errorLabel={t("error")} />;
+  return <ExcelExportButton columns={columns} rows={rows} fileName={`commissions-${month}`} sheetName={month} label={t("button")} errorLabel={t("error")} title={t("title", { month })} />;
 }

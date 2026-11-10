@@ -12,8 +12,8 @@ import type { Category, CommissionSettings, ProductRule, Rules, TargetUnit, Tier
  *      • 50 % up to 70 %       → the old system (by default: the line commission, no bonuses or deductions);
  *      • 70 % and above        → the line commission with every bonus and deduction below.
  * 3. Percentage adjustments of the line commission: + 20 % when every target is met, − 15 % when the
- *    slow-moving achievement is under 60 %. Then flat bonuses: cash sales ≥ 60 %, collections > 120 % of
- *    sales, and the monthly sales ladder (highest matching step).
+ * slow-moving achievement is under 60 %. Then flat bonuses: the share of invoices issued and paid this month
+ * ≥ 60 % of sales, collections > 120 % of sales, and the monthly sales ladder (highest matching step).
  * 4. Collections ÷ sales is applied to the commission component only, with no upper cap; bonuses and deductions
  *    are added afterward without being scaled by collections.
  * 5. A note is flagged when month-end sales are below the minimum (478,000).
@@ -25,8 +25,8 @@ export type SaleLine = {
   qty: number;
   /** Net amount after discount, negative for refunds. */
   amount: number;
-  /** Sold on immediate payment terms (cash sale). */
-  cash: boolean;
+  /** Share of this line's net sales paid during the selected month, regardless of payment method. */
+  cashAmount: number;
   day: string;
 };
 
@@ -60,7 +60,9 @@ export type RangeResult = BucketResult & { target: number | null; targetToDate: 
 export type RepResult = {
   sales: number;
   qty: number;
+  /** Net sales value corresponding to invoice amounts paid in the selected month, by any payment method. */
   cashSales: number;
+  /** Paid invoice sales as a percentage of total net sales. */
   cashShare: number | null;
   collections: number;
   /** Actual collections as a percentage of sales, which may exceed 100% or be negative. */
@@ -127,7 +129,7 @@ export function calculate(settings: CommissionSettings, targets: RepTargets, dat
   for (const line of data.lines) {
     sales += line.amount;
     qty += line.qty;
-    if (line.cash) cashSales += line.amount;
+    cashSales += line.cashAmount;
     const rule = productRuleFor(products, line.productId, line.templateId);
     const unitPrice = line.qty ? Math.abs(line.amount / line.qty) : Math.abs(line.amount);
     const index = tierIndex(tiers, unitPrice);
@@ -188,7 +190,7 @@ export function calculate(settings: CommissionSettings, targets: RepTargets, dat
   const regime: Regime = achievement == null ? "noTarget" : achievement < rules.lowAchievementPct ? "low" : achievement < rules.oldSystemUntilPct ? "old" : "full";
   const fullRules = regime === "full" || regime === "noTarget";
 
-  const cashShare = pctOf(cashSales, sales);
+  const cashShare = sales > 0 ? (100 * cashSales) / sales : 0;
   const collectionRatio = pctOf(data.collections, sales);
   const collectionFactor = sales > 0 ? (100 * Math.max(data.collections, 0)) / sales : 0;
   const slowAchievement = categories.slow.achievement;

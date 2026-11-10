@@ -12,6 +12,7 @@ export function ExcelExportButton({
   sheetName,
   label,
   errorLabel,
+  title,
 }: {
   columns: ExcelColumn[];
   rows: ExcelRow[];
@@ -19,6 +20,7 @@ export function ExcelExportButton({
   sheetName: string;
   label: string;
   errorLabel: string;
+  title?: string;
 }) {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState(false);
@@ -27,7 +29,7 @@ export function ExcelExportButton({
     setPending(true);
     setError(false);
     try {
-      await downloadExcel(fileName, sheetName, columns, rows);
+      await downloadExcel(fileName, sheetName, columns, rows, title);
     } catch (reason) {
       console.error("[excel-export] failed to create workbook:", reason);
       setError(true);

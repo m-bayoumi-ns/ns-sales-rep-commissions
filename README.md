@@ -10,7 +10,7 @@ light/dark). Pages: `/en/commissions` (`/en` and `/ar` open it) and `/en/setting
 |---|---|
 | Sales | Posted customer invoices and credit notes (`account.move`) whose **Salesperson** (`sales_rep_id`) is the rep, by invoice date. Product lines at their net amount after discount (`balance`); credit notes count negative. |
 | Products / colours | `product.product` variants; the colour is the variant's `COLOR` attribute value. |
-| Cash sales | Invoices on the "Immediate Payment" term (same rule as the finance reports). |
+| Paid invoice sales | For invoices issued in the selected month, only the share of net sales proportional to amounts settled during that month counts, regardless of payment method. Partial payments count; later or earlier payments do not. |
 | Collections | Same receipts as Customer Payments: posted customer payments − refunds (credited to the payment's **Commission Users**), money collected from incoming cheques on the day it landed (cheque's Commission Users, else the customer's salesperson), and treasury receipts entered as journal entries (customer's salesperson). |
 | Receivables | Gross debt today of the customers whose salesperson is the rep (open month only). |
 
@@ -30,7 +30,7 @@ the page re-reads them every 5 minutes while it is open.
      or a fixed % of sales);
    - 70 % and above → line commission + bonuses / deductions below.
 3. + 20 % of the line commission when every target is met (total + each category that has a target);
-   − 15 % when slow-moving achievement is under 60 %; + 2,000 when cash sales ≥ 60 % of sales; + 2,000 when collections
+   − 15 % when slow-moving achievement is under 60 %; + 2,000 when paid invoice sales ≥ 60 % of sales; + 2,000 when collections
    exceed 120 % of sales; + the monthly sales bonus (highest matching step of the ladder).
 4. Collections ÷ sales, with no upper cap, is applied to the commission component (line commission, or the low / old
    replacement rate when that system applies). Bonuses and deductions are added afterward, unaffected by collections.

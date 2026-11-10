@@ -260,7 +260,7 @@ export async function getCommissionsView(user: AppUser, month: string, repKey: s
     const daily = days.map((day) => ({
       day,
       sales: own.filter((line) => line.day === day).reduce((sum, line) => sum + line.amount, 0),
-      cash: own.filter((line) => line.day === day && line.cash).reduce((sum, line) => sum + line.amount, 0),
+      cash: own.filter((line) => line.day === day).reduce((sum, line) => sum + line.cashAmount, 0),
       collections: collected.filter((row) => row.day === day).reduce((sum, row) => sum + row.amount, 0),
     }));
     const customers = [...Map.groupBy(own, (line) => line.partnerId ?? 0).values()]

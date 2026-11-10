@@ -4,6 +4,7 @@ import { type Catalog, getCatalog } from "@/lib/finance/catalog";
 import { addMonths, cached, currentMonth, MINUTE, monthBounds, monthTtl } from "@/lib/finance/core";
 import { payMethodOf } from "@/lib/finance/methods";
 import type { SaleLine } from "./engine";
+import { paidInvoiceShares } from "./settlement";
 
 /**
  * Everything the commissions read from Odoo — read-only (lib/odoo/client.ts refuses any write).
@@ -133,8 +134,11 @@ export type RepSaleLine = SaleLine & {
   uom: string | null;
 };
 
-type MoveRow = { id: number; name: string; move_type: string; invoice_date: string | false; sales_rep_id: Many2one; invoice_payment_term_id: Many2one; partner_id: Many2one };
+type MoveRow = { id: number; name: string; move_type: string; invoice_date: string | false; sales_rep_id: Many2one; partner_id: Many2one };
 type LineRow = { id: number; move_id: Many2one; product_id: Many2one; quantity: number; balance: number };
+type ReceivableLineRow = { id: number; move_id: Many2one; balance: number };
+type ReconciliationRow = { id: number; debit_move_id: Many2one; credit_move_id: Many2one; amount: number; max_date: string | false };
+type MoveLineDateRow = { id: number; date: string | false };
 
 export function getSalesLines(month: string, repIds: number[]): Promise<RepSaleLine[]> {
   if (!repIds.length) return Promise.resolve([]);
@@ -151,17 +155,77 @@ export function getSalesLines(month: string, repIds: number[]): Promise<RepSaleL
         ["sales_rep_id", "in", repIds],
         ["partner_id", "not in", icList(catalog)],
       ],
-      ["id", "name", "move_type", "invoice_date", "sales_rep_id", "invoice_payment_term_id", "partner_id"],
+      ["id", "name", "move_type", "invoice_date", "sales_rep_id", "partner_id"],
     );
     const moveById = new Map(moves.map((move) => [move.id, move]));
-    const lines = (
-      await Promise.all(
+    const invoiceIds = new Set(moves.filter((move) => move.move_type === "out_invoice").map((move) => move.id));
+    const [lines, receivableLines] = await Promise.all([
+      Promise.all(
         chunk(moves.map((move) => move.id), 800).map((ids) =>
           searchReadAll<LineRow>("account.move.line", [["move_id", "in", ids], ["display_type", "=", "product"]], ["id", "move_id", "product_id", "quantity", "balance"]),
         ),
+      ).then((parts) => parts.flat()),
+      Promise.all(
+        chunk([...invoiceIds], 800).map((ids) =>
+          searchReadAll<ReceivableLineRow>(
+            "account.move.line",
+            [["move_id", "in", ids], ["account_id.account_type", "=", "asset_receivable"]],
+            ["id", "move_id", "balance"],
+          ),
+        ),
+      ).then((parts) => parts.flat()),
+    ]);
+    const receivableLineIds = receivableLines.map((line) => line.id);
+    const [reconciliationParts, products] = await Promise.all([
+      Promise.all(
+        chunk(receivableLineIds, 800).map((ids) =>
+          searchReadAll<ReconciliationRow>(
+            "account.partial.reconcile",
+            ["|", ["debit_move_id", "in", ids], ["credit_move_id", "in", ids], ["max_date", "<=", end]],
+            ["id", "debit_move_id", "credit_move_id", "amount", "max_date"],
+          ),
+        ),
+      ),
+      getProducts([...new Set(lines.map((line) => m2oId(line.product_id)).filter((id): id is number => id != null))]),
+    ]);
+    const rawReconciliations = [...new Map(reconciliationParts.flat().map((row) => [row.id, row])).values()]
+      .filter((row): row is ReconciliationRow & { max_date: string } => typeof row.max_date === "string");
+    const receivableLineIdSet = new Set(receivableLineIds);
+    const counterpartLineIds = [...new Set(rawReconciliations.flatMap((row) => {
+      const debitLineId = m2oId(row.debit_move_id);
+      const creditLineId = m2oId(row.credit_move_id);
+      if (debitLineId != null && receivableLineIdSet.has(debitLineId)) return creditLineId == null ? [] : [creditLineId];
+      if (creditLineId != null && receivableLineIdSet.has(creditLineId)) return debitLineId == null ? [] : [debitLineId];
+      return [];
+    }))];
+    const counterpartLines = (
+      await Promise.all(
+        chunk(counterpartLineIds, 800).map((ids) =>
+          searchReadAll<MoveLineDateRow>("account.move.line", [["id", "in", ids]], ["id", "date"]),
+        ),
       )
     ).flat();
-    const products = await getProducts([...new Set(lines.map((line) => m2oId(line.product_id)).filter((id): id is number => id != null))]);
+    const counterpartDateByLine = new Map(counterpartLines.flatMap((line) => (typeof line.date === "string" ? [[line.id, line.date] as const] : [])));
+    const reconciliations = rawReconciliations.flatMap((row) => {
+      const debitLineId = m2oId(row.debit_move_id);
+      const creditLineId = m2oId(row.credit_move_id);
+      const invoiceLineId = debitLineId != null && receivableLineIdSet.has(debitLineId) ? debitLineId : creditLineId;
+      const counterpartLineId = invoiceLineId === debitLineId ? creditLineId : debitLineId;
+      const date = counterpartLineId == null ? undefined : counterpartDateByLine.get(counterpartLineId);
+      return invoiceLineId == null || !receivableLineIdSet.has(invoiceLineId) || date == null
+        ? []
+        : [{ debitLineId, creditLineId, amount: Number(row.amount) || 0, date }];
+    });
+    const paidInvoiceSharesById = paidInvoiceShares(
+      invoiceIds,
+      receivableLines.flatMap((line) => {
+        const invoiceId = m2oId(line.move_id);
+        return invoiceId == null ? [] : [{ id: line.id, invoiceId, balance: Number(line.balance) || 0 }];
+      }),
+      reconciliations,
+      start,
+      end,
+    );
 
     const out: RepSaleLine[] = [];
     for (const line of lines) {
@@ -172,7 +236,6 @@ export function getSalesLines(month: string, repIds: number[]): Promise<RepSaleL
       const refund = move.move_type === "out_refund";
       const productId = m2oId(line.product_id) ?? 0;
       const product = products.get(productId);
-      const termId = m2oId(move.invoice_payment_term_id);
       out.push({
         repId: m2oId(move.sales_rep_id)!,
         moveId: move.id,
@@ -188,7 +251,7 @@ export function getSalesLines(month: string, repIds: number[]): Promise<RepSaleL
         uom: product?.uom ?? null,
         qty: (refund ? -1 : 1) * Math.abs(Number(line.quantity) || 0),
         amount,
-        cash: termId != null && catalog.immediateTermIds.has(termId),
+        cashAmount: !refund ? amount * (paidInvoiceSharesById.get(move.id) ?? 0) : 0,
         day: move.invoice_date || start,
       });
     }

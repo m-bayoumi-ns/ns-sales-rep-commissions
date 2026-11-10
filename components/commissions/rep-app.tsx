@@ -21,12 +21,13 @@ import {
   SparklesIcon,
   TargetIcon,
   TrendingUpIcon,
+  UserRoundIcon,
   UsersIcon,
   WalletIcon,
   ZapIcon,
 } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "@/i18n/navigation";
 import { AndroidBottomNav, type AppSection } from "@/components/layout/android-bottom-nav";
 import { MonthBar } from "@/components/commissions/month-bar";
@@ -69,7 +70,9 @@ export function RepApp({ detail, settings, clock, months, teamLink, initialTab =
         <header className="rep-balance-header relative overflow-hidden bg-gradient-to-br from-[#5a3a1d] via-[#4a2d16] to-[#2e1d0f] px-5 pt-5 pb-6 text-white sm:px-7">
           <div aria-hidden className="pointer-events-none absolute -end-20 -top-24 size-72 rounded-full bg-amber-300/15 blur-3xl" />
           <div className="relative flex items-center gap-3">
-            <Initials name={rep.name} />
+            <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-white/15 text-white ring-2 ring-white/25">
+              <UserRoundIcon aria-hidden className="size-5" />
+            </span>
             <div className="min-w-0 flex-1">
               <p className="truncate text-base font-semibold">
                 <bdi>{rep.name}</bdi>
@@ -134,16 +137,6 @@ export function RepApp({ detail, settings, clock, months, teamLink, initialTab =
 }
 
 // ---------------------------------------------------------------- building blocks
-function Initials({ name }: { name: string }) {
-  const letters = name
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0])
-    .join("");
-  return <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-white/15 text-base font-bold ring-2 ring-white/25">{letters}</span>;
-}
-
 function LevelChip({ regime }: { regime: RepDetail["rep"]["result"]["regime"] }) {
   const t = useTranslations("app2.chip");
   const tone = { full: "bg-emerald-400/20 text-emerald-100", old: "bg-amber-300/20 text-amber-100", low: "bg-red-400/25 text-red-100", noTarget: "bg-white/15 text-white" }[regime];
@@ -164,6 +157,11 @@ function Mini({ label, value }: { label: string; value: string }) {
 /** The road to the target: three levels (0.1 % · old system · full + bonuses) with the rep's position and month-end projection. */
 function LevelRoad({ achievement, projected, low, old }: { achievement: number | null; projected: number | null; low: number; old: number }) {
   const t = useTranslations("app2.road");
+  const [entered, setEntered] = useState(false);
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => setEntered(true));
+    return () => cancelAnimationFrame(frame);
+  }, []);
   if (achievement == null) return null;
   const max = Math.max(110, Math.min(160, Math.ceil(Math.max(achievement, projected ?? 0) / 10) * 10 + 10));
   const at = (value: number) => `${(100 * Math.min(Math.max(value, 0), max)) / max}%`;
@@ -175,12 +173,12 @@ function LevelRoad({ achievement, projected, low, old }: { achievement: number |
   return (
     <div className="relative mt-6" dir="ltr" aria-label={t("label", { pct: formatPercent(achievement) })}>
       <div className="relative h-2.5 rounded-full bg-white/15">
-        {projected != null && projected > achievement ? <div className="absolute inset-y-0 left-0 rounded-full bg-white/25" style={{ width: at(projected) }} /> : null}
-        <div className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-amber-300 to-emerald-300 transition-[width] duration-700" style={{ width: at(achievement) }} />
+        {projected != null && projected > achievement ? <div className="absolute inset-y-0 left-0 rounded-full bg-white/25 transition-[width] duration-1000 ease-out" style={{ width: entered ? at(projected) : "0%" }} /> : null}
+        <div className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-amber-300 to-emerald-300 transition-[width] duration-1000 ease-out" style={{ width: entered ? at(achievement) : "0%" }} />
         {marks.map((mark) => (
           <span key={mark.label} className={cn("absolute top-1/2 size-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2", achievement >= mark.value ? "border-white bg-emerald-300" : "border-white/60 bg-[#4a2d16]")} style={{ left: at(mark.value) }} />
         ))}
-        <span className="absolute -top-1 size-[18px] -translate-x-1/2 rounded-full border-[3px] border-white bg-amber-300 shadow" style={{ left: at(achievement) }} />
+        <span className={cn("absolute -top-1 size-[18px] -translate-x-1/2 rounded-full border-[3px] border-white bg-amber-300 shadow transition-[left,transform,opacity] duration-1000 ease-out", entered ? "scale-100 opacity-100" : "scale-75 opacity-0")} style={{ left: at(entered ? achievement : 0) }} />
       </div>
       <div className="relative mt-2 h-4 text-[10px] text-white/70">
         {marks.map((mark) => (
@@ -363,7 +361,6 @@ function Summary({ detail, settings, clock }: { detail: RepDetail; settings: Com
       <Group title={t("thisMonth")}>
         <Row icon={<ReceiptTextIcon aria-hidden className="size-4" />} label={t("invoices")} value={formatNumber(rep.invoices)} valueSub={t("customersN", { count: rep.customers })} />
         <Row icon={<BanknoteIcon aria-hidden className="size-4" />} label={t("cashShare")} sub={t("cashNeed", { pct: settings.rules.cashSharePct })} value={formatPercent(r.cashShare)} tone={(r.cashShare ?? 0) >= settings.rules.cashSharePct ? "good" : undefined} />
-        <Row icon={<HandCoinsIcon aria-hidden className="size-4" />} label={t("collected")} sub={t("collectNeed", { pct: settings.rules.collectionPct })} value={formatCompactCurrency(r.collections, locale)} valueSub={formatPercent(r.collectionRatio)} />
       </Group>
     </>
   );
@@ -723,46 +720,25 @@ function Collections({ detail, clock }: { detail: RepDetail; clock: MonthClock }
   const locale = useLocale() as Locale;
   const r = detail.rep.result;
   const c = detail.collections;
-  const recent = [...detail.daily].filter((day) => day.collections !== 0).reverse().slice(0, 10);
-  const collectionProgress = r.collectionRatio == null ? 0 : Math.min(Math.max(r.collectionRatio, 0), 100);
   return (
     <>
-      <section aria-label={t("collectedMonth")} className="relative isolate overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-[#5a3a1d] via-[#4a2d16] to-[#2e1d0f] p-5 text-white shadow-lg shadow-[#4a2d16]/15 sm:p-6">
+      <section aria-label={t("collectedMonth")} className="relative isolate overflow-hidden rounded-3xl border border-white/15 bg-gradient-to-br from-[#805a34] via-[#704a2a] to-[#54381f] p-5 text-white shadow-lg shadow-[#4a2d16]/15 sm:p-6">
         <div aria-hidden className="pointer-events-none absolute -end-16 -top-20 size-56 rounded-full bg-amber-300/15 blur-3xl" />
-        <div className="relative flex items-center gap-3">
-          <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-white/10 text-amber-100 ring-1 ring-white/15">
-            <HandCoinsIcon aria-hidden className="size-5" />
-          </span>
-          <div className="min-w-0 flex-1">
-            <p className="text-sm font-semibold text-white/80">{t("collectedMonth")}</p>
-            <p dir="ltr" className="mt-1 text-start text-3xl font-extrabold tracking-tight tabular-nums sm:text-4xl">
-              {formatCurrency(r.collections, locale)}
-            </p>
+        <div className="relative flex items-center justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-3">
+            <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-white/10 text-amber-100 ring-1 ring-white/15">
+              <HandCoinsIcon aria-hidden className="size-5" />
+            </span>
+            <p className="text-sm font-semibold text-white/90">{t("collectedMonth")}</p>
           </div>
-          <span dir="ltr" className="shrink-0 rounded-full border border-emerald-200/20 bg-emerald-300/15 px-3 py-1.5 text-xs font-bold text-emerald-100 tabular-nums">
+          <span dir="ltr" className="shrink-0 rounded-full border border-[#3b2414]/80 bg-[#3b2414]/75 px-3 py-1.5 text-xs font-bold text-white tabular-nums">
             {formatPercent(r.collectionRatio)}
           </span>
         </div>
-        <div className="relative mt-5">
-          <div className="mb-2 flex items-center justify-between gap-3 text-xs">
-            <span className="text-white/70">{t("collectedOfSales")}</span>
-            <span className="font-semibold text-white/90">{t("collectionRate")}</span>
-          </div>
-          <div
-            role="progressbar"
-            aria-label={t("collectionRate")}
-            aria-valuemin={0}
-            aria-valuemax={100}
-            aria-valuenow={collectionProgress}
-            className="h-2 overflow-hidden rounded-full bg-white/15"
-          >
-            <div className="h-full rounded-full bg-gradient-to-r from-[#f3d9b2] via-[#dfb37d] to-[#f8e9d4] transition-[width]" style={{ width: `${collectionProgress}%` }} />
-          </div>
-        </div>
-        <div className="relative mt-4 flex items-center justify-between gap-3 border-t border-white/15 pt-3 text-xs">
-          <span className="text-white/65">{t("sales")}</span>
-          <span dir="ltr" className="font-semibold text-white/90 tabular-nums">{formatCurrency(r.sales, locale)}</span>
-        </div>
+        <p dir={locale === "ar" ? "rtl" : "ltr"} className="relative mt-3 flex items-baseline gap-2 text-3xl font-extrabold tracking-tight tabular-nums sm:text-4xl">
+          <span dir="ltr">{formatNumber(r.collections)}</span>
+          <span className="text-base font-semibold text-white/80">{locale === "ar" ? "ج.م" : "EGP"}</span>
+        </p>
       </section>
       <Group title={t("bySource")}>
         <Row icon={<WalletIcon aria-hidden className="size-4" />} label={t("payments")} value={formatNumber(c.payment)} />
@@ -778,13 +754,6 @@ function Collections({ detail, clock }: { detail: RepDetail; clock: MonthClock }
           value={detail.rep.receivables == null ? "—" : formatCurrency(detail.rep.receivables, locale)}
         />
       </Group>
-      {recent.length ? (
-        <Group title={t("latestDays")}>
-          {recent.map((day) => (
-            <Row key={day.day} label={new Intl.DateTimeFormat(locale === "ar" ? "ar-EG-u-nu-latn" : "en-GB", { weekday: "long", day: "numeric", month: "short", timeZone: "UTC" }).format(new Date(`${day.day}T00:00:00Z`))} value={formatNumber(day.collections)} />
-          ))}
-        </Group>
-      ) : null}
     </>
   );
 }
@@ -816,7 +785,9 @@ function Statement({ detail, settings }: { detail: RepDetail; settings: Commissi
           <SparklesIcon aria-hidden className="size-4 text-primary" />
           {t("statementTitle")}
         </span>
-        <span className="text-xs text-muted-foreground">{t(`level.${r.regime}Short`)}</span>
+        <span className="inline-flex items-center rounded-lg border border-success/40 bg-success-soft px-2.5 py-1 text-xs font-semibold text-success">
+          {t(`level.${r.regime}Short`)}
+        </span>
       </div>
 
       <ul className="flex flex-col gap-2 border-b border-dashed py-3">
@@ -839,7 +810,7 @@ function Statement({ detail, settings }: { detail: RepDetail; settings: Commissi
             </>
           );
           return (
-            <li key={line.key} className={cn("flex flex-col text-sm", replaced && "opacity-50")}>
+            <li key={line.key} className={cn("flex flex-col text-sm", r.regime === "low" && replaced && "opacity-50")}>
               {openable ? (
                 <button type="button" aria-expanded={open} onClick={() => setOpenKey(open ? null : line.key)} className="-mx-2 flex items-baseline gap-2 rounded-lg px-2 py-1 hover:bg-muted">
                   {body}
@@ -851,7 +822,7 @@ function Statement({ detail, settings }: { detail: RepDetail; settings: Commissi
             </li>
           );
         })}
-        <li className={cn("flex items-baseline gap-2 rounded-lg bg-accent/60 px-2 py-2 text-sm font-bold text-foreground", replaced && "opacity-50")}>
+        <li className={cn("flex items-baseline gap-2 rounded-lg bg-accent/60 px-2 py-2 text-sm font-bold text-foreground", r.regime === "low" && replaced && "opacity-50")}>
           <span>{t("lineCommission")}</span>
           <span aria-hidden className="mb-1 flex-1 border-b border-dotted" />
           <span dir="ltr" className="tabular-nums">{formatNumber(useOldSystemTiers ? r.adjustments.find((item) => item.key === "oldTiers")?.amount ?? r.base : r.base)}</span>
@@ -863,7 +834,7 @@ function Statement({ detail, settings }: { detail: RepDetail; settings: Commissi
         {adjustments.map((item) => (
           <StatementAdjustment key={item.key} item={item} rules={rules} replaced={replaced} />
         ))}
-        {replaced ? (
+        {replaced && !(r.regime === "old" && rules.oldSystemMode === "tiers") ? (
           <li className="flex items-baseline gap-2 rounded-lg bg-warning-soft px-2 py-1.5 text-sm text-warning">
             <span>{r.regime === "low" ? tb("lowRate", { rate: rules.lowRate }) : rules.oldSystemMode === "tiers" ? tb("oldTiers") : tb("oldRate", { rate: rules.oldRate })}</span>
             <span aria-hidden className="mb-1 flex-1" />

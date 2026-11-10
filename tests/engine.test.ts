@@ -16,7 +16,7 @@ const settings = settingsSchema.parse({
   ],
 });
 
-const line = (over: Partial<SaleLine>): SaleLine => ({ productId: 1, templateId: 1, qty: 10, amount: 1000, cash: false, day: "2026-11-02", ...over });
+const line = (over: Partial<SaleLine>): SaleLine => ({ productId: 1, templateId: 1, qty: 10, amount: 1000, cashAmount: 0, day: "2026-11-02", ...over });
 
 describe("price tiers and products", () => {
   it("measures slow-moving targets by sales value, including legacy settings", () => {
@@ -62,6 +62,27 @@ describe("price tiers and products", () => {
 
 describe("calculate", () => {
   const targets = { totalTarget: 1_000_000, slowTarget: 1000, digitalTarget: 100_000 };
+  it("counts only the paid share of an invoice in cash sales", () => {
+    const result = calculate(
+      settings,
+      { totalTarget: null, slowTarget: null, digitalTarget: null },
+      { lines: [line({ qty: 100, amount: 10_000, cashAmount: 2_500 })], collections: 2_500 },
+      { monthClosed: true },
+    );
+
+    expect(result.cashSales).toBe(2_500);
+    expect(result.cashShare).toBe(25);
+  });
+  it("shows a numeric zero paid percentage when there are no sales", () => {
+    const result = calculate(
+      settings,
+      { totalTarget: null, slowTarget: null, digitalTarget: null },
+      { lines: [], collections: 0 },
+      { monthClosed: true },
+    );
+
+    expect(result.cashShare).toBe(0);
+  });
   it("line commission by tier and product", () => {
     const result = calculate(settings, { totalTarget: null, slowTarget: null, digitalTarget: null }, {
       lines: [line({ qty: 10, amount: 500 }), line({ qty: 10, amount: 1500 }), line({ templateId: 10, qty: 5, amount: 1000 }), line({ productId: 201, templateId: 20, amount: 1000 })],
@@ -75,7 +96,7 @@ describe("calculate", () => {
     expect(result.regime).toBe("noTarget");
   });
   it("below 50% pays 0.1% of sales only", () => {
-    const result = calculate(settings, { ...targets, slowTarget: null }, { lines: [line({ qty: 1000, amount: 400_000, cash: true })], collections: 900_000 }, { monthClosed: true });
+    const result = calculate(settings, { ...targets, slowTarget: null }, { lines: [line({ qty: 1000, amount: 400_000, cashAmount: 400_000 })], collections: 900_000 }, { monthClosed: true });
     expect(result.regime).toBe("low");
     expect(result.beforeCollection).toBeCloseTo(400);
     expect(result.collectionFactor).toBe(225);
@@ -94,7 +115,7 @@ describe("calculate", () => {
     const withBonus = calculate(
       settings,
       { totalTarget: 50_000, slowTarget: null, digitalTarget: null },
-      { lines: [line({ qty: 1000, amount: 100_000, cash: true })], collections: 50_000 },
+      { lines: [line({ qty: 1000, amount: 100_000, cashAmount: 100_000 })], collections: 50_000 },
       { monthClosed: false },
     );
     expect(withBonus.regime).toBe("full");
@@ -147,7 +168,7 @@ describe("calculate", () => {
   });
   it("between 50% and 70% uses the old system (line commission only)", () => {
     const legacy = settingsSchema.parse({ ...settings, rules: { ...settings.rules, oldSystemMode: "base" } });
-    const result = calculate(legacy, { ...targets, slowTarget: null }, { lines: [line({ qty: 1000, amount: 600_000, cash: true })], collections: 900_000 }, { monthClosed: false });
+    const result = calculate(legacy, { ...targets, slowTarget: null }, { lines: [line({ qty: 1000, amount: 600_000, cashAmount: 600_000 })], collections: 900_000 }, { monthClosed: false });
     expect(result.regime).toBe("old");
     expect(result.collectionFactor).toBe(150);
     expect(result.total).toBeCloseTo(result.base * 1.5);
@@ -188,9 +209,9 @@ describe("calculate", () => {
   });
   it("full system with every bonus", () => {
     const lines = [
-      line({ qty: 1000, amount: 1_000_000, cash: true }), // tier C (1000/m) → 15,000
-      line({ templateId: 10, qty: 1200, amount: 60_000, cash: true }), // slow → 1,200
-      line({ productId: 201, templateId: 20, qty: 500, amount: 120_000, cash: false }), // digital → 3,600
+      line({ qty: 1000, amount: 1_000_000, cashAmount: 1_000_000 }), // tier C (1000/m) → 15,000
+      line({ templateId: 10, qty: 1200, amount: 60_000, cashAmount: 60_000 }), // slow → 1,200
+      line({ productId: 201, templateId: 20, qty: 500, amount: 120_000, cashAmount: 0 }), // digital → 3,600
     ];
     const result = calculate(settings, targets, { lines, collections: 1_500_000 }, { monthClosed: false });
     expect(result.regime).toBe("full");
@@ -230,7 +251,7 @@ describe("calculate", () => {
 describe("price-range targets", () => {
   it("measures each range and counts it in all targets met", () => {
     // Range C (1,100/m); a missing slow target is intentionally ignored.
-    const lines = [line({ qty: 1000, amount: 1_100_000, cash: true }), line({ templateId: 10, qty: 600, amount: 30_000 })];
+    const lines = [line({ qty: 1000, amount: 1_100_000, cashAmount: 1_100_000 }), line({ templateId: 10, qty: 600, amount: 30_000 })];
     const base = { totalTarget: 1_000_000, slowTarget: null, digitalTarget: null };
     const met = calculate(settings, { ...base, rangeTargets: [null, null, 1_000_000] }, { lines, collections: 0 }, { monthClosed: false });
     expect(met.tiers[2].achievement).toBeCloseTo(110);
@@ -244,7 +265,7 @@ describe("price-range targets", () => {
 describe("cash and collections bonus minimum achievement", () => {
   const withMin = (cash: number | null, collection: number | null) =>
     settingsSchema.parse({ ...settings, rules: { ...settings.rules, cashMinAchievementPct: cash, collectionMinAchievementPct: collection } });
-  const data = { lines: [line({ qty: 1000, amount: 300_000, cash: true })], collections: 400_000 };
+  const data = { lines: [line({ qty: 1000, amount: 300_000, cashAmount: 300_000 })], collections: 400_000 };
   const targets = { totalTarget: 1_000_000, slowTarget: null, digitalTarget: null };
   const bonus = (result: ReturnType<typeof calculate>, key: string) => result.adjustments.find((item) => item.key === key)!;
 
