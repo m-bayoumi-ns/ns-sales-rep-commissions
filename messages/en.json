@@ -531,24 +531,6 @@
       "hint": "Sellers see it at once in the bell at the top of the page, even if the page is already open.",
       "sentAll": "all sellers notified",
       "sentSome": "{count, plural, one {# seller notified} other {# sellers notified}}"
-    },
-    "androidDownload": {
-      "title": "Android app download",
-      "description": "Which app the “Download for Android” button on the app page gives. Applies to everyone right away; it is not a monthly setting.",
-      "recommended": "Recommended",
-      "native": {
-        "title": "Native app",
-        "hint": "Built for Android: faster screens, works with a weak connection, phone notifications."
-      },
-      "web": {
-        "title": "Web app (WebView)",
-        "hint": "The website inside an app: every page of the site, including settings and accounts, with phone notifications."
-      },
-      "version": "Version {version} · {size} MB",
-      "note": "The “Open the app” button and the phone banner follow this choice. The two apps install side by side; switching does not remove the other one from phones that already have it.",
-      "saving": "Saving…",
-      "saved": "Saved",
-      "error": "Could not save. Try again."
     }
   },
   "app2": {

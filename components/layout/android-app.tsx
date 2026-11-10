@@ -73,8 +73,8 @@ export function AppModeMarker() {
 
 // ---------------------------------------------------------------- open the installed app from the browser
 
-// The native app (android-native/), which the download page serves. The older WebView app is com.naguibselim.commissions.
-const APP_PACKAGE = "com.naguibselim.commissionsapp";
+// Android WebView app package.
+const APP_PACKAGE = "com.naguibselim.commissions";
 const APP_HOST = "ns-sales-rep-commissions.vercel.app";
 
 /**
@@ -246,7 +246,7 @@ export function AndroidDownloadButton({ className }: { className?: string }) {
   return (
     <a
       href={ANDROID_APK_URL}
-      download="NS-Commissions.apk"
+      download="NS-Commissions-WebView.apk"
       className={cn(
         "inline-flex h-12 items-center gap-3 rounded-xl bg-primary px-5 text-primary-foreground shadow-sm transition hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
         className,

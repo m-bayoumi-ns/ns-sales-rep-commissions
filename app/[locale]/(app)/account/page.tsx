@@ -7,8 +7,7 @@ import { PageLoadingStatus } from "@/components/common/loading-status";
 import { requireUser } from "@/lib/auth/dal";
 import { isAdmin, isSeller } from "@/lib/auth/permissions";
 import { AndroidAppCard } from "@/components/layout/android-app";
-import { ANDROID_APPS } from "@/lib/android-app";
-import { chosenAndroidVariant } from "@/lib/app/download";
+import { ANDROID_APP } from "@/lib/android-app";
 import { PhoneNotifications } from "@/components/layout/phone-notifications";
 import { AndroidBottomNav } from "@/components/layout/android-bottom-nav";
 import { PasswordForm } from "./password-form";
@@ -33,7 +32,6 @@ export default function AccountPage({ searchParams }: PageProps<"/[locale]/accou
 async function Account({ searchParams }: { searchParams: PageProps<"/[locale]/account">["searchParams"] }) {
   await connection();
   const user = await requireUser();
-  const androidVariant = await chosenAndroidVariant();
   const t = await getTranslations("account");
   const params = await searchParams;
   const role = isAdmin(user) ? t("roleAdmin") : isSeller(user) ? t("roleSeller") : t("roleManager");
@@ -88,7 +86,7 @@ async function Account({ searchParams }: { searchParams: PageProps<"/[locale]/ac
           </div>
         </details>
       </section>
-      {user.mustChangePassword ? null : <div className="web-only"><AndroidAppCard release={ANDROID_APPS[androidVariant].release} /></div>}
+      {user.mustChangePassword ? null : <div className="web-only"><AndroidAppCard release={ANDROID_APP.release} /></div>}
       {user.mustChangePassword ? null : (
         <Suspense fallback={<div className="h-48 animate-pulse rounded-3xl border bg-card" />}>
           <PhoneNotifications user={user} />

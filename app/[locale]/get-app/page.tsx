@@ -9,8 +9,7 @@ import { BrandLogo } from "@/components/layout/brand-logo";
 import { LanguageSwitcher } from "@/components/layout/language-switcher";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
 import { Link } from "@/i18n/navigation";
-import { ANDROID_APPS, sizeMb } from "@/lib/android-app";
-import { chosenAndroidVariant } from "@/lib/app/download";
+import { ANDROID_APP, sizeMb } from "@/lib/android-app";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("androidApp.page");
@@ -195,7 +194,6 @@ export default function GetAppPage() {
 
 async function AndroidVersion() {
   await connection();
-  const [t, variant] = await Promise.all([getTranslations("androidApp.page"), chosenAndroidVariant()]);
-  const release = ANDROID_APPS[variant].release;
+  const [t, release] = await Promise.all([getTranslations("androidApp.page"), ANDROID_APP.release]);
   return <p className="text-xs text-muted-foreground">{t("version", { version: release.version, size: sizeMb(release.bytes) })}</p>;
 }

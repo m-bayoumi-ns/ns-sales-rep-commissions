@@ -3,7 +3,7 @@ import { ping } from "@/lib/commissions/notifications";
 import { readJson, writeJson } from "@/lib/commissions/storage";
 
 /**
- * Sign-ins per user (Supabase Storage, ns-sales-rep-commissions/app/logins/<userId>.json), so the Android app can
+ * Sign-ins per user (Supabase Storage, ns-sales-rep-commissions/app/logins/<userId>.json), so the Android WebView app can
  * warn the owner when their account is signed in somewhere else. Each entry carries the Supabase session id:
  * the app compares it with its own session and only reports other sessions.
  */

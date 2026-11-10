@@ -11,7 +11,7 @@ import { deviceFile, lastTestRequest } from "./devices";
 import { loginsFor } from "./logins";
 
 /**
- * What the Android app shows as phone notifications. The app calls GET /api/app/feed every ~15 minutes
+ * What the Android WebView app shows as phone notifications. It calls GET /api/app/feed every ~15 minutes
  * (and when it opens). Per device we keep a small state file with what that device was last told:
  *   - the newest sign-in and rate notification it has seen,
  *   - a snapshot of the seller's commission (total, system, every bonus/deduction).

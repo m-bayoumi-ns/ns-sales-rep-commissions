@@ -78,8 +78,3 @@ written) and "Notify" is set to all sellers or chosen accounts, a notification i
 `ns-sales-rep-commissions/notifications.json` and an empty ping is broadcast on the Supabase Realtime channel
 `ns-commissions-notify`. Every open page listening on it fetches its own notifications at once (the bell in the header,
 plus a toast); pages also re-check every 30 seconds. Read markers are in `notifications-read.json`.
-
-## Native Android app
-[`android-native/`](android-native/README.md) is a native (Kotlin + Compose) version of the Commissions page. It signs in
-through `POST /api/app/session` and reads `GET /api/app/commissions` (Bearer token), and it is built by
-`.github/workflows/android-native-apk.yml`. The WebView app in `android/` is unchanged.

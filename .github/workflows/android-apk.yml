@@ -1,8 +1,7 @@
 name: Android APK
 
 # Builds the NS Commissions WebView app (android/), publishes it on the website as
-# public/downloads/ns-commissions-web.apk (served when Settings → Android app download = web) and as a GitHub Release.
-# The native app (android-native-apk.yml) publishes public/downloads/ns-commissions.apk.
+# public/downloads/ns-commissions-web.apk and as a GitHub Release.
 # Runs when anything under android/ changes, or by hand from the Actions tab ("Run workflow").
 
 on:

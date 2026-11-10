@@ -9,7 +9,6 @@ import { readSessionUser } from "@/lib/auth/dal";
 import { isAdmin } from "@/lib/auth/permissions";
 import { normalizeName } from "@/lib/commissions/names";
 import { isDemoMode } from "@/lib/dev";
-import { ANDROID_VARIANTS } from "@/lib/android-app";
 import { publicEnv } from "@/lib/env";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import {
@@ -93,22 +92,6 @@ export async function setForcePassword(userId: string, value: boolean): Promise<
     return { ok: true };
   } catch (error) {
     console.error("[accounts] force password failed:", error);
-    return { ok: false };
-  }
-}
-
-/** Settings → Android app download: which app the website's download button serves (administrators only). */
-export async function setAndroidDownload(value: string): Promise<AccountResult> {
-  const admin = await requireAdmin();
-  const parsed = z.enum(ANDROID_VARIANTS).safeParse(value);
-  if (!parsed.success) return { ok: false };
-  try {
-    await saveAppSettings({ ...(await loadAppSettings()), androidDownload: parsed.data });
-    after(() => logActivity({ action: "android_download_changed", userId: admin.id, email: admin.email, details: { value: parsed.data } }));
-    revalidatePath("/", "layout");
-    return { ok: true };
-  } catch (error) {
-    console.error("[accounts] android download setting failed:", error);
     return { ok: false };
   }
 }
