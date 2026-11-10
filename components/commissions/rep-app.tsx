@@ -337,8 +337,16 @@ function Summary({ detail, settings, clock }: { detail: RepDetail; settings: Com
 
       {!clock.closed && r.totalTarget ? (
         <Group title={t("pace")}>
-          <Row icon={<TrendingUpIcon aria-hidden className="size-4" />} label={t("projected")} value={formatCompactCurrency(rep.projectedSales, locale)} valueSub={formatPercent(rep.projectedAchievement)} />
-          <Row icon={<CalendarClockIcon aria-hidden className="size-4" />} label={t("perDay")} sub={t("daysLeft", { days: clock.remainingDays })} value={rep.perDayToTarget ? formatCompactCurrency(rep.perDayToTarget, locale) : t("reached")} tone={rep.perDayToTarget ? undefined : "good"} />
+          <Row
+            icon={<TrendingUpIcon aria-hidden className="size-4" />}
+            label={<span className="inline-flex items-baseline gap-2">{t("projected")} <bdi dir="ltr" className="font-semibold tabular-nums">{formatCompactCurrency(rep.projectedSales, locale)}</bdi></span>}
+            sub={formatPercent(rep.projectedAchievement)}
+          />
+          <Row
+            icon={<CalendarClockIcon aria-hidden className="size-4" />}
+            label={<span className="inline-flex items-baseline gap-2">{t("perDay")} <bdi dir="ltr" className={cn("font-semibold tabular-nums", !rep.perDayToTarget && "text-success")}>{rep.perDayToTarget ? formatCompactCurrency(rep.perDayToTarget, locale) : t("reached")}</bdi></span>}
+            sub={t("daysLeft", { days: clock.remainingDays })}
+          />
         </Group>
       ) : null}
 
@@ -359,8 +367,17 @@ function Summary({ detail, settings, clock }: { detail: RepDetail; settings: Com
       </Group>
 
       <Group title={t("thisMonth")}>
-        <Row icon={<ReceiptTextIcon aria-hidden className="size-4" />} label={t("invoices")} value={formatNumber(rep.invoices)} valueSub={t("customersN", { count: rep.customers })} />
-        <Row icon={<BanknoteIcon aria-hidden className="size-4" />} label={t("cashShare")} sub={t("cashNeed", { pct: settings.rules.cashSharePct })} value={formatPercent(r.cashShare)} tone={(r.cashShare ?? 0) >= settings.rules.cashSharePct ? "good" : undefined} />
+        <Row
+          icon={<ReceiptTextIcon aria-hidden className="size-4" />}
+          label={<span className="inline-flex items-baseline gap-2">{t("invoices")} <bdi className="font-bold tabular-nums">{formatNumber(rep.invoices)}</bdi></span>}
+          sub={t("customersN", { count: rep.customers })}
+        />
+        <Row
+          icon={<BanknoteIcon aria-hidden className="size-4" />}
+          label={<span className="inline-flex items-baseline gap-2">{t("cashShare")} <bdi className="font-bold tabular-nums">{formatPercent(r.cashShare)}</bdi></span>}
+          sub={t("cashNeed", { pct: settings.rules.cashSharePct })}
+          tone={(r.cashShare ?? 0) >= settings.rules.cashSharePct ? "good" : undefined}
+        />
       </Group>
     </>
   );

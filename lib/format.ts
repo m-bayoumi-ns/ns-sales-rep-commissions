@@ -41,8 +41,8 @@ export function formatCompactCurrency(value: number | null | undefined, locale: 
   if (locale === "ar") {
     const abs = Math.abs(value);
     const sign = value < 0 ? "−" : "";
-    if (abs >= 1e6) return `${sign}${oneDecimalOrTwo(abs / 1e6)} مليون ج.م`;
-    if (abs >= 1e3) return `${sign}${oneDecimalOrTwo(abs / 1e3)} ألف ج.م`;
+    if (abs >= 1e6) return `\u2067${sign}${oneDecimalOrTwo(abs / 1e6)} مليون ج.م\u2069`;
+    if (abs >= 1e3) return `\u2067${sign}${oneDecimalOrTwo(abs / 1e3)} ألف ج.م\u2069`;
     return formatCurrency(value, locale);
   }
   return `${compactEn.format(value).replace("-", "−")} EGP`;
