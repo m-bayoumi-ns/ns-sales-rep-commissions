@@ -10,6 +10,8 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -24,6 +26,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
@@ -56,7 +59,6 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -70,9 +72,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -159,12 +166,12 @@ fun CommissionsScreen(viewModel: AppViewModel) {
             containerColor = MaterialTheme.colorScheme.background,
             bottomBar = {
                 if (selectedDetail != null) {
-                    NavigationBar(containerColor = MaterialTheme.colorScheme.surface) {
+                    NavigationBar(containerColor = MaterialTheme.colorScheme.surface, tonalElevation = 0.dp) {
                         NavigationBarItem(
                             selected = false,
                             onClick = { uri.openUri("$website/account") },
                             icon = { Icon(Icons.Filled.Person, contentDescription = null) },
-                            label = { Text(stringResource(R.string.my_account), maxLines = 1) },
+                            label = { Text(stringResource(R.string.nav_account), maxLines = 1) },
                             alwaysShowLabel = true,
                         )
                         listOf(
@@ -185,8 +192,35 @@ fun CommissionsScreen(viewModel: AppViewModel) {
                                     detailSection = section
                                     scope.launch { listState.animateScrollToItem(0) }
                                 },
-                                icon = { Icon(icon, contentDescription = null) },
-                                label = { Text(stringResource(label), maxLines = 1) },
+                                icon = {
+                                    if (section == RepSection.Summary) {
+                                        Box(Modifier.size(24.dp), contentAlignment = Alignment.Center) {
+                                            Box(
+                                                Modifier
+                                                    .size(56.dp)
+                                                    .offset(y = (-18).dp)
+                                                    .shadow(6.dp, CircleShape)
+                                                    .clip(CircleShape)
+                                                    .background(
+                                                        Brush.linearGradient(
+                                                            listOf(Color(0xFF4A2D16), Color(0xFF76502F), Color(0xFFA77543), Color(0xFF59371E)),
+                                                        ),
+                                                    )
+                                                    .border(4.dp, MaterialTheme.colorScheme.background, CircleShape),
+                                                contentAlignment = Alignment.Center,
+                                            ) {
+                                                Image(
+                                                    painter = painterResource(R.drawable.splash_mark),
+                                                    contentDescription = null,
+                                                    modifier = Modifier.size(34.dp),
+                                                )
+                                            }
+                                        }
+                                    } else {
+                                        Icon(icon, contentDescription = null)
+                                    }
+                                },
+                                label = { Text(stringResource(if (section == RepSection.Summary) R.string.nav_home else label), maxLines = 1) },
                                 alwaysShowLabel = true,
                             )
                         }
@@ -194,44 +228,9 @@ fun CommissionsScreen(viewModel: AppViewModel) {
                 }
             },
             topBar = {
-                TopAppBar(
-                    title = {
-                        Column {
-                            Text(stringResource(R.string.cm_title), fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                            state.data?.user?.let { user ->
-                                Text(user.name, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                            }
-                        }
-                    },
-                    actions = {
-                        if (selectedDetail == null || detailSection == RepSection.Summary) {
-                            IconButton(onClick = { viewModel.refresh() }, enabled = !state.loading && !state.refreshing) {
-                                Icon(Icons.Filled.Refresh, contentDescription = stringResource(R.string.refresh))
-                            }
-                        }
-                        var menu by remember { mutableStateOf(false) }
-                        Box {
-                            IconButton(onClick = { menu = true }) { Icon(Icons.Filled.MoreVert, contentDescription = stringResource(R.string.more)) }
-                            DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
-                                DropdownMenuItem(text = { Text(stringResource(R.string.open_website)) }, onClick = { menu = false; uri.openUri("$website/commissions") })
-                                if (state.data?.user?.admin == true) {
-                                    DropdownMenuItem(
-                                        text = { Text(stringResource(R.string.commission_settings)) },
-                                        onClick = {
-                                            menu = false
-                                            adminPage = AdminPage.Settings
-                                        },
-                                    )
-                                    DropdownMenuItem(text = { Text(stringResource(R.string.manage_accounts)) }, onClick = { menu = false; adminPage = AdminPage.Accounts })
-                                }
-                                DropdownMenuItem(text = { Text(stringResource(R.string.my_account)) }, onClick = { menu = false; uri.openUri("$website/account") })
-                                HorizontalDivider()
-                                DropdownMenuItem(text = { Text(stringResource(R.string.sign_out)) }, onClick = { menu = false; viewModel.signOut() })
-                            }
-                        }
-                    },
-                    colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
-                )
+                if (state.data == null) {
+                    TopAppBar(title = { Text(stringResource(R.string.cm_title), fontWeight = FontWeight.Bold) })
+                }
             },
         ) { padding ->
             PullToRefreshBox(
@@ -266,8 +265,15 @@ fun CommissionsScreen(viewModel: AppViewModel) {
                                 data = data,
                                 loading = state.loading,
                                 showStatus = selectedDetail == null || detailSection == RepSection.Summary,
+                                refreshing = state.refreshing,
+                                onRefresh = viewModel::refresh,
                                 onMonth = viewModel::selectMonth,
                                 onRep = viewModel::selectRep,
+                                onOpenWebsite = { uri.openUri("$website/commissions") },
+                                onAdminSettings = { adminPage = AdminPage.Settings },
+                                onAdminAccounts = { adminPage = AdminPage.Accounts },
+                                onAccount = { uri.openUri("$website/account") },
+                                onSignOut = viewModel::signOut,
                             )
                         }
                         if (!notificationsOn) item(key = "notifications-off") { NotificationsOffCard(onTurnOn = openNotificationSettings) }
@@ -356,8 +362,28 @@ private fun ProblemState(problem: Problem, onRetry: () -> Unit, onOpenWebsite: (
 }
 
 @Composable
-private fun Filters(data: CommissionsResponse, loading: Boolean, showStatus: Boolean, onMonth: (String) -> Unit, onRep: (String) -> Unit) {
+private fun Filters(
+    data: CommissionsResponse,
+    loading: Boolean,
+    showStatus: Boolean,
+    refreshing: Boolean,
+    onRefresh: () -> Unit,
+    onMonth: (String) -> Unit,
+    onRep: (String) -> Unit,
+    onOpenWebsite: () -> Unit,
+    onAdminSettings: () -> Unit,
+    onAdminAccounts: () -> Unit,
+    onAccount: () -> Unit,
+    onSignOut: () -> Unit,
+) {
     val format = LocalFormat.current
+    var now by remember { mutableStateOf(System.currentTimeMillis()) }
+    LaunchedEffect(data.fetchedAt) {
+        while (true) {
+            now = System.currentTimeMillis()
+            delay(15_000)
+        }
+    }
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
             Picker(
@@ -382,22 +408,75 @@ private fun Filters(data: CommissionsResponse, loading: Boolean, showStatus: Boo
                 )
             }
         }
-        if (showStatus) {
-            val clock = data.clock
-            val status = LocalStatus.current
-            if (clock.closed) {
-                Pill(stringResource(R.string.month_closed), MaterialTheme.colorScheme.onSurfaceVariant, MaterialTheme.colorScheme.surfaceVariant)
-            } else {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Pill(stringResource(R.string.live), status.success, status.successSoft)
-                    Text(
-                        stringResource(R.string.day_of, clock.elapsedDays, clock.monthDays) + " · " +
-                            pluralStringResource(R.plurals.days_left, clock.remainingDays, clock.remainingDays),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            if (showStatus) {
+                val clock = data.clock
+                val status = LocalStatus.current
+                if (clock.closed) {
+                    Pill(stringResource(R.string.month_closed), MaterialTheme.colorScheme.onSurfaceVariant, MaterialTheme.colorScheme.surfaceVariant)
+                } else {
+                    val minutes = ((now - Instant.parse(data.fetchedAt).toEpochMilli()).coerceAtLeast(0L) / 60_000).toInt()
+                    val liveText = if (minutes == 0) stringResource(R.string.live_updated_now)
+                    else pluralStringResource(R.plurals.live_updated, minutes, minutes)
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(7.dp),
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(MaterialTheme.colorScheme.surface)
+                            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(10.dp))
+                            .padding(start = 10.dp, end = 2.dp, top = 2.dp, bottom = 2.dp),
+                    ) {
+                        Box(Modifier.size(9.dp).clip(CircleShape).background(status.success))
+                        Text(liveText, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
+                        IconButton(
+                            onClick = onRefresh,
+                            enabled = !loading && !refreshing,
+                            modifier = Modifier.size(32.dp),
+                        ) {
+                            Icon(Icons.Filled.Refresh, contentDescription = stringResource(R.string.refresh), modifier = Modifier.size(16.dp))
+                        }
+                    }
                 }
             }
+            Spacer(Modifier.weight(1f))
+            FilterActionsMenu(data.user.admin, onOpenWebsite, onAdminSettings, onAdminAccounts, onAccount, onSignOut)
+        }
+    }
+}
+
+@Composable
+private fun FilterActionsMenu(
+    isAdmin: Boolean,
+    onOpenWebsite: () -> Unit,
+    onAdminSettings: () -> Unit,
+    onAdminAccounts: () -> Unit,
+    onAccount: () -> Unit,
+    onSignOut: () -> Unit,
+) {
+    var expanded by remember { mutableStateOf(false) }
+    Box {
+        IconButton(onClick = { expanded = true }, modifier = Modifier.size(40.dp)) {
+            Icon(Icons.Filled.MoreVert, contentDescription = stringResource(R.string.more))
+        }
+        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.open_website)) },
+                onClick = { expanded = false; onOpenWebsite() },
+            )
+            if (isAdmin) {
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.commission_settings)) },
+                    onClick = { expanded = false; onAdminSettings() },
+                )
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.manage_accounts)) },
+                    onClick = { expanded = false; onAdminAccounts() },
+                )
+            }
+            DropdownMenuItem(text = { Text(stringResource(R.string.my_account)) }, onClick = { expanded = false; onAccount() })
+            HorizontalDivider()
+            DropdownMenuItem(text = { Text(stringResource(R.string.sign_out)) }, onClick = { expanded = false; onSignOut() })
         }
     }
 }
@@ -406,19 +485,18 @@ private fun Filters(data: CommissionsResponse, loading: Boolean, showStatus: Boo
 private fun Picker(label: String, value: String, options: List<Pair<String, String>>, enabled: Boolean, onSelect: (String) -> Unit, modifier: Modifier = Modifier) {
     var open by remember { mutableStateOf(false) }
     Box(modifier) {
-        Card(
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-            elevation = CardDefaults.cardElevation(defaultElevation = 0.5.dp),
-            modifier = Modifier.fillMaxWidth().clickable(enabled = enabled && options.size > 1) { open = true },
+        OutlinedButton(
+            onClick = { open = true },
+            enabled = enabled && options.size > 1,
+            shape = RoundedCornerShape(10.dp),
+            contentPadding = PaddingValues(horizontal = 10.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(40.dp)
+                .semantics { contentDescription = "$label: $value" },
         ) {
-            Row(Modifier.padding(horizontal = 14.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
-                Column(Modifier.weight(1f)) {
-                    Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text(value, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                }
-                Icon(Icons.Filled.ArrowDropDown, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
+            Text(value, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+            Icon(Icons.Filled.ArrowDropDown, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         DropdownMenu(expanded = open, onDismissRequest = { open = false }, modifier = Modifier.heightIn(max = 420.dp)) {
             options.forEach { (key, text) ->

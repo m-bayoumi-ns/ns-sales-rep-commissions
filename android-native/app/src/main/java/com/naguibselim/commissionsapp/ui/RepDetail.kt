@@ -74,7 +74,9 @@ fun LazyListScope.repDetailItems(
             }
         }
     }
-    item(key = "header-$key") { HeaderCard(data, detail, section) }
+    if (section == RepSection.Summary) {
+        item(key = "header-$key") { HeaderCard(data, detail, section) }
+    }
     when (section) {
         RepSection.Summary -> {
             item(key = "targets-$key") { TargetsCard(data, detail) }

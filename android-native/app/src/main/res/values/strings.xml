@@ -45,6 +45,9 @@
     <string name="month_closed">Month closed · final figures</string>
     <string name="month_closed_short">Closed</string>
     <string name="day_of">Day %1$d of %2$d</string>
+    <string name="nav_account">Account</string>
+    <string name="nav_home">Home</string>
+    <string name="live_updated_now">Live · updated just now</string>
     <string name="loading">Reading the figures from Odoo…</string>
     <string name="loading_hint">This can take up to a minute at the start of the day.</string>
     <string name="updated_at">Updated at %1$s · refreshes every 5 minutes</string>
@@ -349,6 +352,10 @@
     <plurals name="days_left">
         <item quantity="one">%d day left</item>
         <item quantity="other">%d days left</item>
+    </plurals>
+    <plurals name="live_updated">
+        <item quantity="one">Live · updated %d min ago</item>
+        <item quantity="other">Live · updated %d min ago</item>
     </plurals>
     <plurals name="invoices">
         <item quantity="one">%d invoice</item>

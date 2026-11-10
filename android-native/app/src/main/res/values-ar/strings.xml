@@ -45,6 +45,9 @@
     <string name="month_closed">شهر مغلق · أرقام نهائية</string>
     <string name="month_closed_short">مغلق</string>
     <string name="day_of">اليوم %1$d من %2$d</string>
+    <string name="nav_account">الحساب</string>
+    <string name="nav_home">الرئيسية</string>
+    <string name="live_updated_now">مباشر · آخر تحديث الآن</string>
     <string name="loading">جارٍ قراءة الأرقام من أودو…</string>
     <string name="loading_hint">قد يستغرق ذلك حتى دقيقة في بداية اليوم.</string>
     <string name="updated_at">آخر تحديث %1$s · يتحدث كل 5 دقائق</string>
@@ -353,6 +356,14 @@
         <item quantity="few">%d أيام متبقية</item>
         <item quantity="many">%d يومًا متبقيًا</item>
         <item quantity="other">%d يوم متبقٍ</item>
+    </plurals>
+    <plurals name="live_updated">
+        <item quantity="zero">مباشر · آخر تحديث الآن</item>
+        <item quantity="one">مباشر · آخر تحديث منذ دقيقة</item>
+        <item quantity="two">مباشر · آخر تحديث منذ دقيقتين</item>
+        <item quantity="few">مباشر · آخر تحديث منذ %d دقائق</item>
+        <item quantity="many">مباشر · آخر تحديث منذ %d دقيقة</item>
+        <item quantity="other">مباشر · آخر تحديث منذ %d دقيقة</item>
     </plurals>
     <plurals name="invoices">
         <item quantity="zero">لا فواتير</item>
