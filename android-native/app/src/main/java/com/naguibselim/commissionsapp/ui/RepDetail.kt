@@ -28,6 +28,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -49,6 +50,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.LayoutDirection
 import com.naguibselim.commissionsapp.R
 import com.naguibselim.commissionsapp.data.Adjustment
 import com.naguibselim.commissionsapp.data.CommissionsResponse
@@ -137,7 +141,21 @@ private fun HeaderCard(data: CommissionsResponse, detail: RepDetail, section: Re
 
         Column(Modifier.fillMaxWidth().padding(top = 22.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             Text(stringResource(if (closed) R.string.commission_final else R.string.commission_now), style = MaterialTheme.typography.bodyMedium, color = white.copy(alpha = 0.75f))
-            Text(f.money(r.total), style = MaterialTheme.typography.displaySmall, fontWeight = FontWeight.ExtraBold, color = white, maxLines = 1)
+            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Text(f.number(r.total), fontSize = 40.sp, fontWeight = FontWeight.ExtraBold, color = white, maxLines = 1)
+                    Text(
+                        if (f.isArabic) "ج.م" else "EGP",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = white.copy(alpha = 0.72f),
+                        maxLines = 1,
+                    )
+                }
+            }
             if (section == RepSection.Summary && !closed) {
                 Text(stringResource(R.string.updates_live), style = MaterialTheme.typography.bodySmall, color = white.copy(alpha = 0.7f))
             }
@@ -165,7 +183,7 @@ private fun HeaderCard(data: CommissionsResponse, detail: RepDetail, section: Re
                                 .background(Brush.horizontalGradient(listOf(Color(0xFFFCD34D), Color(0xFF6FD39A)))),
                         )
                         Box(
-                            Modifier.align(Alignment.CenterEnd).size(13.dp).clip(CircleShape)
+                            Modifier.align(Alignment.CenterEnd).offset(x = (-6).dp).size(13.dp).clip(CircleShape)
                                 .background(white),
                         )
                     }
@@ -176,7 +194,10 @@ private fun HeaderCard(data: CommissionsResponse, detail: RepDetail, section: Re
                             .size(width = 2.dp, height = 11.dp).background(white.copy(alpha = 0.75f)),
                     )
                     Box(
-                        Modifier.align(Alignment.TopStart).offset(x = maxWidth * position - 14.dp, y = 13.dp)
+                        Modifier.align(Alignment.TopStart).offset(
+                            x = if (position == 1f) maxWidth - 28.dp else maxWidth * position - 14.dp,
+                            y = 13.dp,
+                        )
                             .size(width = 28.dp, height = 16.dp),
                         contentAlignment = Alignment.Center,
                     ) {

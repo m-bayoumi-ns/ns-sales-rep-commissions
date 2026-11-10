@@ -48,6 +48,7 @@
     <string name="nav_account">الحساب</string>
     <string name="nav_home">الرئيسية</string>
     <string name="live_updated_now">مباشر · آخر تحديث الآن</string>
+    <string name="loading_title">جارٍ تحميل أرقام العمولة…</string>
     <string name="loading">جارٍ قراءة الأرقام من أودو…</string>
     <string name="loading_hint">قد يستغرق ذلك حتى دقيقة في بداية اليوم.</string>
     <string name="updated_at">آخر تحديث %1$s · يتحدث كل 5 دقائق</string>

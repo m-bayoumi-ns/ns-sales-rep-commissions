@@ -247,14 +247,7 @@ fun CommissionsScreen(viewModel: AppViewModel) {
                         onOpenWebsite = { uri.openUri("$website/account") },
                         onSignOut = { viewModel.signOut() },
                     )
-                    data == null -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            CircularProgressIndicator()
-                            Spacer(Modifier.height(14.dp))
-                            Text(stringResource(R.string.loading), color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            Text(stringResource(R.string.loading_hint), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center, modifier = Modifier.padding(horizontal = 32.dp, vertical = 4.dp))
-                        }
-                    }
+                    data == null -> LoadingCard()
                     else -> LazyColumn(
                         state = listState,
                         modifier = Modifier.fillMaxSize(),
@@ -265,6 +258,7 @@ fun CommissionsScreen(viewModel: AppViewModel) {
                             Filters(
                                 data = data,
                                 loading = state.loading,
+                                showRepPicker = selectedDetail == null,
                                 showStatus = selectedDetail == null || detailSection == RepSection.Summary,
                                 refreshing = state.refreshing,
                                 onRefresh = viewModel::refresh,
@@ -334,6 +328,64 @@ private fun LinearLoading() {
 }
 
 @Composable
+private fun LoadingCard() {
+    Box(
+        Modifier.fillMaxSize().padding(horizontal = 16.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Card(
+            shape = RoundedCornerShape(22.dp),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+        ) {
+            Row(
+                Modifier.fillMaxWidth().padding(20.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+            ) {
+                Box(
+                    Modifier.size(52.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primaryContainer),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(28.dp),
+                        color = MaterialTheme.colorScheme.primary,
+                        strokeWidth = 2.5.dp,
+                    )
+                }
+                Column(
+                    Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    Text(
+                        stringResource(R.string.loading_title),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
+                    Text(
+                        stringResource(R.string.loading),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    androidx.compose.material3.LinearProgressIndicator(
+                        Modifier.fillMaxWidth().padding(top = 2.dp),
+                        color = MaterialTheme.colorScheme.primary,
+                        trackColor = MaterialTheme.colorScheme.surfaceVariant,
+                    )
+                    Text(
+                        stringResource(R.string.loading_hint),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
 private fun ProblemState(problem: Problem, onRetry: () -> Unit, onOpenWebsite: () -> Unit, onSignOut: () -> Unit) {
     // Scrollable so pull-to-refresh also works here.
     LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(24.dp), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
@@ -366,6 +418,7 @@ private fun ProblemState(problem: Problem, onRetry: () -> Unit, onOpenWebsite: (
 private fun Filters(
     data: CommissionsResponse,
     loading: Boolean,
+    showRepPicker: Boolean,
     showStatus: Boolean,
     refreshing: Boolean,
     onRefresh: () -> Unit,
@@ -395,7 +448,7 @@ private fun Filters(
                 onSelect = onMonth,
                 modifier = Modifier.weight(1f),
             )
-            if (data.repOptions.size > 1) {
+            if (showRepPicker && data.repOptions.size > 1) {
                 val all = data.allReps to stringResource(R.string.all_sellers)
                 val current = data.detail?.rep?.key ?: data.allReps
                 val options = listOf(all) + data.repOptions.map { it.key to it.name }

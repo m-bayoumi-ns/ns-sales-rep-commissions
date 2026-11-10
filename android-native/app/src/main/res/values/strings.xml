@@ -48,6 +48,7 @@
     <string name="nav_account">Account</string>
     <string name="nav_home">Home</string>
     <string name="live_updated_now">Live · updated just now</string>
+    <string name="loading_title">Loading commission figures…</string>
     <string name="loading">Reading the figures from Odoo…</string>
     <string name="loading_hint">This can take up to a minute at the start of the day.</string>
     <string name="updated_at">Updated at %1$s · refreshes every 5 minutes</string>
