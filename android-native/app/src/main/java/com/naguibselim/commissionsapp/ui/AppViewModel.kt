@@ -9,6 +9,7 @@ import com.naguibselim.commissionsapp.data.AdminAccountsPayload
 import com.naguibselim.commissionsapp.data.AdminSettingsPayload
 import com.naguibselim.commissionsapp.data.ApiClient
 import com.naguibselim.commissionsapp.data.ApiResult
+import com.naguibselim.commissionsapp.data.AppUpdateInfo
 import com.naguibselim.commissionsapp.data.CommissionsViewPayload
 import com.naguibselim.commissionsapp.data.CommissionSettingsModel
 import com.naguibselim.commissionsapp.data.NotificationsPayload
@@ -74,7 +75,9 @@ data class AppUiState(
     val adminAccountsData: AdminAccountsPayload? = null,
     val loadingAdminAccounts: Boolean = false,
     val adminAccountsBusy: Boolean = false,
-    val adminAccountsToast: Pair<Boolean, String>? = null
+    val adminAccountsToast: Pair<Boolean, String>? = null,
+    // Mandatory App Update
+    val mandatoryUpdate: AppUpdateInfo? = null
 )
 
 class AppViewModel(application: Application) : AndroidViewModel(application) {
@@ -91,11 +94,19 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     val state: StateFlow<AppUiState> = _state.asStateFlow()
 
     init {
+        checkAppUpdate()
         if (_state.value.signedIn) {
             loadCommissions(initial = true)
             refreshNotifications()
             FeedWorker.schedule(getApplication())
             FeedWorker.checkNow(getApplication(), 4L)
+        }
+    }
+
+    fun checkAppUpdate() {
+        viewModelScope.launch {
+            val update = api.checkMandatoryUpdate()
+            _state.update { it.copy(mandatoryUpdate = update) }
         }
     }
 
@@ -207,12 +218,14 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun signOut() {
+        val currentUpdate = _state.value.mandatoryUpdate
         store.clearSession()
         _state.update {
             AppUiState(
                 signedIn = false,
                 language = store.language(),
-                themeMode = store.themeMode()
+                themeMode = store.themeMode(),
+                mandatoryUpdate = currentUpdate
             )
         }
     }

@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { FileTextIcon, HandCoinsIcon, ShoppingCartIcon, UserRoundIcon } from "lucide-react";
+import { ChartNoAxesCombinedIcon, CoinsIcon, FileTextIcon, UserRoundIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
@@ -29,7 +29,7 @@ export function AndroidBottomNav({
   const itemClass = (selected: boolean) =>
     cn("flex min-w-0 flex-1 flex-col items-center justify-center gap-1 py-1 text-[10px] font-medium leading-none transition-colors", selected ? "text-primary" : "text-muted-foreground hover:text-foreground");
 
-  const sectionItem = (section: AppSection, Icon: typeof ShoppingCartIcon) => {
+  const sectionItem = (section: AppSection, Icon: typeof ChartNoAxesCombinedIcon) => {
     const selected = active === section;
     return onSelect ? (
       <button key={section} type="button" aria-current={selected ? "page" : undefined} onClick={() => onSelect(section)} className={itemClass(selected)}>
@@ -51,7 +51,7 @@ export function AndroidBottomNav({
           <UserRoundIcon aria-hidden className="size-5" />
           <span className="truncate">{t("account")}</span>
         </Link>
-        {sectionItem("sales", ShoppingCartIcon)}
+        {sectionItem("sales", ChartNoAxesCombinedIcon)}
         <div className="relative flex min-w-0 flex-col items-center justify-end pb-1">
           <span aria-hidden className="absolute -top-4 left-1/2 z-0 size-[4.5rem] -translate-x-1/2 rounded-t-full border-x border-t bg-card" />
           {onSelect ? (
@@ -65,7 +65,7 @@ export function AndroidBottomNav({
           )}
           <span className={cn("relative z-10 mb-1 whitespace-nowrap text-[10px] font-semibold leading-none", active === "summary" ? "text-primary" : "text-muted-foreground")}>{t("home")}</span>
         </div>
-        {sectionItem("collections", HandCoinsIcon)}
+        {sectionItem("collections", CoinsIcon)}
         {sectionItem("statement", FileTextIcon)}
       </div>
     </nav>

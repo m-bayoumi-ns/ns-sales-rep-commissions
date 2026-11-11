@@ -3,6 +3,7 @@ package com.naguibselim.commissionsapp
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -17,6 +18,7 @@ import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -26,6 +28,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -36,8 +39,14 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Download
+import androidx.compose.material.icons.outlined.SystemUpdate
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
@@ -62,13 +71,17 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.zIndex
 import androidx.core.content.ContextCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import com.naguibselim.commissionsapp.data.AppUpdateInfo
 import com.naguibselim.commissionsapp.notify.Notifier
 import com.naguibselim.commissionsapp.ui.AccountScreen
 import com.naguibselim.commissionsapp.ui.AdminAccountsScreen
@@ -78,6 +91,7 @@ import com.naguibselim.commissionsapp.ui.AppViewModel
 import com.naguibselim.commissionsapp.ui.CommissionsScreen
 import com.naguibselim.commissionsapp.ui.LocalNsColors
 import com.naguibselim.commissionsapp.ui.LoginScreen
+import com.naguibselim.commissionsapp.ui.LtrText
 import com.naguibselim.commissionsapp.ui.LucideIcons
 import com.naguibselim.commissionsapp.ui.MainNavDestination
 import com.naguibselim.commissionsapp.ui.NsTheme
@@ -140,8 +154,28 @@ class MainActivity : ComponentActivity() {
                         viewModel = viewModel
                     )
                 }
+
+                // Mandatory Update Pop-up Box (Non-dismissible)
+                state.mandatoryUpdate?.let { updateInfo ->
+                    MandatoryUpdateDialog(
+                        update = updateInfo,
+                        onDownload = {
+                            runCatching {
+                                val dlIntent = Intent(Intent.ACTION_VIEW, Uri.parse(updateInfo.downloadUrl)).apply {
+                                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                }
+                                context.startActivity(dlIntent)
+                            }
+                        }
+                    )
+                }
             }
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        viewModel.checkAppUpdate()
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -223,6 +257,10 @@ private fun MainAuthenticatedShell(
                             onSelectRep = { viewModel.selectRep(it) },
                             onRefresh = { viewModel.loadCommissions(isRefresh = true) },
                             onOpenNotifications = { viewModel.openNotifications(it) },
+                            onToggleTheme = {
+                                val next = if (c.isDark) "light" else "dark"
+                                viewModel.setThemeMode(next)
+                            },
                             onOpenAdminSettings = {
                                 viewModel.navigateTo(MainNavDestination.ADMIN_SETTINGS)
                             },
@@ -494,5 +532,135 @@ private fun BottomNavSideItem(
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.padding(top = 4.dp)
         )
+    }
+}
+
+@Composable
+private fun MandatoryUpdateDialog(
+    update: AppUpdateInfo,
+    onDownload: () -> Unit
+) {
+    val c = LocalNsColors.current
+    val sizeMbStr = if (update.bytes > 0) {
+        String.format(java.util.Locale.US, "%.1f MB", update.bytes.toDouble() / (1024.0 * 1024.0))
+    } else null
+
+    Dialog(
+        onDismissRequest = { /* Mandatory update — cannot be dismissed */ },
+        properties = DialogProperties(
+            dismissOnBackPress = false,
+            dismissOnClickOutside = false,
+            usePlatformDefaultWidth = false
+        )
+    ) {
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp),
+            shape = RoundedCornerShape(28.dp),
+            color = c.card,
+            border = BorderStroke(1.dp, c.border),
+            shadowElevation = 12.dp
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp, vertical = 28.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(14.dp)
+            ) {
+                // Header Badge with NS Mark & System Update Icon
+                Box(
+                    modifier = Modifier
+                        .size(64.dp)
+                        .clip(RoundedCornerShape(20.dp))
+                        .background(
+                            Brush.linearGradient(
+                                colors = listOf(c.heroStart, c.heroMid, c.heroEnd)
+                            )
+                        )
+                        .border(1.5.dp, c.primary.copy(alpha = 0.35f), RoundedCornerShape(20.dp)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Image(
+                        painter = painterResource(id = R.drawable.ns_mark),
+                        contentDescription = null,
+                        contentScale = ContentScale.Fit,
+                        modifier = Modifier.size(38.dp)
+                    )
+                }
+
+                Text(
+                    text = tr("تحديث إجباري جديد متاح", "Mandatory Update Available"),
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = c.foreground,
+                    textAlign = TextAlign.Center
+                )
+
+                Text(
+                    text = tr(
+                        "يتوفر إصدار جديد من تطبيق عمولات المندوبين. يرجى تحميل وتثبيت التحديث الجديد للمتابعة.",
+                        "A new version of the Sales Rep Commissions app is available. Please download and install the new version to continue."
+                    ),
+                    fontSize = 13.5.sp,
+                    color = c.mutedForeground,
+                    textAlign = TextAlign.Center,
+                    lineHeight = 20.sp
+                )
+
+                // Version pill
+                Surface(
+                    shape = RoundedCornerShape(14.dp),
+                    color = c.accent,
+                    border = BorderStroke(1.dp, c.primary.copy(alpha = 0.2f))
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.SystemUpdate,
+                            contentDescription = null,
+                            tint = c.primary,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        LtrText(
+                            text = "v${update.currentVersion} → v${update.version}" + (sizeMbStr?.let { " · $it" } ?: ""),
+                            fontSize = 12.5.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = c.primary
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                Button(
+                    onClick = onDownload,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(50.dp),
+                    shape = RoundedCornerShape(14.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = c.primary,
+                        contentColor = c.primaryForeground
+                    )
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.Download,
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = tr("تحميل التحديث الآن", "Download Update"),
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+        }
     }
 }

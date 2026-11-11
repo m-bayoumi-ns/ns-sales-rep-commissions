@@ -10,8 +10,8 @@ import {
   CircleDashedIcon,
   CircleMinusIcon,
   ChevronRightIcon,
+  CoinsIcon,
   FlagIcon,
-  HandCoinsIcon,
   LayersIcon,
   LightbulbIcon,
   PackageIcon,
@@ -24,6 +24,7 @@ import {
   UserRoundIcon,
   UsersIcon,
   WalletIcon,
+  XIcon,
   ZapIcon,
 } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
@@ -326,7 +327,7 @@ function Summary({ detail, settings, clock }: { detail: RepDetail; settings: Com
             );
           })}
         <Row
-          icon={<HandCoinsIcon aria-hidden className="size-4" />}
+          icon={<CoinsIcon aria-hidden className="size-4" />}
           label={t(clock.closed ? "collectionRate" : "collectionRateToDate")}
           sub={`${formatCompactCurrency(r.collections, locale)} / ${formatCompactCurrency(r.sales, locale)} ${t("collectedOfSales")}`}
           value={formatPercent(r.collectionRatio)}
@@ -491,6 +492,7 @@ function Sales({ detail, clock }: { detail: RepDetail; clock: MonthClock }) {
   const [view, setView] = useState<SalesView>("days");
   const [mobileView, setMobileView] = useState<SalesView | null>(null);
   const [query, setQuery] = useState("");
+  const [searchExpanded, setSearchExpanded] = useState(false);
   const [all, setAll] = useState(false);
   const text = query.trim().toLowerCase();
   const match = (value: string) => !text || value.toLowerCase().includes(text);
@@ -539,6 +541,7 @@ function Sales({ detail, clock }: { detail: RepDetail; clock: MonthClock }) {
                   setMobileView(key);
                   setAll(false);
                   setQuery("");
+                  setSearchExpanded(false);
                 }}
                 className="flex min-h-20 items-center gap-3 rounded-2xl border bg-card px-4 py-4 text-start shadow-sm transition-colors hover:bg-accent"
               >
@@ -554,10 +557,75 @@ function Sales({ detail, clock }: { detail: RepDetail; clock: MonthClock }) {
       ) : null}
       <section className={cn("flex flex-col gap-3", mobileView == null ? "web-only" : "android-sales-results")} data-mobile-selected={mobileView != null}>
         {mobileView ? (
-          <button type="button" onClick={() => { setMobileView(null); setQuery(""); }} className="flex w-fit items-center gap-1 rounded-lg px-2 py-1 text-sm font-medium text-primary hover:bg-muted">
-            <ChevronLeftIcon aria-hidden className="size-4 rtl:rotate-180" />
-            {t("chooseSalesView")}
-          </button>
+          <div className="app-only flex flex-col items-center gap-3.5">
+            <div className="flex w-full items-center justify-between">
+              <button
+                type="button"
+                onClick={() => {
+                  setMobileView(null);
+                  setQuery("");
+                  setSearchExpanded(false);
+                }}
+                className="flex items-center gap-1 rounded-full border bg-accent/70 px-3 py-1.5 text-xs font-semibold text-primary transition-colors hover:bg-accent"
+              >
+                <ChevronLeftIcon aria-hidden className="size-4 rtl:rotate-180" />
+                {t("chooseSalesView")}
+              </button>
+              <span className="rounded-full border border-primary/20 bg-accent px-3 py-1 text-xs font-bold text-primary tabular-nums">
+                {t(`viewTitle.${currentView}`, { count })}
+              </span>
+            </div>
+
+            <div className="flex w-full flex-col items-center gap-1.5 rounded-2xl border border-primary/15 bg-accent/50 px-4 py-4 text-center">
+              <span className="flex size-11 items-center justify-center rounded-xl border border-primary/20 bg-card text-primary shadow-xs">
+                {currentView === "days" ? (
+                  <CalendarDaysIcon aria-hidden className="size-5" />
+                ) : currentView === "customers" ? (
+                  <UsersIcon aria-hidden className="size-5" />
+                ) : currentView === "invoices" ? (
+                  <ReceiptTextIcon aria-hidden className="size-5" />
+                ) : (
+                  <PackageIcon aria-hidden className="size-5" />
+                )}
+              </span>
+              <h3 className="text-lg font-extrabold text-foreground">{t(`view.${currentView}`)}</h3>
+              <span className="mt-0.5 h-1 w-9 rounded-full bg-primary/55" />
+            </div>
+
+            <div className="flex w-full justify-center">
+              {!searchExpanded && !query ? (
+                <button
+                  type="button"
+                  onClick={() => setSearchExpanded(true)}
+                  aria-label={t(`searchView.${currentView}`)}
+                  className="flex size-11 items-center justify-center rounded-full border border-primary/30 bg-card text-primary shadow-sm transition-all duration-300 hover:scale-105 hover:bg-accent active:scale-95"
+                >
+                  <SearchIcon aria-hidden className="size-5" />
+                </button>
+              ) : (
+                <div className="relative w-full animate-in fade-in zoom-in-95 duration-200">
+                  <SearchIcon aria-hidden className="pointer-events-none absolute start-3.5 top-1/2 size-4 -translate-y-1/2 text-primary" />
+                  <input
+                    autoFocus
+                    value={query}
+                    onChange={(event) => setQuery(event.target.value)}
+                    placeholder={t(`searchView.${currentView}`)}
+                    className="h-11 w-full rounded-full border border-primary/40 bg-card ps-10 pe-10 text-sm shadow-xs outline-none focus-visible:border-primary focus-visible:ring-3 focus-visible:ring-ring/40 dark:bg-input/30"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (query) setQuery("");
+                      else setSearchExpanded(false);
+                    }}
+                    className="absolute end-2.5 top-1/2 flex size-7 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground"
+                  >
+                    <XIcon aria-hidden className="size-4" />
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
         ) : null}
         <div role="tablist" aria-label={t("salesViews")} className="web-only grid grid-cols-4 gap-1 rounded-xl bg-muted p-1">
           {(["days", "customers", "invoices", "products"] as SalesView[]).map((key) => (
@@ -576,7 +644,7 @@ function Sales({ detail, clock }: { detail: RepDetail; clock: MonthClock }) {
             </button>
           ))}
         </div>
-        <div className="flex flex-wrap items-center justify-between gap-2 px-1">
+        <div className="web-only flex flex-wrap items-center justify-between gap-2 px-1">
           <h3 className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
             {t(`viewTitle.${currentView}`, { count })}
           </h3>
@@ -744,7 +812,7 @@ function Collections({ detail, clock }: { detail: RepDetail; clock: MonthClock }
         <div className="relative flex items-center justify-between gap-3">
           <div className="flex min-w-0 items-center gap-3">
             <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-white/10 text-amber-100 ring-1 ring-white/15">
-              <HandCoinsIcon aria-hidden className="size-5" />
+              <CoinsIcon aria-hidden className="size-5" />
             </span>
             <p className="text-sm font-semibold text-white/90">{t("collectedMonth")}</p>
           </div>

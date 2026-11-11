@@ -1,8 +1,15 @@
 package com.naguibselim.commissionsapp.ui
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -67,6 +74,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -979,7 +988,15 @@ private fun SalesSection(
     val isAr = LocalIsArabic.current
     var mobileView by rememberSaveable(salesResetTick) { mutableStateOf<String?>(null) } // null | "days" | "customers" | "invoices" | "products"
     var query by rememberSaveable(mobileView) { mutableStateOf("") }
+    var searchExpanded by rememberSaveable(mobileView) { mutableStateOf(false) }
     var showAll by rememberSaveable(mobileView) { mutableStateOf(false) }
+    val searchFocusRequester = remember { FocusRequester() }
+
+    LaunchedEffect(searchExpanded) {
+        if (searchExpanded) {
+            runCatching { searchFocusRequester.requestFocus() }
+        }
+    }
 
     // Screenshot 4: When mobileView == null, show "اختر طريقة عرض العمولة" and 4 large cards
     if (mobileView == null) {
@@ -1015,6 +1032,7 @@ private fun SalesSection(
                             mobileView = key
                             showAll = false
                             query = ""
+                            searchExpanded = false
                         },
                     shape = RoundedCornerShape(16.dp),
                     color = c.card,
@@ -1112,72 +1130,244 @@ private fun SalesSection(
         else -> days.size
     }
 
-    // Back button to return to the 4 sales view choices
-    Row(
-        modifier = Modifier
-            .clip(RoundedCornerShape(8.dp))
-            .clickable {
-                mobileView = null
-                query = ""
-            }
-            .padding(horizontal = 4.dp, vertical = 4.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(4.dp)
-    ) {
-        Icon(
-            imageVector = if (isAr) Icons.AutoMirrored.Outlined.KeyboardArrowRight else Icons.AutoMirrored.Outlined.KeyboardArrowLeft,
-            contentDescription = null,
-            tint = c.primary,
-            modifier = Modifier.size(18.dp)
-        )
-        Text(
-            text = tr("اختر طريقة عرض العمولة", "Choose a commission view"),
-            fontSize = 13.5.sp,
-            fontWeight = FontWeight.Medium,
-            color = c.primary
-        )
+    // Modern Header & Expandable Search Section
+    val viewIcon = when (currentView) {
+        "products" -> LucideIcons.Package
+        "invoices" -> LucideIcons.ReceiptText
+        "customers" -> LucideIcons.Users
+        else -> LucideIcons.CalendarDays
     }
-
+    val modernTitle = when (currentView) {
+        "products" -> tr("حسب المنتج", "By Product")
+        "invoices" -> tr("حسب الفاتورة", "By Invoice")
+        "customers" -> tr("حسب العميل", "By Customer")
+        else -> tr("حسب اليوم", "By Day")
+    }
+    val modernSubtitle = when (currentView) {
+        "products" -> tr("المنتجات المباعة وتفاصيل عمولة كل صنف", "Products sold and line commission details")
+        "invoices" -> tr("فواتير المبيعات وإشعارات الدائن", "Sales invoices and credit notes")
+        "customers" -> tr("إجمالي المبيعات والعمولة لكل عميل", "Total sales and commission per customer")
+        else -> tr("ملخص المبيعات والعمولة اليومية", "Daily sales and commission summary")
+    }
+    val countBadgeLabel = when (currentView) {
+        "products" -> tr("$count منتج", "$count items")
+        "invoices" -> tr("$count فاتورة", "$count invoices")
+        "customers" -> tr("$count عميل", "$count customers")
+        else -> tr("$count يوم", "$count days")
+    }
     val searchPlaceholder = when (currentView) {
-        "products" -> tr("ابحث عن منتج أو لون أو فاتورة", "Search product, colour or invoice")
-        "invoices" -> tr("ابحث برقم الفاتورة أو العميل", "Search invoice number or customer")
-        "customers" -> tr("ابحث عن عميل", "Search customer")
-        else -> tr("ابحث برقم الفاتورة أو العميل", "Search invoice or customer")
+        "products" -> tr("ابحث عن منتج أو لون أو فاتورة...", "Search product, colour or invoice...")
+        "invoices" -> tr("ابحث برقم الفاتورة أو العميل...", "Search invoice number or customer...")
+        "customers" -> tr("ابحث عن اسم العميل...", "Search customer name...")
+        else -> tr("ابحث برقم الفاتورة أو العميل أو التاريخ...", "Search invoice, customer or date...")
     }
 
-    OutlinedTextField(
-        value = query,
-        onValueChange = { query = it },
-        placeholder = { Text(searchPlaceholder, fontSize = 13.sp) },
-        leadingIcon = {
-            Icon(Icons.Outlined.Search, contentDescription = null, modifier = Modifier.size(18.dp))
-        },
-        trailingIcon = if (query.isNotEmpty()) {
-            {
-                IconButton(onClick = { query = "" }) {
-                    Icon(Icons.Outlined.Clear, contentDescription = null, modifier = Modifier.size(18.dp))
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(14.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        // Top back link row
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Surface(
+                shape = CircleShape,
+                color = c.accent.copy(alpha = 0.7f),
+                border = BorderStroke(1.dp, c.border),
+                modifier = Modifier
+                    .clip(CircleShape)
+                    .clickable {
+                        mobileView = null
+                        query = ""
+                        searchExpanded = false
+                    }
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Icon(
+                        imageVector = if (isAr) Icons.AutoMirrored.Outlined.KeyboardArrowRight else Icons.AutoMirrored.Outlined.KeyboardArrowLeft,
+                        contentDescription = null,
+                        tint = c.primary,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Text(
+                        text = tr("طرق العرض", "All views"),
+                        fontSize = 12.5.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = c.primary
+                    )
                 }
             }
-        } else null,
-        singleLine = true,
-        shape = CircleShape,
-        colors = OutlinedTextFieldDefaults.colors(
-            focusedContainerColor = c.card,
-            unfocusedContainerColor = c.card,
-            focusedBorderColor = c.primary,
-            unfocusedBorderColor = c.border
-        ),
-        modifier = Modifier.fillMaxWidth()
-    )
 
-    val viewTitle = when (currentView) {
-        "products" -> tr("المنتجات المباعة ($count)", "Products sold ($count)")
-        "invoices" -> tr("الفواتير ($count)", "Invoices ($count)")
-        "customers" -> tr("العملاء ($count)", "Customers ($count)")
-        else -> tr("الأيام ($count)", "Days ($count)")
+            Box(
+                modifier = Modifier
+                    .clip(CircleShape)
+                    .background(c.accent)
+                    .border(1.dp, c.primary.copy(alpha = 0.18f), CircleShape)
+                    .padding(horizontal = 12.dp, vertical = 5.dp)
+            ) {
+                Text(
+                    text = countBadgeLabel,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = c.primary
+                )
+            }
+        }
+
+        // Modern Title Header Card complementing the overall design
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(20.dp),
+            color = c.accent.copy(alpha = if (c.isDark) 0.55f else 0.48f),
+            border = BorderStroke(1.dp, c.primary.copy(alpha = 0.16f))
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 18.dp, vertical = 16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(46.dp)
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(c.card)
+                        .border(1.dp, c.primary.copy(alpha = 0.22f), RoundedCornerShape(14.dp)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = viewIcon,
+                        contentDescription = null,
+                        tint = c.primary,
+                        modifier = Modifier.size(22.dp)
+                    )
+                }
+                Text(
+                    text = modernTitle,
+                    fontSize = 19.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = c.foreground,
+                    textAlign = TextAlign.Center
+                )
+                Text(
+                    text = modernSubtitle,
+                    fontSize = 12.5.sp,
+                    color = c.mutedForeground,
+                    textAlign = TextAlign.Center
+                )
+                // Decorative modern accent pill bar
+                Box(
+                    modifier = Modifier
+                        .padding(top = 2.dp)
+                        .width(36.dp)
+                        .height(3.dp)
+                        .clip(CircleShape)
+                        .background(c.primary.copy(alpha = 0.55f))
+                )
+            }
+        }
+
+        // Below the title: Modern Expandable Search Bar (Search icon that expands into an input box when clicked)
+        val isSearchOpen = searchExpanded || query.isNotEmpty()
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .animateContentSize(animationSpec = tween(durationMillis = 320, easing = FastOutSlowInEasing)),
+            contentAlignment = Alignment.Center
+        ) {
+            AnimatedContent(
+                targetState = isSearchOpen,
+                transitionSpec = {
+                    (fadeIn(tween(240)) + scaleIn(initialScale = 0.88f, animationSpec = tween(260, easing = FastOutSlowInEasing)))
+                        .togetherWith(fadeOut(tween(180)) + scaleOut(targetScale = 0.88f, animationSpec = tween(180)))
+                },
+                label = "expandableSearch"
+            ) { expanded ->
+                if (!expanded) {
+                    // Collapsed state: sleek modern circular Search icon button
+                    Surface(
+                        shape = CircleShape,
+                        color = c.card,
+                        border = BorderStroke(1.2.dp, c.primary.copy(alpha = 0.28f)),
+                        shadowElevation = 2.dp,
+                        modifier = Modifier
+                            .size(46.dp)
+                            .clip(CircleShape)
+                            .clickable { searchExpanded = true }
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                imageVector = LucideIcons.Search,
+                                contentDescription = tr("بحث", "Search"),
+                                tint = c.primary,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                    }
+                } else {
+                    // Expanded state: full-width modern pill input box
+                    OutlinedTextField(
+                        value = query,
+                        onValueChange = { query = it },
+                        placeholder = {
+                            Text(
+                                text = searchPlaceholder,
+                                fontSize = 13.sp,
+                                color = c.mutedForeground
+                            )
+                        },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = LucideIcons.Search,
+                                contentDescription = null,
+                                tint = c.primary,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        },
+                        trailingIcon = {
+                            IconButton(
+                                onClick = {
+                                    if (query.isNotEmpty()) {
+                                        query = ""
+                                    } else {
+                                        searchExpanded = false
+                                    }
+                                }
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Outlined.Clear,
+                                    contentDescription = tr("إغلاق البحث", "Close search"),
+                                    tint = c.mutedForeground,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+                        },
+                        singleLine = true,
+                        shape = RoundedCornerShape(24.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedContainerColor = c.card,
+                            unfocusedContainerColor = c.card,
+                            focusedBorderColor = c.primary,
+                            unfocusedBorderColor = c.primary.copy(alpha = 0.35f)
+                        ),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .focusRequester(searchFocusRequester)
+                    )
+                }
+            }
+        }
     }
 
-    NsGroupCard(title = viewTitle) {
+    NsGroupCard(title = null) {
         if (count == 0) {
             Text(
                 text = tr("لا توجد مبيعات هذا الشهر بعد.", "No sales yet this month."),

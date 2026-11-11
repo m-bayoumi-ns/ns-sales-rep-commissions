@@ -88,7 +88,7 @@ fun LtrText(
 
 @Composable
 fun NsGroupCard(
-    title: String,
+    title: String? = null,
     modifier: Modifier = Modifier,
     footer: String? = null,
     action: (@Composable () -> Unit)? = null,
@@ -96,21 +96,23 @@ fun NsGroupCard(
 ) {
     val c = LocalNsColors.current
     Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 4.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Text(
-                text = title.uppercase(),
-                fontSize = 12.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = c.mutedForeground,
-                letterSpacing = 0.3.sp
-            )
-            action?.invoke()
+        if (!title.isNullOrBlank() || action != null) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = (title ?: "").uppercase(),
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = c.mutedForeground,
+                    letterSpacing = 0.3.sp
+                )
+                action?.invoke()
+            }
         }
         Surface(
             modifier = Modifier.fillMaxWidth(),

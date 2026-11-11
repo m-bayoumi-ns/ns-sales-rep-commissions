@@ -6,13 +6,13 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.vector.PathBuilder
 import androidx.compose.ui.graphics.vector.path
 import androidx.compose.ui.unit.dp
 
 object LucideIcons {
     private fun strokeVector(
         name: String,
-        strokeWidth: Float = 2f,
         block: ImageVector.Builder.() -> Unit
     ): ImageVector {
         return ImageVector.Builder(
@@ -26,7 +26,7 @@ object LucideIcons {
 
     private fun ImageVector.Builder.strokePath(
         strokeWidth: Float = 2f,
-        pathBuilder: androidx.compose.ui.graphics.vector.PathBuilder.() -> Unit
+        pathBuilder: PathBuilder.() -> Unit
     ) {
         path(
             fill = null,
@@ -39,45 +39,117 @@ object LucideIcons {
         )
     }
 
-    /** Lucide `hand-coins` — used in bottom nav "التحصيل" and Collections header */
+    private fun PathBuilder.circlePath(cx: Float, cy: Float, r: Float) {
+        moveTo(cx + r, cy)
+        arcTo(r, r, 0f, isMoreThanHalf = false, isPositiveArc = true, cx - r, cy)
+        arcTo(r, r, 0f, isMoreThanHalf = false, isPositiveArc = true, cx + r, cy)
+        close()
+    }
+
+    /**
+     * Updated Modern Collections Icon (`Coins` / Stacked Financial Coins) —
+     * used in bottom nav "التحصيل", Collections hero card, and Summary collections row.
+     */
     val HandCoins: ImageVector by lazy {
-        strokeVector("HandCoins") {
-            // Hand palm & fingers
+        strokeVector("CollectionsCoins") {
+            // Front coin (cx = 8.5, cy = 8.5, r = 5.5)
             strokePath {
-                moveTo(11f, 15f)
-                horizontalLineTo(13f)
-                arcTo(2f, 2f, 0f, false, false, 15f, 13f)
-                verticalLineTo(12.5f)
-                arcTo(1.5f, 1.5f, 0f, false, false, 13.5f, 11f)
-                horizontalLineTo(8.5f)
-                curveTo(7.4f, 11f, 6.4f, 11.4f, 5.7f, 12.1f)
-                lineTo(2f, 16f)
+                circlePath(8.5f, 8.5f, 5.5f)
+            }
+            // Inner detail on front coin (vertical bar / 1 mark)
+            strokePath {
+                moveTo(7.8f, 6.7f)
+                horizontalLineTo(8.7f)
+                verticalLineTo(10.5f)
+            }
+            // Back / lower stacked coin arc + rim
+            strokePath {
+                moveTo(13.8f, 10.2f)
+                curveTo(17.4f, 10.9f, 20f, 13.8f, 20f, 16.5f)
+                curveTo(20f, 19.6f, 16.9f, 21.5f, 13.5f, 21.5f)
+                curveTo(10.4f, 21.5f, 7.8f, 19.8f, 7.1f, 17.2f)
+            }
+            // Mid coin ridge accent
+            strokePath {
+                moveTo(15.2f, 14.2f)
+                lineTo(13.2f, 16.2f)
+                lineTo(15.2f, 18.2f)
+            }
+        }
+    }
+
+    /**
+     * Updated Modern Sales Icon (`ChartNoAxesCombined` — Rising Sales Bars + Upward Trend Arrow) —
+     * used in bottom nav "المبيعات".
+     */
+    val ShoppingCart: ImageVector by lazy {
+        strokeVector("SalesTrendChart") {
+            // Rising sales bars at base
+            strokePath {
+                moveTo(5f, 21f)
+                verticalLineTo(16f)
+                moveTo(11f, 21f)
+                verticalLineTo(13f)
+                moveTo(17f, 21f)
+                verticalLineTo(10f)
+            }
+            // Upward trend line with arrow head
+            strokePath {
+                moveTo(3f, 11.5f)
+                lineTo(8.5f, 6.5f)
+                lineTo(12.5f, 9.5f)
+                lineTo(20f, 3f)
             }
             strokePath {
-                moveTo(7f, 21f)
-                lineTo(8.6f, 19.6f)
-                curveTo(9.3f, 19f, 10.2f, 18.7f, 11.1f, 18.7f)
+                moveTo(15.5f, 3f)
+                horizontalLineTo(20f)
+                verticalLineTo(7.5f)
+            }
+        }
+    }
+
+    /**
+     * Modern Light Bulb Icon (`Lightbulb`) —
+     * used inside the circular Day/Night mode toggle button next to the Notification Bell.
+     */
+    val Lightbulb: ImageVector by lazy {
+        strokeVector("Lightbulb") {
+            // Bulb glass dome & neck
+            strokePath {
+                moveTo(15f, 14f)
+                curveTo(15.4f, 12.8f, 16.2f, 11.9f, 17.1f, 10.9f)
+                curveTo(18.3f, 9.7f, 19f, 8.1f, 19f, 6.5f)
+                curveTo(19f, 3.2f, 15.9f, 1.5f, 12f, 1.5f)
+                curveTo(8.1f, 1.5f, 5f, 3.2f, 5f, 6.5f)
+                curveTo(5f, 8.1f, 5.7f, 9.7f, 6.9f, 10.9f)
+                curveTo(7.8f, 11.9f, 8.6f, 12.8f, 9f, 14f)
+            }
+            // Screw base lines
+            strokePath {
+                moveTo(9f, 18f)
                 horizontalLineTo(15f)
-                curveTo(16.1f, 18.7f, 17.1f, 18.3f, 17.8f, 17.5f)
-                lineTo(21.4f, 13.9f)
-                arcTo(1.5f, 1.5f, 0f, false, false, 19.3f, 11.8f)
-                lineTo(16.5f, 14f)
+                moveTo(10f, 21.5f)
+                horizontalLineTo(14f)
+            }
+            // Subtle inner filament arc
+            strokePath(strokeWidth = 1.6f) {
+                moveTo(10f, 8.5f)
+                curveTo(10.8f, 7.2f, 13.2f, 7.2f, 14f, 8.5f)
+            }
+        }
+    }
+
+    /**
+     * Modern Search Icon (`Search`) — used in the expandable Sales search bar.
+     */
+    val Search: ImageVector by lazy {
+        strokeVector("Search") {
+            strokePath {
+                circlePath(11f, 11f, 7.5f)
             }
             strokePath {
-                moveTo(2f, 16f)
-                lineTo(7f, 21f)
-            }
-            // Top coin (circle at 16, 6, r = 2.5)
-            strokePath {
-                moveTo(18.5f, 6f)
-                arcTo(2.5f, 2.5f, 0f, true, true, 13.5f, 6f)
-                arcTo(2.5f, 2.5f, 0f, true, true, 18.5f, 6f)
-            }
-            // Second coin (circle at 9.5, 5, r = 2.2)
-            strokePath {
-                moveTo(11.7f, 5f)
-                arcTo(2.2f, 2.2f, 0f, true, true, 7.3f, 5f)
-                arcTo(2.2f, 2.2f, 0f, true, true, 11.7f, 5f)
+                moveTo(20.5f, 20.5f)
+                lineTo(16.4f, 16.4f)
             }
         }
     }
@@ -113,39 +185,11 @@ object LucideIcons {
         }
     }
 
-    /** Lucide `shopping-cart` — used in bottom nav "المبيعات" */
-    val ShoppingCart: ImageVector by lazy {
-        strokeVector("ShoppingCart") {
-            strokePath {
-                moveTo(9f, 21f)
-                arcTo(1f, 1f, 0f, true, true, 7f, 21f)
-                arcTo(1f, 1f, 0f, true, true, 9f, 21f)
-            }
-            strokePath {
-                moveTo(20f, 21f)
-                arcTo(1f, 1f, 0f, true, true, 18f, 21f)
-                arcTo(1f, 1f, 0f, true, true, 20f, 21f)
-            }
-            strokePath {
-                moveTo(2.05f, 2.05f)
-                horizontalLineTo(4.05f)
-                lineTo(6.71f, 14.47f)
-                arcTo(2f, 2f, 0f, false, false, 8.71f, 16.05f)
-                horizontalLineTo(18.49f)
-                arcTo(2f, 2f, 0f, false, false, 20.44f, 14.48f)
-                lineTo(22.09f, 7.05f)
-                horizontalLineTo(5.12f)
-            }
-        }
-    }
-
     /** Lucide `user-round` — used in bottom nav "الحساب" and avatar */
     val UserRound: ImageVector by lazy {
         strokeVector("UserRound") {
             strokePath {
-                moveTo(16f, 8f)
-                arcTo(4f, 4f, 0f, true, true, 8f, 8f)
-                arcTo(4f, 4f, 0f, true, true, 16f, 8f)
+                circlePath(12f, 8f, 4f)
             }
             strokePath {
                 moveTo(20f, 21f)
@@ -229,9 +273,7 @@ object LucideIcons {
                 close()
             }
             strokePath {
-                moveTo(14f, 12f)
-                arcTo(2f, 2f, 0f, true, true, 10f, 12f)
-                arcTo(2f, 2f, 0f, true, true, 14f, 12f)
+                circlePath(12f, 12f, 2f)
             }
             strokePath {
                 moveTo(6f, 12f)
@@ -254,9 +296,7 @@ object LucideIcons {
                 verticalLineTo(21f)
             }
             strokePath {
-                moveTo(13f, 7f)
-                arcTo(4f, 4f, 0f, true, true, 5f, 7f)
-                arcTo(4f, 4f, 0f, true, true, 13f, 7f)
+                circlePath(9f, 7f, 4f)
             }
             strokePath {
                 moveTo(22f, 21f)
@@ -342,19 +382,13 @@ object LucideIcons {
     val Target: ImageVector by lazy {
         strokeVector("Target") {
             strokePath {
-                moveTo(22f, 12f)
-                arcTo(10f, 10f, 0f, true, true, 2f, 12f)
-                arcTo(10f, 10f, 0f, true, true, 22f, 12f)
+                circlePath(12f, 12f, 10f)
             }
             strokePath {
-                moveTo(18f, 12f)
-                arcTo(6f, 6f, 0f, true, true, 6f, 12f)
-                arcTo(6f, 6f, 0f, true, true, 18f, 12f)
+                circlePath(12f, 12f, 6f)
             }
             strokePath {
-                moveTo(14f, 12f)
-                arcTo(2f, 2f, 0f, true, true, 10f, 12f)
-                arcTo(2f, 2f, 0f, true, true, 14f, 12f)
+                circlePath(12f, 12f, 2f)
             }
         }
     }

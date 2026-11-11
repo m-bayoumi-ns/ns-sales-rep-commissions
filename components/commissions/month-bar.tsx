@@ -1,14 +1,17 @@
 "use client";
 
-import { CalendarDaysIcon, RadioIcon, RefreshCwIcon } from "lucide-react";
+import { CalendarDaysIcon, LightbulbIcon, RadioIcon, RefreshCwIcon } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
-import { useEffect, useState, useTransition } from "react";
+import { useTheme } from "next-themes";
+import { useEffect, useState, useSyncExternalStore, useTransition } from "react";
 import { usePathname, useRouter } from "@/i18n/navigation";
 import { NotificationBell } from "@/components/layout/notification-bell";
 import type { Locale } from "@/i18n/routing";
 import { formatMonth } from "@/lib/format";
+import { cn } from "@/lib/utils";
 
 const REFRESH_MS = 5 * 60_000;
+const noop = () => () => {};
 
 /**
  * Month choice (kept in the URL) and, for the open month, a live indicator that re-reads the figures every
@@ -16,17 +19,31 @@ const REFRESH_MS = 5 * 60_000;
  */
 export function MonthBar({ months, month, live, keepRep, showStatus = true, showAppNotifications = false }: { months: string[]; month: string; live: boolean; keepRep?: string; showStatus?: boolean; showAppNotifications?: boolean }) {
   const t = useTranslations("cm.month");
+  const th = useTranslations("header");
   const locale = useLocale() as Locale;
   const router = useRouter();
   const pathname = usePathname();
   const [pending, startTransition] = useTransition();
   const [lastRefresh, setLastRefresh] = useState(() => Date.now());
   const [now, setNow] = useState(() => Date.now());
+  const { resolvedTheme, setTheme } = useTheme();
+  const mounted = useSyncExternalStore(noop, () => true, () => false);
+  const isDark = mounted && resolvedTheme === "dark";
 
   const refresh = () => startTransition(() => {
     router.refresh();
     setLastRefresh(Date.now());
   });
+
+  const toggleDayNight = () => {
+    const next = isDark ? "light" : "dark";
+    const doc = document as Document & { startViewTransition?: (cb: () => void) => void };
+    if (typeof doc.startViewTransition === "function") {
+      doc.startViewTransition(() => setTheme(next));
+    } else {
+      setTheme(next);
+    }
+  };
 
   useEffect(() => {
     if (!live) return;
@@ -85,7 +102,27 @@ export function MonthBar({ months, month, live, keepRep, showStatus = true, show
         ) : null}
       </div>
       {showAppNotifications ? (
-        <div className="app-only app-home-notification shrink-0">
+        <div className="app-only app-home-notification flex shrink-0 items-center gap-2">
+          <button
+            type="button"
+            onClick={toggleDayNight}
+            aria-label={th("theme")}
+            title={th("theme")}
+            className={cn(
+              "relative flex size-9 items-center justify-center rounded-full border shadow-sm transition-all duration-300 outline-none focus-visible:ring-3 focus-visible:ring-ring/50 active:scale-90",
+              isDark
+                ? "border-amber-400/35 bg-amber-950/40 text-amber-400"
+                : "border-border bg-card text-primary hover:bg-accent"
+            )}
+          >
+            <LightbulbIcon
+              aria-hidden
+              className={cn(
+                "size-[18px] transition-transform duration-300",
+                isDark ? "-rotate-12 scale-95" : "rotate-0 scale-105"
+              )}
+            />
+          </button>
           <NotificationBell appHome />
         </div>
       ) : null}

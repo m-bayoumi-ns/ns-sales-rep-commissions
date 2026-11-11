@@ -1,5 +1,8 @@
 package com.naguibselim.commissionsapp.ui
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Typography
@@ -8,6 +11,7 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalLayoutDirection
@@ -95,42 +99,6 @@ val DarkNsColors = NsColors(
 val LocalNsColors = staticCompositionLocalOf { LightNsColors }
 val LocalIsArabic = staticCompositionLocalOf { true }
 
-private val LightM3 = lightColorScheme(
-    primary = LightNsColors.primary,
-    onPrimary = LightNsColors.primaryForeground,
-    primaryContainer = LightNsColors.accent,
-    onPrimaryContainer = LightNsColors.foreground,
-    secondary = Color(0xFFC49A6C),
-    onSecondary = Color.White,
-    background = LightNsColors.background,
-    onBackground = LightNsColors.foreground,
-    surface = LightNsColors.card,
-    onSurface = LightNsColors.foreground,
-    surfaceVariant = LightNsColors.muted,
-    onSurfaceVariant = LightNsColors.mutedForeground,
-    outline = LightNsColors.border,
-    error = LightNsColors.destructive,
-    onError = Color.White
-)
-
-private val DarkM3 = darkColorScheme(
-    primary = DarkNsColors.primary,
-    onPrimary = DarkNsColors.primaryForeground,
-    primaryContainer = DarkNsColors.accent,
-    onPrimaryContainer = DarkNsColors.foreground,
-    secondary = Color(0xFFC49A6C),
-    onSecondary = Color(0xFF1C1917),
-    background = DarkNsColors.background,
-    onBackground = DarkNsColors.foreground,
-    surface = DarkNsColors.card,
-    onSurface = DarkNsColors.foreground,
-    surfaceVariant = DarkNsColors.muted,
-    onSurfaceVariant = DarkNsColors.mutedForeground,
-    outline = DarkNsColors.border,
-    error = DarkNsColors.destructive,
-    onError = Color(0xFF1C1917)
-)
-
 private val NsTypography = Typography(
     headlineLarge = TextStyle(fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, lineHeight = 36.sp),
     headlineMedium = TextStyle(fontSize = 22.sp, fontWeight = FontWeight.Bold, lineHeight = 28.sp),
@@ -141,6 +109,57 @@ private val NsTypography = Typography(
     labelLarge = TextStyle(fontSize = 13.sp, fontWeight = FontWeight.SemiBold, lineHeight = 18.sp),
     labelMedium = TextStyle(fontSize = 11.5.sp, fontWeight = FontWeight.Medium, lineHeight = 15.sp)
 )
+
+@Composable
+private fun animateNsColors(target: NsColors): NsColors {
+    val spec = tween<Color>(durationMillis = 420, easing = FastOutSlowInEasing)
+    val background by animateColorAsState(target.background, spec, label = "bg")
+    val card by animateColorAsState(target.card, spec, label = "card")
+    val foreground by animateColorAsState(target.foreground, spec, label = "fg")
+    val muted by animateColorAsState(target.muted, spec, label = "muted")
+    val mutedForeground by animateColorAsState(target.mutedForeground, spec, label = "mutedFg")
+    val primary by animateColorAsState(target.primary, spec, label = "primary")
+    val primaryForeground by animateColorAsState(target.primaryForeground, spec, label = "primaryFg")
+    val accent by animateColorAsState(target.accent, spec, label = "accent")
+    val border by animateColorAsState(target.border, spec, label = "border")
+    val success by animateColorAsState(target.success, spec, label = "success")
+    val successSoft by animateColorAsState(target.successSoft, spec, label = "successSoft")
+    val warning by animateColorAsState(target.warning, spec, label = "warning")
+    val warningSoft by animateColorAsState(target.warningSoft, spec, label = "warningSoft")
+    val destructive by animateColorAsState(target.destructive, spec, label = "destructive")
+    val destructiveSoft by animateColorAsState(target.destructiveSoft, spec, label = "destructiveSoft")
+    val heroStart by animateColorAsState(target.heroStart, spec, label = "heroStart")
+    val heroMid by animateColorAsState(target.heroMid, spec, label = "heroMid")
+    val heroEnd by animateColorAsState(target.heroEnd, spec, label = "heroEnd")
+    val collectionsStart by animateColorAsState(target.collectionsStart, spec, label = "colStart")
+    val collectionsMid by animateColorAsState(target.collectionsMid, spec, label = "colMid")
+    val collectionsEnd by animateColorAsState(target.collectionsEnd, spec, label = "colEnd")
+
+    return NsColors(
+        isDark = target.isDark,
+        background = background,
+        card = card,
+        foreground = foreground,
+        muted = muted,
+        mutedForeground = mutedForeground,
+        primary = primary,
+        primaryForeground = primaryForeground,
+        accent = accent,
+        border = border,
+        success = success,
+        successSoft = successSoft,
+        warning = warning,
+        warningSoft = warningSoft,
+        destructive = destructive,
+        destructiveSoft = destructiveSoft,
+        heroStart = heroStart,
+        heroMid = heroMid,
+        heroEnd = heroEnd,
+        collectionsStart = collectionsStart,
+        collectionsMid = collectionsMid,
+        collectionsEnd = collectionsEnd
+    )
+}
 
 @Composable
 fun NsTheme(
@@ -155,8 +174,47 @@ fun NsTheme(
         else -> sysDark
     }
     val isAr = language != "en"
-    val colors = if (useDark) DarkNsColors else LightNsColors
+    val targetColors = if (useDark) DarkNsColors else LightNsColors
+    val colors = animateNsColors(targetColors)
     val direction = if (isAr) LayoutDirection.Rtl else LayoutDirection.Ltr
+
+    val colorScheme = if (useDark) {
+        darkColorScheme(
+            primary = colors.primary,
+            onPrimary = colors.primaryForeground,
+            primaryContainer = colors.accent,
+            onPrimaryContainer = colors.foreground,
+            secondary = Color(0xFFC49A6C),
+            onSecondary = Color(0xFF1C1917),
+            background = colors.background,
+            onBackground = colors.foreground,
+            surface = colors.card,
+            onSurface = colors.foreground,
+            surfaceVariant = colors.muted,
+            onSurfaceVariant = colors.mutedForeground,
+            outline = colors.border,
+            error = colors.destructive,
+            onError = Color(0xFF1C1917)
+        )
+    } else {
+        lightColorScheme(
+            primary = colors.primary,
+            onPrimary = colors.primaryForeground,
+            primaryContainer = colors.accent,
+            onPrimaryContainer = colors.foreground,
+            secondary = Color(0xFFC49A6C),
+            onSecondary = Color.White,
+            background = colors.background,
+            onBackground = colors.foreground,
+            surface = colors.card,
+            onSurface = colors.foreground,
+            surfaceVariant = colors.muted,
+            onSurfaceVariant = colors.mutedForeground,
+            outline = colors.border,
+            error = colors.destructive,
+            onError = Color.White
+        )
+    }
 
     CompositionLocalProvider(
         LocalNsColors provides colors,
@@ -164,7 +222,7 @@ fun NsTheme(
         LocalLayoutDirection provides direction
     ) {
         MaterialTheme(
-            colorScheme = if (useDark) DarkM3 else LightM3,
+            colorScheme = colorScheme,
             typography = NsTypography,
             content = content
         )

@@ -394,6 +394,15 @@ data class AdminAccountsPayload(
     val defaultPassword: String
 )
 
+// App Release / Mandatory Update Info
+data class AppUpdateInfo(
+    val version: String,
+    val currentVersion: String,
+    val bytes: Long,
+    val publishedAt: String,
+    val downloadUrl: String
+)
+
 // JSON Parsing Helpers
 object JsonParsers {
     private fun JSONObject.optDoubleNull(key: String): Double? =

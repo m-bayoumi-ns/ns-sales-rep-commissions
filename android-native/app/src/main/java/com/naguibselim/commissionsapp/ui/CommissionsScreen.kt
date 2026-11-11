@@ -1,5 +1,11 @@
 package com.naguibselim.commissionsapp.ui
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -69,6 +75,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -99,6 +106,7 @@ fun CommissionsScreen(
     onSelectRep: (String) -> Unit,
     onRefresh: () -> Unit,
     onOpenNotifications: (Boolean) -> Unit,
+    onToggleTheme: () -> Unit = {},
     onOpenAdminSettings: () -> Unit,
     onOpenAdminAccounts: () -> Unit = {},
     onSignOut: () -> Unit
@@ -152,7 +160,7 @@ fun CommissionsScreen(
                     val monthName = Format.monthLabel(payload.clock.month, isAr)
                     val showStatus = section == SellerSection.SUMMARY || payload.detail == null
 
-                    // Top MonthBar matching Screenshots 1, 2, 3, 4
+                    // Top MonthBar matching Screenshots 1, 2, 3, 4 + Lightbulb Day/Night switcher next to Notifications
                     FilterActionRow(
                         payload = payload,
                         showStatus = showStatus,
@@ -162,6 +170,7 @@ fun CommissionsScreen(
                         onOpenRepPicker = { showRepSheet = true },
                         onRefresh = onRefresh,
                         onOpenNotifications = { onOpenNotifications(true) },
+                        onToggleTheme = onToggleTheme,
                         onOpenAdminSettings = onOpenAdminSettings,
                         onOpenAdminAccounts = onOpenAdminAccounts
                     )
@@ -309,6 +318,7 @@ private fun FilterActionRow(
     onOpenRepPicker: () -> Unit,
     onRefresh: () -> Unit,
     onOpenNotifications: () -> Unit,
+    onToggleTheme: () -> Unit,
     onOpenAdminSettings: () -> Unit,
     onOpenAdminAccounts: () -> Unit
 ) {
@@ -319,7 +329,7 @@ private fun FilterActionRow(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        // Top row: Month selector on the right (in RTL), Notification bell on the left (in RTL, when showStatus is true)
+        // Top row: Month selector on the right (in RTL), Lightbulb + Notification bell on the left (in RTL, when showStatus is true)
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
@@ -365,33 +375,94 @@ private fun FilterActionRow(
             }
 
             if (showStatus) {
-                // Circular Notification Bell on the left (in RTL), matching Screenshot 2
-                Surface(
-                    shape = CircleShape,
-                    color = c.card,
-                    border = BorderStroke(1.dp, c.border),
-                    shadowElevation = 0.5.dp,
-                    modifier = Modifier.size(38.dp)
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    IconButton(onClick = onOpenNotifications) {
-                        BadgedBox(
-                            badge = {
-                                if (unreadCount > 0) {
-                                    Badge(
-                                        containerColor = c.destructive,
-                                        contentColor = Color.White
-                                    ) {
-                                        Text(text = if (unreadCount > 9) "9+" else "$unreadCount", fontSize = 9.sp)
+                    // Circular Light Bulb Day/Night Mode Switcher with modern animated transition
+                    val bulbRotation by animateFloatAsState(
+                        targetValue = if (c.isDark) -18f else 0f,
+                        animationSpec = spring(
+                            dampingRatio = Spring.DampingRatioMediumBouncy,
+                            stiffness = Spring.StiffnessLow
+                        ),
+                        label = "bulbRotation"
+                    )
+                    val bulbScale by animateFloatAsState(
+                        targetValue = if (c.isDark) 0.92f else 1.06f,
+                        animationSpec = spring(
+                            dampingRatio = Spring.DampingRatioMediumBouncy,
+                            stiffness = Spring.StiffnessMediumLow
+                        ),
+                        label = "bulbScale"
+                    )
+                    val bulbTint by animateColorAsState(
+                        targetValue = if (c.isDark) Color(0xFFFBBF24) else c.primary,
+                        animationSpec = tween(durationMillis = 380, easing = FastOutSlowInEasing),
+                        label = "bulbTint"
+                    )
+                    val bulbBg by animateColorAsState(
+                        targetValue = if (c.isDark) Color(0xFF282119) else c.card,
+                        animationSpec = tween(durationMillis = 380, easing = FastOutSlowInEasing),
+                        label = "bulbBg"
+                    )
+                    val bulbBorder by animateColorAsState(
+                        targetValue = if (c.isDark) Color(0xFFFBBF24).copy(alpha = 0.35f) else c.border,
+                        animationSpec = tween(durationMillis = 380, easing = FastOutSlowInEasing),
+                        label = "bulbBorder"
+                    )
+
+                    Surface(
+                        shape = CircleShape,
+                        color = bulbBg,
+                        border = BorderStroke(1.dp, bulbBorder),
+                        shadowElevation = 0.5.dp,
+                        modifier = Modifier.size(38.dp)
+                    ) {
+                        IconButton(onClick = onToggleTheme) {
+                            Icon(
+                                imageVector = LucideIcons.Lightbulb,
+                                contentDescription = tr("تبديل الوضع الليلي والنهاري", "Toggle day and night mode"),
+                                tint = bulbTint,
+                                modifier = Modifier
+                                    .size(18.dp)
+                                    .graphicsLayer {
+                                        rotationZ = bulbRotation
+                                        scaleX = bulbScale
+                                        scaleY = bulbScale
+                                    }
+                            )
+                        }
+                    }
+
+                    // Circular Notification Bell on the left (in RTL), matching Screenshot 2
+                    Surface(
+                        shape = CircleShape,
+                        color = c.card,
+                        border = BorderStroke(1.dp, c.border),
+                        shadowElevation = 0.5.dp,
+                        modifier = Modifier.size(38.dp)
+                    ) {
+                        IconButton(onClick = onOpenNotifications) {
+                            BadgedBox(
+                                badge = {
+                                    if (unreadCount > 0) {
+                                        Badge(
+                                            containerColor = c.destructive,
+                                            contentColor = Color.White
+                                        ) {
+                                            Text(text = if (unreadCount > 9) "9+" else "$unreadCount", fontSize = 9.sp)
+                                        }
                                     }
                                 }
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Outlined.Notifications,
+                                    contentDescription = tr("الإشعارات", "Notifications"),
+                                    tint = c.foreground,
+                                    modifier = Modifier.size(18.dp)
+                                )
                             }
-                        ) {
-                            Icon(
-                                imageVector = Icons.Outlined.Notifications,
-                                contentDescription = tr("الإشعارات", "Notifications"),
-                                tint = c.foreground,
-                                modifier = Modifier.size(18.dp)
-                            )
                         }
                     }
                 }

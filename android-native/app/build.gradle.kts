@@ -4,7 +4,7 @@ plugins {
     id("org.jetbrains.kotlin.plugin.compose")
 }
 
-val ciBuild = (System.getenv("GITHUB_RUN_NUMBER") ?: "20").toIntOrNull() ?: 20
+val ciBuild = (System.getenv("GITHUB_RUN_NUMBER") ?: "21").toIntOrNull() ?: 21
 val apiBaseUrl = (System.getenv("API_BASE_URL")?.trim()?.removeSuffix("/"))
     ?.takeIf { it.isNotEmpty() }
     ?: "https://ns-sales-rep-commissions.vercel.app"

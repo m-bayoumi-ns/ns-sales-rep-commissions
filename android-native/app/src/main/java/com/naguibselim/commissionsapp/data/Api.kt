@@ -397,4 +397,39 @@ class ApiClient(private val store: SessionStore) {
             ApiResult.Error(code = "network_error", detail = e.localizedMessage)
         }
     }
+
+    suspend fun checkMandatoryUpdate(): AppUpdateInfo? = withContext(Dispatchers.IO) {
+        runCatching {
+            val conn = openConnection("/api/app/download?info=1&variant=native", "GET")
+            val (status, raw) = readBody(conn)
+            if (status !in 200..299) return@withContext null
+            val json = JSONObject(raw)
+            val remoteVersion = json.optString("version", "").trim()
+            val currentVersion = BuildConfig.VERSION_NAME.trim()
+            if (remoteVersion.isNotEmpty() && isNewerVersion(remoteVersion, currentVersion)) {
+                AppUpdateInfo(
+                    version = remoteVersion,
+                    currentVersion = currentVersion,
+                    bytes = json.optLong("bytes", 0L),
+                    publishedAt = json.optString("publishedAt", ""),
+                    downloadUrl = "$baseUrl/api/app/download?variant=native"
+                )
+            } else {
+                null
+            }
+        }.getOrNull()
+    }
+
+    private fun isNewerVersion(remote: String, current: String): Boolean {
+        if (remote == current) return false
+        val rParts = remote.removePrefix("v").split(".", "-").map { it.toIntOrNull() ?: 0 }
+        val cParts = current.removePrefix("v").split(".", "-").map { it.toIntOrNull() ?: 0 }
+        val maxLen = maxOf(rParts.size, cParts.size)
+        for (i in 0 until maxLen) {
+            val rv = rParts.getOrElse(i) { 0 }
+            val cv = cParts.getOrElse(i) { 0 }
+            if (rv != cv) return rv > cv
+        }
+        return false
+    }
 }

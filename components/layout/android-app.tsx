@@ -58,17 +58,84 @@ export function useDevice(): Device {
   return useSyncExternalStore(noop, detectDevice, () => "unknown");
 }
 
+function isNewerSemver(remote: string, current: string): boolean {
+  if (!remote || !current || remote === current) return false;
+  const rParts = remote.replace(/^v/i, "").split(/[.-]/).map((n) => Number.parseInt(n, 10) || 0);
+  const cParts = current.replace(/^v/i, "").split(/[.-]/).map((n) => Number.parseInt(n, 10) || 0);
+  const len = Math.max(rParts.length, cParts.length);
+  for (let i = 0; i < len; i++) {
+    const rv = rParts[i] ?? 0;
+    const cv = cParts[i] ?? 0;
+    if (rv !== cv) return rv > cv;
+  }
+  return false;
+}
+
 /**
- * Keeps <html data-app> set inside the Android app. The inline script in the root layout sets it on a full
- * page load, but switching language re-renders the root layout on the client (a new <html>, and inline
- * scripts don't run again), which brought back the browser header until the next refresh.
+ * Keeps <html data-app> set inside the Android app, and checks if a mandatory app update is available.
  */
 export function AppModeMarker() {
   const pathname = usePathname();
+  const locale = useLocale();
+  const isAr = locale === "ar";
+  const [mandatoryUpdate, setMandatoryUpdate] = useState<{ version: string; current: string; bytes: number } | null>(null);
+
   useLayoutEffect(() => {
     if (isAppShell()) document.documentElement.setAttribute("data-app", "");
   }, [pathname]);
-  return null;
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !navigator.userAgent.includes("NSCommissionsApp")) return;
+    const uaMatch = navigator.userAgent.match(/NSCommissionsApp\/([0-9.]+)/i);
+    const currentVersion = readStatus()?.version ?? uaMatch?.[1] ?? "";
+    if (!currentVersion) return;
+
+    const checkUpdate = () => {
+      fetch("/api/app/download?info=1&variant=web", { cache: "no-store" })
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data: { version?: string; bytes?: number } | null) => {
+          if (data?.version && isNewerSemver(data.version, currentVersion)) {
+            setMandatoryUpdate({ version: data.version, current: currentVersion, bytes: data.bytes ?? 0 });
+          }
+        })
+        .catch(() => {});
+    };
+
+    checkUpdate();
+    window.addEventListener("focus", checkUpdate);
+    return () => window.removeEventListener("focus", checkUpdate);
+  }, []);
+
+  if (!mandatoryUpdate) return null;
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-6 backdrop-blur-xs">
+      <div className="flex w-full max-w-sm flex-col items-center gap-3.5 rounded-3xl border bg-card p-6 text-center shadow-2xl">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/brand/app-icon.png" alt="" width={60} height={60} className="size-15 rounded-2xl shadow-md" />
+        <h2 className="text-lg font-extrabold text-foreground">
+          {isAr ? "تحديث إجباري جديد متاح" : "Mandatory Update Available"}
+        </h2>
+        <p className="text-xs leading-relaxed text-muted-foreground">
+          {isAr
+            ? "يتوفر إصدار جديد من تطبيق عمولات المندوبين. يرجى تحميل وتثبيت النسخة الجديدة للمتابعة."
+            : "A new version of the Sales Rep Commissions app is available. Please download and install the new version to continue."}
+        </p>
+        <span dir="ltr" className="rounded-full border border-primary/20 bg-accent px-3.5 py-1 text-xs font-bold text-primary tabular-nums">
+          v{mandatoryUpdate.current} → v{mandatoryUpdate.version}
+          {mandatoryUpdate.bytes > 0 ? ` · ${sizeMb(mandatoryUpdate.bytes)} MB` : ""}
+        </span>
+        <a
+          href="/api/app/download"
+          download="NS-Commissions.apk"
+          className="mt-1 inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-primary px-5 text-sm font-bold text-primary-foreground shadow-sm transition hover:bg-primary/90"
+        >
+          <DownloadIcon aria-hidden className="size-4" />
+          {isAr ? "تحميل التحديث الآن" : "Download Update"}
+        </a>
+      </div>
+    </div>
+  );
 }
 
 // ---------------------------------------------------------------- open the installed app from the browser
