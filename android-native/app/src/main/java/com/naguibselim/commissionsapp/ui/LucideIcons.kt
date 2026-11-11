@@ -1,7 +1,7 @@
 package com.naguibselim.commissionsapp.ui
 
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Fingerprint
+import androidx.compose.material.icons.filled.Fingerprint
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathFillType
 import androidx.compose.ui.graphics.SolidColor
@@ -9,7 +9,6 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.PathBuilder
-import androidx.compose.ui.graphics.vector.PathParser
 import androidx.compose.ui.graphics.vector.path
 import androidx.compose.ui.unit.dp
 
@@ -100,29 +99,44 @@ object LucideIcons {
     }
 
     /**
-     * WhatsApp Brand Vector Icon (Crisp, official SVG outline & phone handset)
+     * WhatsApp Brand Vector Icon
      */
     val WhatsApp: ImageVector by lazy {
-        val pathNodes = PathParser().parsePathString(
-            "M12.04,2c-5.46,0 -9.91,4.45 -9.91,9.91c0,1.75 0.46,3.45 1.32,4.95L2.05,22l5.25,-1.38c1.45,0.79 3.08,1.21 4.74,1.21c5.46,0 9.91,-4.45 9.91,-9.91c0,-2.65 -1.03,-5.14 -2.9,-7.01A9.82,9.82 0,0 0 12.04,2m0.01,1.67c2.2,0 4.26,0.86 5.82,2.41a8.17,8.17 0,0 1 2.41,5.83c0,4.54 -3.7,8.24 -8.24,8.24c-1.48,0 -2.93,-0.4 -4.2,-1.15l-0.3,-0.18 -3.12,0.82 0.83,-3.04 -0.2,-0.31a8.19,8.19 0,0 1 -1.26,-4.38c0,-4.54 3.7,-8.24 8.24,-8.24m4.52,11.66c-0.25,-0.13 -1.47,-0.72 -1.7,-0.81 -0.23,-0.08 -0.39,-0.13 -0.56,0.13 -0.17,0.25 -0.64,0.81 -0.79,0.97 -0.14,0.17 -0.29,0.19 -0.54,0.06 -0.25,-0.13 -1.06,-0.39 -2.02,-1.25 -0.75,-0.67 -1.26,-1.5 -1.41,-1.75 -0.15,-0.25 -0.02,-0.39 0.11,-0.51 0.11,-0.11 0.25,-0.29 0.38,-0.44 0.13,-0.14 0.17,-0.25 0.25,-0.42 0.08,-0.17 0.04,-0.31 -0.02,-0.44 -0.06,-0.13 -0.56,-1.34 -0.76,-1.84 -0.2,-0.49 -0.4,-0.42 -0.56,-0.43h-0.48c-0.17,0 -0.44,0.06 -0.67,0.31 -0.23,0.25 -0.88,0.86 -0.88,2.1s0.9,2.44 1.03,2.61c0.13,0.17 1.78,2.72 4.31,3.81 0.6,0.26 1.07,0.42 1.44,0.54 0.61,0.19 1.16,0.17 1.6,0.1 0.49,-0.07 1.47,-0.6 1.68,-1.18 0.21,-0.58 0.21,-1.07 0.15,-1.18 -0.06,-0.12 -0.22,-0.19 -0.47,-0.32"
-        ).toNodes()
-        ImageVector.Builder(
-            name = "WhatsApp",
-            defaultWidth = 24.dp,
-            defaultHeight = 24.dp,
-            viewportWidth = 24f,
-            viewportHeight = 24f
-        ).addPath(
-            pathData = pathNodes,
-            fill = SolidColor(Color.White)
-        ).build()
+        strokeVector("WhatsApp") {
+            // Speech bubble outline with tail
+            strokePath(1.9f) {
+                moveTo(12f, 3f)
+                arcTo(8.5f, 8.5f, 0f, false, true, 20.5f, 11.5f)
+                arcTo(8.5f, 8.5f, 0f, false, true, 12f, 20f)
+                curveTo(10.5f, 20f, 9.1f, 19.6f, 7.8f, 18.8f)
+                lineTo(3.5f, 20.5f)
+                lineTo(5.2f, 16.2f)
+                curveTo(4.3f, 14.8f, 3.5f, 13.2f, 3.5f, 11.5f)
+                arcTo(8.5f, 8.5f, 0f, false, true, 12f, 3f)
+            }
+            // Handset silhouette inside
+            strokePath(1.8f) {
+                moveTo(9f, 8.5f)
+                curveTo(8.7f, 8.8f, 8.5f, 9.2f, 8.5f, 9.7f)
+                curveTo(8.5f, 10.7f, 9.1f, 11.8f, 10.2f, 12.9f)
+                curveTo(11.3f, 14.0f, 12.4f, 14.6f, 13.4f, 14.6f)
+                curveTo(13.9f, 14.6f, 14.3f, 14.4f, 14.6f, 14.1f)
+                lineTo(13.5f, 12.8f)
+                curveTo(13.3f, 12.6f, 13.0f, 12.6f, 12.8f, 12.8f)
+                lineTo(12.3f, 13.3f)
+                curveTo(11.8f, 13.0f, 11.0f, 12.2f, 10.7f, 11.7f)
+                lineTo(11.2f, 11.2f)
+                curveTo(11.4f, 11.0f, 11.4f, 10.7f, 11.2f, 10.5f)
+                close()
+            }
+        }
     }
 
     /**
      * Biometric / Fingerprint Vector Icon (Official Google Material Biometric Icon)
      */
     val Fingerprint: ImageVector
-        get() = Icons.Outlined.Fingerprint
+        get() = Icons.Default.Fingerprint
 
     /** Lucide `user-round-cog` — used in bottom nav "حسابي" / Account with settings emblem */
     val UserCog: ImageVector by lazy {

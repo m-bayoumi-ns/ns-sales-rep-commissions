@@ -26,8 +26,8 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Fingerprint
 import androidx.compose.material.icons.outlined.ErrorOutline
-import androidx.compose.material.icons.outlined.Fingerprint
 import androidx.compose.material.icons.outlined.Language
 import androidx.compose.material.icons.outlined.Visibility
 import androidx.compose.material.icons.outlined.VisibilityOff
@@ -422,7 +422,7 @@ fun LoginScreen(
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Icon(
-                                        imageVector = Icons.Outlined.Fingerprint,
+                                        imageVector = Icons.Default.Fingerprint,
                                         contentDescription = tr("تسجيل الدخول بالبصمة", "Sign in with Fingerprint"),
                                         tint = c.primary,
                                         modifier = Modifier.size(28.dp)
