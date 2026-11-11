@@ -96,7 +96,7 @@ object LucideIcons {
     val WhatsApp: ImageVector by lazy {
         strokeVector("LucideWhatsApp") {
             // Speech bubble with pointer
-            strokePath(1.9f) {
+            strokePath(2f) {
                 moveTo(21f, 11.5f)
                 arcTo(8.5f, 8.5f, 0f, isMoreThanHalf = false, isPositiveArc = false, 12f, 3f)
                 arcTo(8.5f, 8.5f, 0f, isMoreThanHalf = false, isPositiveArc = false, 4.5f, 16.5f)
@@ -107,11 +107,19 @@ object LucideIcons {
                 close()
             }
             // Phone handset outline inside
-            strokePath(1.7f) {
-                moveTo(9.2f, 8.8f)
-                curveTo(9.0f, 9.6f, 9.5f, 10.7f, 10.4f, 11.8f)
-                curveTo(11.3f, 12.9f, 12.4f, 13.4f, 13.2f, 13.2f)
-                lineTo(14.5f, 14.5f)
+            strokePath(1.9f) {
+                moveTo(9f, 8.5f)
+                curveTo(8.7f, 8.8f, 8.5f, 9.2f, 8.5f, 9.7f)
+                curveTo(8.5f, 10.7f, 9.1f, 11.8f, 10.2f, 12.9f)
+                curveTo(11.3f, 14.0f, 12.4f, 14.6f, 13.4f, 14.6f)
+                curveTo(13.9f, 14.6f, 14.3f, 14.4f, 14.6f, 14.1f)
+                lineTo(13.5f, 12.8f)
+                curveTo(13.3f, 12.6f, 13.0f, 12.6f, 12.8f, 12.8f)
+                lineTo(12.3f, 13.3f)
+                curveTo(11.8f, 13.0f, 11.0f, 12.2f, 10.7f, 11.7f)
+                lineTo(11.2f, 11.2f)
+                curveTo(11.4f, 11.0f, 11.4f, 10.7f, 11.2f, 10.5f)
+                close()
             }
         }
     }

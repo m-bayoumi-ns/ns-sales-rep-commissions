@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -433,67 +434,65 @@ fun LoginScreen(
                     // WhatsApp Admin Support Card
                     Surface(
                         modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(16.dp),
+                        shape = RoundedCornerShape(18.dp),
                         color = c.muted.copy(alpha = 0.55f),
                         border = BorderStroke(1.dp, c.border)
                     ) {
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(horizontal = 14.dp, vertical = 12.dp),
+                                .padding(horizontal = 16.dp, vertical = 14.dp),
                             horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                            verticalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
                             Text(
                                 text = tr(
-                                    "إذا واجهتك أي مشكلة في تسجيل الدخول أو حسابك، يرجى التواصل مع المسؤول مباشرة.",
-                                    "If you experience issues logging in or with your account, please contact the administrator."
+                                    "إذا واجهتك أي مشكلة في تسجيل الدخول أو حسابك، يرجى التواصل مع المسؤول مباشرة:",
+                                    "If you experience issues logging in or with your account, please contact the administrator:"
                                 ),
-                                fontSize = 11.8.sp,
+                                fontSize = 12.sp,
                                 color = c.mutedForeground,
                                 textAlign = TextAlign.Center,
-                                lineHeight = 16.5.sp
+                                lineHeight = 17.sp
                             )
 
-                            Button(
-                                onClick = {
-                                    val url = "https://wa.me/201277909022?text=" + Uri.encode(
-                                        "السلام عليكم، أحتاج مساعدة في تسجيل الدخول لتطبيق عمولات نجيب سليم."
-                                    )
-                                    try {
-                                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
-                                        context.startActivity(intent)
-                                    } catch (_: Exception) {
-                                        try {
-                                            val webIntent = Intent(
-                                                Intent.ACTION_VIEW,
-                                                Uri.parse("https://api.whatsapp.com/send?phone=201277909022")
-                                            )
-                                            context.startActivity(webIntent)
-                                        } catch (_: Exception) {}
-                                    }
-                                },
+                            // Circular WhatsApp Logo Button only
+                            Surface(
+                                shape = CircleShape,
+                                color = Color(0xFF25D366),
+                                shadowElevation = 3.dp,
                                 modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(42.dp),
-                                shape = RoundedCornerShape(12.dp),
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = Color(0xFF25D366),
-                                    contentColor = Color.White
-                                )
+                                    .size(48.dp)
+                                    .clip(CircleShape)
+                                    .clickable {
+                                        val url = "https://wa.me/201277909022?text=" + Uri.encode(
+                                            "السلام عليكم، أحتاج مساعدة في تسجيل الدخول لتطبيق عمولات نجيب سليم."
+                                        )
+                                        try {
+                                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+                                            context.startActivity(intent)
+                                        } catch (_: Exception) {
+                                            try {
+                                                val webIntent = Intent(
+                                                    Intent.ACTION_VIEW,
+                                                    Uri.parse("https://api.whatsapp.com/send?phone=201277909022")
+                                                )
+                                                context.startActivity(webIntent)
+                                            } catch (_: Exception) {}
+                                        }
+                                    }
                             ) {
-                                Icon(
-                                    imageVector = LucideIcons.WhatsApp,
-                                    contentDescription = null,
-                                    tint = Color.White,
-                                    modifier = Modifier.size(19.dp)
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(
-                                    text = tr("تواصل عبر واتساب (+20 1277909022)", "WhatsApp Admin (+20 1277909022)"),
-                                    fontSize = 12.5.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
+                                Box(
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = LucideIcons.WhatsApp,
+                                        contentDescription = tr("تواصل عبر واتساب", "WhatsApp"),
+                                        tint = Color.White,
+                                        modifier = Modifier.size(26.dp)
+                                    )
+                                }
                             }
                         }
                     }
