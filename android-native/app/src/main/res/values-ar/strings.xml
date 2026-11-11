@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">عمولات المندوبين</string>
+    <string name="channel_commission">تحديثات العمولة</string>
+    <string name="channel_commission_desc">زيادة أو نقص العمولة، استحقاق أو فقد الحوافز، وتغييرات النسب.</string>
+    <string name="channel_security">تنبيهات الأمان</string>
+    <string name="channel_security_desc">تسجيل الدخول لحسابك من أجهزة أخرى.</string>
+</resources>

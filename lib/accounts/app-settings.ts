@@ -1,4 +1,5 @@
 import "server-only";
+import { ANDROID_VARIANTS, type AndroidVariant, DEFAULT_ANDROID_VARIANT } from "@/lib/android-app";
 import { normalizeName } from "@/lib/commissions/names";
 import { readJson, writeJson } from "@/lib/commissions/storage";
 
@@ -9,6 +10,8 @@ export type AppSettings = {
   usernames?: Record<string, string>;
   /** Display names for individual commission cards (normalized sheet name → display name). */
   sellerDisplayNames?: Record<string, string>;
+  /** Which Android app the website's download button serves (Settings → Android app download). */
+  androidDownload?: AndroidVariant;
 };
 
 export async function loadAppSettings(): Promise<AppSettings> {
@@ -23,6 +26,7 @@ export async function loadAppSettings(): Promise<AppSettings> {
   return {
     usernames: data?.usernames ?? {},
     sellerDisplayNames,
+    androidDownload: ANDROID_VARIANTS.includes(data?.androidDownload as AndroidVariant) ? data!.androidDownload : DEFAULT_ANDROID_VARIANT,
   };
 }
 

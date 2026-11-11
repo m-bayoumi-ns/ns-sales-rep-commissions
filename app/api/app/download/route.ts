@@ -1,13 +1,16 @@
 import { type NextRequest, NextResponse } from "next/server";
-import { ANDROID_APP, downloadInfo } from "@/lib/android-app";
+import { ANDROID_APPS, ANDROID_VARIANTS, type AndroidVariant, downloadInfo } from "@/lib/android-app";
+import { chosenAndroidVariant } from "@/lib/app/download";
 
 /**
  * The website's "Download for Android" link. Public (the download page is open to everyone).
- *   GET /api/app/download         → redirects to the Android WebView APK
- *   GET /api/app/download?info=1  → { package, version, bytes, publishedAt } for the page's buttons
+ *   GET /api/app/download         → redirects to the APK chosen in Settings (native or WebView app)
+ *   GET /api/app/download?info=1  → { variant, package, version, bytes, publishedAt } for the page's buttons
  */
 export async function GET(request: NextRequest) {
+  const requested = request.nextUrl.searchParams.get("variant") as AndroidVariant | null;
+  const variant = requested && ANDROID_VARIANTS.includes(requested) ? requested : await chosenAndroidVariant();
   const headers = { "Cache-Control": "no-store" };
-  if (request.nextUrl.searchParams.has("info")) return NextResponse.json(downloadInfo(), { headers });
-  return NextResponse.redirect(new URL(ANDROID_APP.file, request.url), { status: 302, headers });
+  if (request.nextUrl.searchParams.has("info")) return NextResponse.json(downloadInfo(variant), { headers });
+  return NextResponse.redirect(new URL(ANDROID_APPS[variant].file, request.url), { status: 302, headers });
 }

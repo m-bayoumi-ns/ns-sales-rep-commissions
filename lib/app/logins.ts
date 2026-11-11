@@ -41,8 +41,10 @@ export function describeDevice(userAgent: string | null | undefined): string {
           : /linux/i.test(ua)
             ? "Linux"
             : "";
-  const app = /NSCommissionsApp/.test(ua)
-    ? "NS app"
+  const app = /NSCommissionsNative/.test(ua)
+    ? "NS native app"
+    : /NSCommissionsApp/.test(ua)
+      ? "NS app"
     : /edg\//i.test(ua)
       ? "Edge"
       : /opr\/|opera/i.test(ua)
