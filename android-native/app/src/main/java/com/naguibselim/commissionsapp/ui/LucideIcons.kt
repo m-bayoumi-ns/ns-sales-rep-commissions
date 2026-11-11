@@ -47,8 +47,14 @@ object LucideIcons {
     }
 
     /**
-     * Scale / Customer Accounts & Balances Icon (`Scale` — Balance scale)
-     * Specifically requested to represent "أرصدة العملاء / حسابات العملاء / التحصيل"
+     * Customer Balances & Debtors Icon (`CustomerBalances`)
+     * Specifically represents customers who have outstanding balances ("العملاء الذين عليهم مديونيات / مستحقات")
+     * Matches the customer accounts section and receivables card.
+     */
+    val CustomerBalances: ImageVector by lazy { Users }
+
+    /**
+     * Scale / Balance Icon (`Scale`)
      */
     val Scale: ImageVector by lazy {
         strokeVector("LucideScale") {

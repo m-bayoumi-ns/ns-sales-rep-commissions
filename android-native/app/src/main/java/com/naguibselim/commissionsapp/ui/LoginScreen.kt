@@ -2,7 +2,6 @@ package com.naguibselim.commissionsapp.ui
 
 import android.content.Intent
 import android.net.Uri
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -101,7 +100,6 @@ fun LoginScreen(
     var password by rememberSaveable { mutableStateOf("") }
     var rememberMe by rememberSaveable { mutableStateOf(initialRememberMe) }
     var showPassword by rememberSaveable { mutableStateOf(false) }
-    var showForgotHelp by rememberSaveable { mutableStateOf(false) }
 
     val errorMessage = when (errorCode) {
         "invalid_input" -> tr("أدخل البريد أو اسم المستخدم وكلمة المرور.", "Enter your email/username and password.")
@@ -365,122 +363,112 @@ fun LoginScreen(
 
                     Spacer(modifier = Modifier.height(14.dp))
 
-                    // Primary Sign-in Button
-                    Button(
-                        onClick = { onSignIn(identifier, password, rememberMe) },
-                        enabled = !signingIn,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(46.dp),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = c.primary,
-                            contentColor = c.primaryForeground
-                        )
+                    // Primary Sign-in Row (with square fingerprint button placed next to it)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        if (signingIn) {
-                            CircularProgressIndicator(
-                                color = c.primaryForeground,
-                                strokeWidth = 2.2.dp,
-                                modifier = Modifier.size(18.dp)
-                            )
-                            Spacer(modifier = Modifier.size(8.dp))
-                            Text(
-                                text = tr("جارٍ تسجيل الدخول…", "Signing in…"),
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.SemiBold
-                            )
-                        } else {
-                            Text(
-                                text = tr("تسجيل الدخول", "Sign in"),
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.SemiBold
-                            )
-                        }
-                    }
-
-                    // Biometric (Fingerprint) Login Button
-                    if (biometricAvailable && hasSavedCredentials && onBiometricSignIn != null) {
-                        Spacer(modifier = Modifier.height(10.dp))
-                        OutlinedButton(
-                            onClick = onBiometricSignIn,
+                        Button(
+                            onClick = { onSignIn(identifier, password, rememberMe) },
                             enabled = !signingIn,
                             modifier = Modifier
-                                .fillMaxWidth()
-                                .height(46.dp),
+                                .weight(1f)
+                                .height(48.dp),
                             shape = RoundedCornerShape(12.dp),
-                            border = BorderStroke(1.2.dp, c.primary.copy(alpha = 0.6f)),
-                            colors = ButtonDefaults.outlinedButtonColors(
-                                contentColor = c.primary
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = c.primary,
+                                contentColor = c.primaryForeground
                             )
                         ) {
-                            Icon(
-                                imageVector = LucideIcons.Fingerprint,
-                                contentDescription = null,
-                                tint = c.primary,
-                                modifier = Modifier.size(20.dp)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = tr("تسجيل الدخول بالبصمة", "Sign in with Fingerprint"),
-                                fontSize = 13.5.sp,
-                                fontWeight = FontWeight.SemiBold
-                            )
+                            if (signingIn) {
+                                CircularProgressIndicator(
+                                    color = c.primaryForeground,
+                                    strokeWidth = 2.2.dp,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Spacer(modifier = Modifier.size(8.dp))
+                                Text(
+                                    text = tr("جارٍ تسجيل الدخول…", "Signing in…"),
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                            } else {
+                                Text(
+                                    text = tr("تسجيل الدخول", "Sign in"),
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                            }
+                        }
+
+                        // Square Biometric (Fingerprint) Button placed next to the Login Button
+                        if (biometricAvailable && onBiometricSignIn != null) {
+                            Surface(
+                                shape = RoundedCornerShape(12.dp),
+                                color = c.muted.copy(alpha = 0.7f),
+                                border = BorderStroke(1.2.dp, c.border),
+                                modifier = Modifier
+                                    .size(48.dp)
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .clickable(enabled = !signingIn) { onBiometricSignIn() }
+                            ) {
+                                Box(
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = LucideIcons.Fingerprint,
+                                        contentDescription = tr("تسجيل الدخول بالبصمة", "Sign in with Fingerprint"),
+                                        tint = c.primary,
+                                        modifier = Modifier.size(24.dp)
+                                    )
+                                }
+                            }
                         }
                     }
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // WhatsApp Admin Support Card
+                    // WhatsApp Admin Support Card with aligned icon and text
                     Surface(
                         modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(18.dp),
+                        shape = RoundedCornerShape(16.dp),
                         color = c.muted.copy(alpha = 0.55f),
                         border = BorderStroke(1.dp, c.border)
                     ) {
-                        Column(
+                        Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(horizontal = 16.dp, vertical = 14.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(10.dp)
+                                .clickable {
+                                    val url = "https://wa.me/201277909022?text=" + Uri.encode(
+                                        "السلام عليكم، أحتاج مساعدة في تسجيل الدخول لتطبيق عمولات نجيب سليم."
+                                    )
+                                    try {
+                                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+                                        context.startActivity(intent)
+                                    } catch (_: Exception) {
+                                        try {
+                                            val webIntent = Intent(
+                                                Intent.ACTION_VIEW,
+                                                Uri.parse("https://api.whatsapp.com/send?phone=201277909022")
+                                            )
+                                            context.startActivity(webIntent)
+                                        } catch (_: Exception) {}
+                                    }
+                                }
+                                .padding(horizontal = 14.dp, vertical = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
-                            Text(
-                                text = tr(
-                                    "إذا واجهتك أي مشكلة في تسجيل الدخول أو حسابك، يرجى التواصل مع المسؤول مباشرة:",
-                                    "If you experience issues logging in or with your account, please contact the administrator:"
-                                ),
-                                fontSize = 12.sp,
-                                color = c.mutedForeground,
-                                textAlign = TextAlign.Center,
-                                lineHeight = 17.sp
-                            )
-
-                            // Circular WhatsApp Logo Button only
+                            // Circular WhatsApp Logo Button
                             Surface(
                                 shape = CircleShape,
                                 color = Color(0xFF25D366),
-                                shadowElevation = 3.dp,
+                                shadowElevation = 2.dp,
                                 modifier = Modifier
-                                    .size(48.dp)
+                                    .size(42.dp)
                                     .clip(CircleShape)
-                                    .clickable {
-                                        val url = "https://wa.me/201277909022?text=" + Uri.encode(
-                                            "السلام عليكم، أحتاج مساعدة في تسجيل الدخول لتطبيق عمولات نجيب سليم."
-                                        )
-                                        try {
-                                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
-                                            context.startActivity(intent)
-                                        } catch (_: Exception) {
-                                            try {
-                                                val webIntent = Intent(
-                                                    Intent.ACTION_VIEW,
-                                                    Uri.parse("https://api.whatsapp.com/send?phone=201277909022")
-                                                )
-                                                context.startActivity(webIntent)
-                                            } catch (_: Exception) {}
-                                        }
-                                    }
                             ) {
                                 Box(
                                     modifier = Modifier.fillMaxSize(),
@@ -490,44 +478,21 @@ fun LoginScreen(
                                         imageVector = LucideIcons.WhatsApp,
                                         contentDescription = tr("تواصل عبر واتساب", "WhatsApp"),
                                         tint = Color.White,
-                                        modifier = Modifier.size(26.dp)
+                                        modifier = Modifier.size(22.dp)
                                     )
                                 }
                             }
-                        }
-                    }
 
-                    Spacer(modifier = Modifier.height(14.dp))
-
-                    Text(
-                        text = tr("هل نسيت كلمة المرور؟", "Forgot your password?"),
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = c.mutedForeground,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier
-                            .clickable { showForgotHelp = !showForgotHelp }
-                            .padding(vertical = 4.dp)
-                    )
-
-                    AnimatedVisibility(visible = showForgotHelp) {
-                        Surface(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(top = 8.dp),
-                            shape = RoundedCornerShape(12.dp),
-                            color = c.muted.copy(alpha = 0.6f),
-                            border = BorderStroke(1.dp, c.border)
-                        ) {
+                            // Text aligned alongside the WhatsApp icon
                             Text(
                                 text = tr(
-                                    "تتم إدارة الصلاحيات وكلمات المرور من قِبل المسؤول. تواصل مع الدعم الفني لإعادة تعيين كلمة المرور.",
-                                    "Permissions and passwords are managed by administrators. Contact IT support to reset your password."
+                                    "إذا واجهتك أي مشكلة في تسجيل الدخول أو حسابك، يرجى التواصل مع المسؤول مباشرة عبر واتساب.",
+                                    "If you experience issues logging in or with your account, please contact the administrator via WhatsApp."
                                 ),
                                 fontSize = 12.sp,
                                 color = c.mutedForeground,
-                                lineHeight = 18.sp,
-                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp)
+                                lineHeight = 17.5.sp,
+                                modifier = Modifier.weight(1f)
                             )
                         }
                     }

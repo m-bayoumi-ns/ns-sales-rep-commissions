@@ -143,6 +143,10 @@ class MainActivity : FragmentActivity() {
                     val bioTitle = tr("تسجيل الدخول بالبصمة", "Sign in with Biometrics")
                     val bioSubtitle = tr("استخدم بصمة الإصبع للوصول إلى لوحة العمولات", "Use your fingerprint to access commission dashboard")
                     val bioCancel = tr("إلغاء", "Cancel")
+                    val bioNotSavedMsg = tr(
+                        "سجّل الدخول أولاً بكلمة المرور مع تفعيل 'تذكرني' لاستخدام البصمة",
+                        "Sign in once with 'Remember me' enabled to activate fingerprint login"
+                    )
                     LoginScreen(
                         signingIn = state.signingIn,
                         errorCode = state.signInError,
@@ -161,18 +165,26 @@ class MainActivity : FragmentActivity() {
                             viewModel.setThemeMode(next)
                         },
                         onSignIn = { id, pass, remember -> viewModel.signIn(id, pass, remember) },
-                        onBiometricSignIn = if (bioAvailable && savedPass.isNotBlank() && savedUser.isNotBlank()) {
+                        onBiometricSignIn = if (bioAvailable) {
                             {
-                                launchBiometricPrompt(
-                                    activity = this@MainActivity,
-                                    title = bioTitle,
-                                    subtitle = bioSubtitle,
-                                    negativeButtonText = bioCancel,
-                                    onSuccess = {
-                                        viewModel.signIn(savedUser, savedPass, rememberMe = true)
-                                    },
-                                    onError = { /* ignored / user cancelled */ }
-                                )
+                                if (savedPass.isNotBlank() && savedUser.isNotBlank()) {
+                                    launchBiometricPrompt(
+                                        activity = this@MainActivity,
+                                        title = bioTitle,
+                                        subtitle = bioSubtitle,
+                                        negativeButtonText = bioCancel,
+                                        onSuccess = {
+                                            viewModel.signIn(savedUser, savedPass, rememberMe = true)
+                                        },
+                                        onError = { /* ignored / user cancelled */ }
+                                    )
+                                } else {
+                                    android.widget.Toast.makeText(
+                                        this@MainActivity,
+                                        bioNotSavedMsg,
+                                        android.widget.Toast.LENGTH_LONG
+                                    ).show()
+                                }
                             }
                         } else null
                     )
@@ -189,7 +201,10 @@ class MainActivity : FragmentActivity() {
                         update = updateInfo,
                         onDownload = {
                             runCatching {
-                                val dlIntent = Intent(Intent.ACTION_VIEW, Uri.parse(updateInfo.downloadUrl)).apply {
+                                val pageUrl = updateInfo.downloadPageUrl.ifBlank {
+                                    "${BuildConfig.API_BASE_URL.removeSuffix("/")}/get-app"
+                                }
+                                val dlIntent = Intent(Intent.ACTION_VIEW, Uri.parse(pageUrl)).apply {
                                     addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                                 }
                                 context.startActivity(dlIntent)
@@ -527,7 +542,7 @@ private fun NsAndroidBottomNav(
                         // 4. Collections / Customer Accounts (Second from left)
                         BottomNavSideItem(
                             label = collectionsLabel,
-                            icon = LucideIcons.Scale,
+                            icon = LucideIcons.CustomerBalances,
                             selected = isCollections,
                             onClick = { onSelectSellerSection(SellerSection.COLLECTIONS) },
                             modifier = Modifier.weight(1f)
@@ -673,8 +688,8 @@ private fun MandatoryUpdateDialog(
 
                 Text(
                     text = tr(
-                        "يتوفر إصدار جديد من تطبيق عمولات المندوبين. يرجى تحميل وتثبيت التحديث الجديد للاستفادة من أحدث الميزات والإصلاحات.",
-                        "A new version of the Sales Rep Commissions app is available. Please download and install the new version to get the latest features and fixes."
+                        "يتوفر إصدار جديد من تطبيق عمولات المندوبين. اضغط على الزر أدناه للانتقال إلى صفحة التحميل الرسمية لتحميل وتثبيت التحديث.",
+                        "A new version of the Sales Rep Commissions app is available. Tap below to visit the official download page and install the update."
                     ),
                     fontSize = 13.5.sp,
                     color = c.mutedForeground,
@@ -728,7 +743,7 @@ private fun MandatoryUpdateDialog(
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = tr("تحميل التحديث الآن", "Download Update"),
+                        text = tr("الانتقال لصفحة التحميل", "Go to Download Page"),
                         fontSize = 15.sp,
                         fontWeight = FontWeight.Bold
                     )

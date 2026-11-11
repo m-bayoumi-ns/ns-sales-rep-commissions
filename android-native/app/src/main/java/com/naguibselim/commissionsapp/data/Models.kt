@@ -400,7 +400,8 @@ data class AppUpdateInfo(
     val currentVersion: String,
     val bytes: Long,
     val publishedAt: String,
-    val downloadUrl: String
+    val downloadUrl: String,
+    val downloadPageUrl: String = ""
 )
 
 // JSON Parsing Helpers
