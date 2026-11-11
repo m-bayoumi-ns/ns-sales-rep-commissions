@@ -201,10 +201,12 @@ class MainActivity : FragmentActivity() {
                         update = updateInfo,
                         onDownload = {
                             runCatching {
-                                val pageUrl = updateInfo.downloadPageUrl.ifBlank {
-                                    "https://ns-scw.bayoumi.dev/ar/get-app"
+                                val targetUrl = updateInfo.downloadUrl.ifBlank {
+                                    updateInfo.downloadPageUrl.ifBlank {
+                                        "https://ns-scw.bayoumi.dev/ar/get-app"
+                                    }
                                 }
-                                val dlIntent = Intent(Intent.ACTION_VIEW, Uri.parse(pageUrl)).apply {
+                                val dlIntent = Intent(Intent.ACTION_VIEW, Uri.parse(targetUrl)).apply {
                                     addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                                 }
                                 context.startActivity(dlIntent)
@@ -688,8 +690,8 @@ private fun MandatoryUpdateDialog(
 
                 Text(
                     text = tr(
-                        "يتوفر إصدار جديد من تطبيق عمولات المندوبين. اضغط على الزر أدناه للانتقال إلى صفحة التحميل الرسمية لتحميل وتثبيت التحديث.",
-                        "A new version of the Sales Rep Commissions app is available. Tap below to visit the official download page and install the update."
+                        "يتوفر إصدار جديد من تطبيق عمولات المندوبين. اضغط على الزر أدناه لبدء تحميل وتثبيت التحديث مباشرة.",
+                        "A new version of the Sales Rep Commissions app is available. Tap below to download and install the update now."
                     ),
                     fontSize = 13.5.sp,
                     color = c.mutedForeground,

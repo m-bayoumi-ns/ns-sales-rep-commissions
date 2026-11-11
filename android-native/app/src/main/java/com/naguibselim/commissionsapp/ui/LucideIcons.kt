@@ -1,5 +1,7 @@
 package com.naguibselim.commissionsapp.ui
 
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Fingerprint
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathFillType
 import androidx.compose.ui.graphics.SolidColor
@@ -7,6 +9,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.PathBuilder
+import androidx.compose.ui.graphics.vector.PathParser
 import androidx.compose.ui.graphics.vector.path
 import androidx.compose.ui.unit.dp
 
@@ -97,83 +100,29 @@ object LucideIcons {
     }
 
     /**
-     * WhatsApp Brand Vector Icon (Crisp, solid official silhouette)
+     * WhatsApp Brand Vector Icon (Crisp, official SVG outline & phone handset)
      */
     val WhatsApp: ImageVector by lazy {
+        val pathNodes = PathParser().parsePathString(
+            "M12.04,2c-5.46,0 -9.91,4.45 -9.91,9.91c0,1.75 0.46,3.45 1.32,4.95L2.05,22l5.25,-1.38c1.45,0.79 3.08,1.21 4.74,1.21c5.46,0 9.91,-4.45 9.91,-9.91c0,-2.65 -1.03,-5.14 -2.9,-7.01A9.82,9.82 0,0 0 12.04,2m0.01,1.67c2.2,0 4.26,0.86 5.82,2.41a8.17,8.17 0,0 1 2.41,5.83c0,4.54 -3.7,8.24 -8.24,8.24c-1.48,0 -2.93,-0.4 -4.2,-1.15l-0.3,-0.18 -3.12,0.82 0.83,-3.04 -0.2,-0.31a8.19,8.19 0,0 1 -1.26,-4.38c0,-4.54 3.7,-8.24 8.24,-8.24m4.52,11.66c-0.25,-0.13 -1.47,-0.72 -1.7,-0.81 -0.23,-0.08 -0.39,-0.13 -0.56,0.13 -0.17,0.25 -0.64,0.81 -0.79,0.97 -0.14,0.17 -0.29,0.19 -0.54,0.06 -0.25,-0.13 -1.06,-0.39 -2.02,-1.25 -0.75,-0.67 -1.26,-1.5 -1.41,-1.75 -0.15,-0.25 -0.02,-0.39 0.11,-0.51 0.11,-0.11 0.25,-0.29 0.38,-0.44 0.13,-0.14 0.17,-0.25 0.25,-0.42 0.08,-0.17 0.04,-0.31 -0.02,-0.44 -0.06,-0.13 -0.56,-1.34 -0.76,-1.84 -0.2,-0.49 -0.4,-0.42 -0.56,-0.43h-0.48c-0.17,0 -0.44,0.06 -0.67,0.31 -0.23,0.25 -0.88,0.86 -0.88,2.1s0.9,2.44 1.03,2.61c0.13,0.17 1.78,2.72 4.31,3.81 0.6,0.26 1.07,0.42 1.44,0.54 0.61,0.19 1.16,0.17 1.6,0.1 0.49,-0.07 1.47,-0.6 1.68,-1.18 0.21,-0.58 0.21,-1.07 0.15,-1.18 -0.06,-0.12 -0.22,-0.19 -0.47,-0.32"
+        ).toNodes()
         ImageVector.Builder(
             name = "WhatsApp",
             defaultWidth = 24.dp,
             defaultHeight = 24.dp,
             viewportWidth = 24f,
             viewportHeight = 24f
-        ).apply {
-            path(fill = SolidColor(Color.White)) {
-                moveTo(12.04f, 2f)
-                curveTo(6.58f, 2f, 2.13f, 6.45f, 2.13f, 11.91f)
-                curveTo(2.13f, 13.66f, 2.59f, 15.36f, 3.45f, 16.86f)
-                lineTo(2.05f, 22f)
-                lineTo(7.3f, 20.62f)
-                curveTo(8.75f, 21.41f, 10.38f, 21.83f, 12.04f, 21.83f)
-                curveTo(17.5f, 21.83f, 21.95f, 17.38f, 21.95f, 11.91f)
-                curveTo(21.95f, 6.45f, 17.5f, 2f, 12.04f, 2f)
-                close()
-                moveTo(17.5f, 16.2f)
-                curveTo(17.27f, 16.85f, 16.38f, 17.38f, 15.68f, 17.53f)
-                curveTo(15.2f, 17.63f, 14.57f, 17.7f, 12.44f, 16.81f)
-                curveTo(9.71f, 15.68f, 7.95f, 12.9f, 7.82f, 12.72f)
-                curveTo(7.68f, 12.54f, 6.72f, 11.27f, 6.72f, 9.94f)
-                curveTo(6.72f, 8.62f, 7.39f, 7.97f, 7.65f, 7.7f)
-                curveTo(7.92f, 7.42f, 8.23f, 7.36f, 8.46f, 7.36f)
-                curveTo(8.61f, 7.36f, 8.74f, 7.36f, 8.85f, 7.37f)
-                curveTo(9.18f, 7.38f, 9.34f, 7.42f, 9.56f, 7.94f)
-                curveTo(9.83f, 8.58f, 10.48f, 10.19f, 10.55f, 10.35f)
-                curveTo(10.64f, 10.51f, 10.71f, 10.71f, 10.6f, 10.93f)
-                curveTo(10.49f, 11.15f, 10.42f, 11.25f, 10.25f, 11.44f)
-                curveTo(10.08f, 11.64f, 9.9f, 11.87f, 9.75f, 12.03f)
-                curveTo(9.58f, 12.2f, 9.4f, 12.38f, 9.59f, 12.71f)
-                curveTo(9.79f, 13.04f, 10.45f, 14.13f, 11.43f, 15.01f)
-                curveTo(12.7f, 16.14f, 13.73f, 16.5f, 14.11f, 16.66f)
-                curveTo(14.48f, 16.82f, 14.7f, 16.78f, 14.92f, 16.53f)
-                curveTo(15.14f, 16.27f, 15.85f, 15.46f, 16.12f, 15.08f)
-                curveTo(16.39f, 14.71f, 16.65f, 14.76f, 17.02f, 14.89f)
-                curveTo(17.38f, 15.02f, 19.33f, 15.98f, 19.73f, 16.19f)
-                curveTo(20.13f, 16.39f, 20.39f, 16.49f, 20.49f, 16.66f)
-                curveTo(20.59f, 16.83f, 20.59f, 17.52f, 20.14f, 18.17f)
-                curveTo(19.69f, 18.81f, 18.23f, 19.46f, 17.5f, 16.2f)
-                close()
-            }
-        }.build()
+        ).addPath(
+            pathData = pathNodes,
+            fill = SolidColor(Color.White)
+        ).build()
     }
 
     /**
-     * Biometric / Fingerprint Vector Icon (Enhanced Multi-ridge Biometric Pattern)
+     * Biometric / Fingerprint Vector Icon (Official Google Material Biometric Icon)
      */
-    val Fingerprint: ImageVector by lazy {
-        strokeVector("Fingerprint") {
-            strokePath(1.9f) {
-                moveTo(12f, 10f)
-                arcTo(2f, 2f, 0f, false, false, 10f, 12f)
-                curveTo(10f, 14.5f, 11f, 16.5f, 11f, 19.5f)
-            }
-            strokePath(1.9f) {
-                moveTo(7.5f, 8.5f)
-                arcTo(4.5f, 4.5f, 0f, false, true, 16.5f, 8.5f)
-                curveTo(16.5f, 10.5f, 15.8f, 12.5f, 15.2f, 14.5f)
-                curveTo(14.6f, 16.5f, 14.2f, 18f, 14.2f, 19.5f)
-            }
-            strokePath(1.9f) {
-                moveTo(5f, 11.5f)
-                arcTo(7f, 7f, 0f, false, true, 19f, 11.5f)
-                curveTo(19f, 14f, 18.4f, 16.5f, 17.8f, 18.5f)
-            }
-            strokePath(1.9f) {
-                moveTo(2.5f, 13.5f)
-                curveTo(2.5f, 8.5f, 6.7f, 4.5f, 12f, 4.5f)
-                curveTo(17.3f, 4.5f, 21.5f, 8.5f, 21.5f, 13.5f)
-                curveTo(21.5f, 15.5f, 21f, 17.5f, 20.5f, 19f)
-            }
-        }
-    }
+    val Fingerprint: ImageVector
+        get() = Icons.Outlined.Fingerprint
 
     /** Lucide `user-round-cog` — used in bottom nav "حسابي" / Account with settings emblem */
     val UserCog: ImageVector by lazy {

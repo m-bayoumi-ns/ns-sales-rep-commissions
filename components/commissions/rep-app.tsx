@@ -347,10 +347,9 @@ function Summary({ detail, settings, clock }: { detail: RepDetail; settings: Com
           })}
         <Row
           icon={<CoinsIcon aria-hidden className="size-4" />}
-          label={t(clock.closed ? "collectionRate" : "collectionRateToDate")}
+          label={t("collectionRate")}
           sub={`${formatCompactCurrency(r.collections, locale)} / ${formatCompactCurrency(r.sales, locale)} ${t("collectedOfSales")}`}
           value={formatPercent(r.collectionRatio)}
-          valueSub={t("commissionApplied", { pct: formatPercent(r.collectionFactor) })}
           progress={r.collectionFactor}
         />
       </Group>

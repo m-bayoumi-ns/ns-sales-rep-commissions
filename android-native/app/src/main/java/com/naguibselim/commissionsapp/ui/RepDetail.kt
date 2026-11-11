@@ -606,11 +606,10 @@ private fun SummarySection(
         NsDivider()
         NsListRow(
             icon = LucideIcons.HandCoins,
-            label = if (clock.closed) tr("التحصيل مقابل المبيعات", "Collections against sales")
-            else tr("التحصيل مقابل مبيعات الشهر حتى الآن", "Collections against MTD sales"),
+            label = tr("التحصيل مقابل المبيعات", "Collections vs sales"),
             sub = "${Format.compactCurrency(r.collections, isAr)} / ${Format.compactCurrency(r.sales, isAr)} ${tr("المحصّل / المبيعات", "collected / sales")}",
             value = Format.percent(r.collectionRatio),
-            valueSub = tr("المطبق على عمولة البنود: ${Format.percent(r.collectionFactor)}", "Applied to line commission: ${Format.percent(r.collectionFactor)}"),
+            valueSub = null,
             progress = r.collectionFactor,
             hasProgressSlot = true
         )
