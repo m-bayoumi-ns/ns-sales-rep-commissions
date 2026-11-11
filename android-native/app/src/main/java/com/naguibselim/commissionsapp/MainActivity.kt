@@ -202,7 +202,7 @@ class MainActivity : FragmentActivity() {
                         onDownload = {
                             runCatching {
                                 val pageUrl = updateInfo.downloadPageUrl.ifBlank {
-                                    "${BuildConfig.API_BASE_URL.removeSuffix("/")}/get-app"
+                                    "https://ns-scw.bayoumi.dev/ar/get-app"
                                 }
                                 val dlIntent = Intent(Intent.ACTION_VIEW, Uri.parse(pageUrl)).apply {
                                     addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
