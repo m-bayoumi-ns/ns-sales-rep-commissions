@@ -32,17 +32,11 @@ struct MainShellView: View {
                 .ignoresSafeArea(.keyboard, edges: .bottom)
             }
 
-            // Mandatory Update Pop-up Box Modal Overlay
+            // Update Pop-up Box Modal Overlay (Mandatory download with no skip/check-again)
             if let update = viewModel.mandatoryUpdate {
-                MandatoryUpdateDialog(
-                    update: update,
-                    onDismiss: { viewModel.dismissUpdateDialog() },
-                    onRecheck: {
-                        Task { await viewModel.checkMandatoryUpdate() }
-                    }
-                )
-                .transition(.opacity)
-                .zIndex(100)
+                MandatoryUpdateDialog(update: update)
+                    .transition(.opacity)
+                    .zIndex(100)
             }
         }
         .environment(\.nsColors, colors)

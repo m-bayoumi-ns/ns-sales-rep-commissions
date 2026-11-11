@@ -195,7 +195,7 @@ class MainActivity : FragmentActivity() {
                     )
                 }
 
-                // Mandatory Update Pop-up Box
+                // Update Pop-up Box (Mandatory download with no skip/check-again)
                 state.mandatoryUpdate?.let { updateInfo ->
                     MandatoryUpdateDialog(
                         update = updateInfo,
@@ -211,9 +211,7 @@ class MainActivity : FragmentActivity() {
                                 }
                                 context.startActivity(dlIntent)
                             }
-                        },
-                        onDismiss = { viewModel.dismissUpdateDialog() },
-                        onRecheck = { viewModel.checkAppUpdate() }
+                        }
                     )
                 }
             }
@@ -626,9 +624,7 @@ private fun BottomNavSideItem(
 @Composable
 private fun MandatoryUpdateDialog(
     update: AppUpdateInfo,
-    onDownload: () -> Unit,
-    onDismiss: () -> Unit,
-    onRecheck: () -> Unit
+    onDownload: () -> Unit
 ) {
     val c = LocalNsColors.current
     val sizeMbStr = if (update.bytes > 0) {
@@ -636,9 +632,9 @@ private fun MandatoryUpdateDialog(
     } else null
 
     Dialog(
-        onDismissRequest = onDismiss,
+        onDismissRequest = { /* Non-dismissable: mandatory update */ },
         properties = DialogProperties(
-            dismissOnBackPress = true,
+            dismissOnBackPress = false,
             dismissOnClickOutside = false,
             usePlatformDefaultWidth = false
         )
@@ -749,30 +745,6 @@ private fun MandatoryUpdateDialog(
                         fontSize = 15.sp,
                         fontWeight = FontWeight.Bold
                     )
-                }
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    TextButton(onClick = onRecheck) {
-                        Text(
-                            text = tr("إعادة الفحص", "Check Again"),
-                            fontSize = 13.sp,
-                            color = c.primary,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                    }
-
-                    TextButton(onClick = onDismiss) {
-                        Text(
-                            text = tr("المتابعة للتطبيق", "Continue to App"),
-                            fontSize = 13.sp,
-                            color = c.mutedForeground,
-                            fontWeight = FontWeight.Medium
-                        )
-                    }
                 }
             }
         }

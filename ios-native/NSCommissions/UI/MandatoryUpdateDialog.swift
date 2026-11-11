@@ -2,8 +2,6 @@ import SwiftUI
 
 struct MandatoryUpdateDialog: View {
     let update: AppUpdateInfo
-    let onDismiss: () -> Void
-    let onRecheck: () -> Void
     @Environment(\.nsColors) private var c
     @Environment(\.isArabic) private var isAr
 
@@ -93,25 +91,6 @@ struct MandatoryUpdateDialog: View {
                 }
                 .buttonStyle(.plain)
                 .padding(.top, 4)
-
-                // Secondary actions: Recheck / Continue
-                HStack {
-                    Button(action: onRecheck) {
-                        Text(tr("إعادة الفحص", "Check Again", isAr: isAr))
-                            .font(.system(size: 13, weight: .semibold))
-                            .foregroundColor(c.primary)
-                    }
-
-                    Spacer()
-
-                    Button(action: onDismiss) {
-                        Text(tr("المتابعة للتطبيق", "Continue to App", isAr: isAr))
-                            .font(.system(size: 13, weight: .medium))
-                            .foregroundColor(c.mutedForeground)
-                    }
-                }
-                .padding(.horizontal, 4)
-                .padding(.top, 2)
             }
             .padding(24)
             .background(

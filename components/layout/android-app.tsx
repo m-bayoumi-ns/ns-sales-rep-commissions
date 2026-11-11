@@ -114,7 +114,7 @@ export function AppModeMarker() {
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/brand/app-icon.png" alt="" width={60} height={60} className="size-15 rounded-2xl shadow-md" />
         <h2 className="text-lg font-extrabold text-foreground">
-          {isAr ? "تحديث إجباري جديد متاح" : "Mandatory Update Available"}
+          {isAr ? "تحديث جديد متاح للتطبيق" : "App Update Available"}
         </h2>
         <p className="text-xs leading-relaxed text-muted-foreground">
           {isAr
