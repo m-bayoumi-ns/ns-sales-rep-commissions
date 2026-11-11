@@ -1,7 +1,5 @@
 package com.naguibselim.commissionsapp.ui
 
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Fingerprint
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathFillType
 import androidx.compose.ui.graphics.SolidColor
@@ -133,10 +131,55 @@ object LucideIcons {
     }
 
     /**
-     * Biometric / Fingerprint Vector Icon (Official Google Material Biometric Icon)
+     * Biometric / Fingerprint Vector Icon (Crisp Lucide Biometric Fingerprint)
      */
-    val Fingerprint: ImageVector
-        get() = Icons.Default.Fingerprint
+    val Fingerprint: ImageVector by lazy {
+        strokeVector("Fingerprint") {
+            // Central core loop
+            strokePath(1.9f) {
+                moveTo(12f, 10f)
+                arcTo(2f, 2f, 0f, false, false, 10f, 12f)
+                curveTo(10f, 13f, 9.9f, 14.5f, 9.74f, 16f)
+            }
+            // Inner right ridge
+            strokePath(1.9f) {
+                moveTo(14f, 13.1f)
+                curveTo(14f, 15.5f, 14f, 19.5f, 13f, 22f)
+            }
+            // Bottom-right ridge
+            strokePath(1.9f) {
+                moveTo(17.3f, 21f)
+                curveTo(17.4f, 20.4f, 17.7f, 18.7f, 17.8f, 18f)
+            }
+            // Upper outer ridge
+            strokePath(1.9f) {
+                moveTo(2f, 12f)
+                arcTo(10f, 10f, 0f, false, true, 20f, 6f)
+            }
+            // Left ridge
+            strokePath(1.9f) {
+                moveTo(5f, 19.5f)
+                curveTo(5.5f, 18f, 6f, 15f, 6f, 12f)
+                arcTo(6f, 6f, 0f, false, true, 6.34f, 10f)
+            }
+            // Bottom left ridge
+            strokePath(1.9f) {
+                moveTo(8.65f, 22f)
+                curveTo(8.86f, 21.34f, 9.1f, 20.68f, 9.22f, 20f)
+            }
+            // Right arch
+            strokePath(1.9f) {
+                moveTo(9f, 6.8f)
+                arcTo(6f, 6f, 0f, false, true, 18f, 12f)
+                lineTo(18f, 14f)
+            }
+            // Outer right edge
+            strokePath(1.9f) {
+                moveTo(21.8f, 16f)
+                curveTo(22f, 14f, 21.9f, 10.6f, 21.8f, 10f)
+            }
+        }
+    }
 
     /** Lucide `user-round-cog` — used in bottom nav "حسابي" / Account with settings emblem */
     val UserCog: ImageVector by lazy {

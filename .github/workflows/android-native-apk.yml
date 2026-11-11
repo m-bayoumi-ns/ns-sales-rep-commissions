@@ -57,21 +57,12 @@ jobs:
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
-        run: |
-          gradle -p android-native --no-daemon assembleRelease --stacktrace 2>&1 | tee build.log || {
-            echo "### Gradle Build Error" >> "$GITHUB_STEP_SUMMARY"
-            echo '```' >> "$GITHUB_STEP_SUMMARY"
-            tail -n 100 build.log >> "$GITHUB_STEP_SUMMARY"
-            echo '```' >> "$GITHUB_STEP_SUMMARY"
-            exit 1
-          }
+        run: gradle -p android-native --no-daemon assembleRelease
 
       - name: Name the APK
         run: |
           mkdir -p dist
-          APK_FILE=$(find android-native/app/build/outputs/apk -name "*.apk" | head -n 1)
-          echo "Found APK at $APK_FILE"
-          cp "$APK_FILE" "dist/NS-Commissions-Native-2.0.${GITHUB_RUN_NUMBER}.apk"
+          cp android-native/app/build/outputs/apk/release/app-release.apk "dist/NS-Commissions-Native-2.0.${GITHUB_RUN_NUMBER}.apk"
           ls -la dist
 
       - name: Publish APK on the website

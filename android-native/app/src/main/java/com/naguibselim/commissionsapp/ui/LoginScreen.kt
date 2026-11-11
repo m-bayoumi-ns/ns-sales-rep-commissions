@@ -26,13 +26,10 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Fingerprint
 import androidx.compose.material.icons.outlined.ErrorOutline
 import androidx.compose.material.icons.outlined.Language
 import androidx.compose.material.icons.outlined.Visibility
 import androidx.compose.material.icons.outlined.VisibilityOff
-import androidx.compose.ui.res.painterResource
-import com.naguibselim.commissionsapp.R
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
@@ -422,7 +419,7 @@ fun LoginScreen(
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Icon(
-                                        imageVector = Icons.Default.Fingerprint,
+                                        imageVector = LucideIcons.Fingerprint,
                                         contentDescription = tr("تسجيل الدخول بالبصمة", "Sign in with Fingerprint"),
                                         tint = c.primary,
                                         modifier = Modifier.size(28.dp)
@@ -479,7 +476,7 @@ fun LoginScreen(
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Icon(
-                                        painter = painterResource(id = R.drawable.ic_whatsapp),
+                                        imageVector = LucideIcons.WhatsApp,
                                         contentDescription = tr("تواصل عبر واتساب", "WhatsApp"),
                                         tint = Color.White,
                                         modifier = Modifier.size(24.dp)
