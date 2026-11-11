@@ -478,7 +478,7 @@ fun LoginScreen(
                                     Icon(
                                         imageVector = LucideIcons.WhatsApp,
                                         contentDescription = tr("تواصل عبر واتساب", "WhatsApp"),
-                                        tint = Color.White,
+                                        tint = Color.Unspecified,
                                         modifier = Modifier.size(24.dp)
                                     )
                                 }

@@ -7,8 +7,8 @@ export function BottomNavBar({ activeTab, onSelectTab, isDark }) {
   const theme = isDark ? Colors.dark : Colors.light;
 
   const tabs = [
-    { id: "statement", label: "الكشف", icon: "receipt-outline", activeIcon: "receipt" },
-    { id: "collections", label: "التحصيل", icon: "account-cash-outline", activeIcon: "account-cash", isCustom: "collections" },
+    { id: "statement", label: "الكشف", icon: "document-text-outline", activeIcon: "document-text" },
+    { id: "collections", label: "التحصيل", isCustom: "collections" },
     { id: "home", label: "الرئيسية", isCenter: true },
     { id: "sales", label: "المبيعات", icon: "trending-up", activeIcon: "trending-up", isCustom: "sales" },
     { id: "account", label: "حسابي", isCustom: "account" },
@@ -71,7 +71,7 @@ export function BottomNavBar({ activeTab, onSelectTab, isDark }) {
                 />
               ) : tab.isCustom === "collections" ? (
                 <MaterialCommunityIcons
-                  name="account-multiple-outline"
+                  name="hand-coin-outline"
                   size={22}
                   color={isActive ? theme.primary : theme.textMuted}
                 />

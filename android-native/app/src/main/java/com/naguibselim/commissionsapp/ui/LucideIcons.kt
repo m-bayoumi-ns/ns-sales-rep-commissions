@@ -1,5 +1,7 @@
 package com.naguibselim.commissionsapp.ui
 
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Fingerprint
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathFillType
 import androidx.compose.ui.graphics.SolidColor
@@ -97,89 +99,74 @@ object LucideIcons {
     }
 
     /**
-     * WhatsApp Brand Vector Icon
+     * WhatsApp Brand Vector Icon — Authentic solid white speech bubble and handset silhouette
      */
     val WhatsApp: ImageVector by lazy {
-        strokeVector("WhatsApp") {
-            // Speech bubble outline with tail
-            strokePath(1.9f) {
-                moveTo(12f, 3f)
-                arcTo(8.5f, 8.5f, 0f, false, true, 20.5f, 11.5f)
-                arcTo(8.5f, 8.5f, 0f, false, true, 12f, 20f)
-                curveTo(10.5f, 20f, 9.1f, 19.6f, 7.8f, 18.8f)
-                lineTo(3.5f, 20.5f)
-                lineTo(5.2f, 16.2f)
-                curveTo(4.3f, 14.8f, 3.5f, 13.2f, 3.5f, 11.5f)
-                arcTo(8.5f, 8.5f, 0f, false, true, 12f, 3f)
-            }
-            // Handset silhouette inside
-            strokePath(1.8f) {
-                moveTo(9f, 8.5f)
-                curveTo(8.7f, 8.8f, 8.5f, 9.2f, 8.5f, 9.7f)
-                curveTo(8.5f, 10.7f, 9.1f, 11.8f, 10.2f, 12.9f)
-                curveTo(11.3f, 14.0f, 12.4f, 14.6f, 13.4f, 14.6f)
-                curveTo(13.9f, 14.6f, 14.3f, 14.4f, 14.6f, 14.1f)
-                lineTo(13.5f, 12.8f)
-                curveTo(13.3f, 12.6f, 13.0f, 12.6f, 12.8f, 12.8f)
-                lineTo(12.3f, 13.3f)
-                curveTo(11.8f, 13.0f, 11.0f, 12.2f, 10.7f, 11.7f)
-                lineTo(11.2f, 11.2f)
-                curveTo(11.4f, 11.0f, 11.4f, 10.7f, 11.2f, 10.5f)
+        ImageVector.Builder(
+            name = "WhatsApp",
+            defaultWidth = 24.dp,
+            defaultHeight = 24.dp,
+            viewportWidth = 24f,
+            viewportHeight = 24f
+        ).apply {
+            path(
+                fill = SolidColor(Color.White),
+                stroke = null,
+                pathFillType = PathFillType.EvenOdd
+            ) {
+                moveTo(12.00f, 2.00f)
+                curveTo(6.48f, 2.00f, 2.00f, 6.48f, 2.00f, 12.00f)
+                curveTo(2.00f, 13.76f, 2.46f, 15.42f, 3.26f, 16.86f)
+                lineTo(2.00f, 22.00f)
+                lineTo(7.28f, 20.76f)
+                curveTo(8.68f, 21.53f, 10.28f, 22.00f, 12.00f, 22.00f)
+                curveTo(17.52f, 22.00f, 22.00f, 17.52f, 22.00f, 12.00f)
+                curveTo(22.00f, 6.48f, 17.52f, 2.00f, 12.00f, 2.00f)
+                close()
+                moveTo(12.00f, 20.26f)
+                curveTo(10.50f, 20.26f, 9.09f, 19.86f, 7.88f, 19.15f)
+                lineTo(7.58f, 18.98f)
+                lineTo(4.52f, 19.70f)
+                lineTo(5.32f, 16.71f)
+                lineTo(5.12f, 16.41f)
+                curveTo(4.35f, 15.16f, 3.90f, 13.69f, 3.90f, 12.10f)
+                curveTo(3.90f, 7.54f, 7.60f, 3.84f, 12.00f, 3.84f)
+                curveTo(16.40f, 3.84f, 20.10f, 7.54f, 20.10f, 12.10f)
+                curveTo(20.10f, 16.66f, 16.40f, 20.25f, 12.00f, 20.25f)
+                close()
+                moveTo(17.47f, 14.38f)
+                curveTo(17.17f, 14.23f, 15.69f, 13.50f, 15.42f, 13.40f)
+                curveTo(15.14f, 13.30f, 14.94f, 13.25f, 14.74f, 13.55f)
+                curveTo(14.54f, 13.85f, 13.96f, 14.53f, 13.79f, 14.73f)
+                curveTo(13.61f, 14.93f, 13.44f, 14.96f, 13.14f, 14.81f)
+                curveTo(12.83f, 14.66f, 11.86f, 14.34f, 10.71f, 13.31f)
+                curveTo(9.82f, 12.51f, 9.21f, 11.52f, 9.04f, 11.22f)
+                curveTo(8.86f, 10.92f, 9.02f, 10.76f, 9.17f, 10.61f)
+                curveTo(9.30f, 10.47f, 9.47f, 10.26f, 9.62f, 10.08f)
+                curveTo(9.77f, 9.91f, 9.82f, 9.78f, 9.92f, 9.58f)
+                curveTo(10.02f, 9.38f, 9.97f, 9.21f, 9.90f, 9.05f)
+                curveTo(9.82f, 8.90f, 9.22f, 7.42f, 8.97f, 6.82f)
+                curveTo(8.72f, 6.24f, 8.48f, 6.32f, 8.29f, 6.31f)
+                curveTo(8.12f, 6.30f, 7.92f, 6.30f, 7.71f, 6.30f)
+                curveTo(7.51f, 6.30f, 7.19f, 6.37f, 6.91f, 6.67f)
+                curveTo(6.64f, 6.97f, 5.86f, 7.70f, 5.86f, 9.18f)
+                curveTo(5.86f, 10.66f, 6.94f, 12.09f, 7.09f, 12.29f)
+                curveTo(7.24f, 12.49f, 9.21f, 15.53f, 12.23f, 16.83f)
+                curveTo(12.94f, 17.14f, 13.50f, 17.33f, 13.94f, 17.47f)
+                curveTo(14.66f, 17.70f, 15.32f, 17.66f, 15.83f, 17.59f)
+                curveTo(16.41f, 17.50f, 17.61f, 16.86f, 17.87f, 16.16f)
+                curveTo(18.12f, 15.46f, 18.12f, 14.85f, 18.04f, 14.73f)
+                curveTo(17.97f, 14.60f, 17.76f, 14.53f, 17.46f, 14.38f)
                 close()
             }
-        }
+        }.build()
     }
 
     /**
-     * Biometric / Fingerprint Vector Icon (Crisp Lucide Biometric Fingerprint)
+     * Biometric / Fingerprint Vector Icon (Google Material Official Fingerprint Icon)
      */
-    val Fingerprint: ImageVector by lazy {
-        strokeVector("Fingerprint") {
-            // Central core loop
-            strokePath(1.9f) {
-                moveTo(12f, 10f)
-                arcTo(2f, 2f, 0f, false, false, 10f, 12f)
-                curveTo(10f, 13f, 9.9f, 14.5f, 9.74f, 16f)
-            }
-            // Inner right ridge
-            strokePath(1.9f) {
-                moveTo(14f, 13.1f)
-                curveTo(14f, 15.5f, 14f, 19.5f, 13f, 22f)
-            }
-            // Bottom-right ridge
-            strokePath(1.9f) {
-                moveTo(17.3f, 21f)
-                curveTo(17.4f, 20.4f, 17.7f, 18.7f, 17.8f, 18f)
-            }
-            // Upper outer ridge
-            strokePath(1.9f) {
-                moveTo(2f, 12f)
-                arcTo(10f, 10f, 0f, false, true, 20f, 6f)
-            }
-            // Left ridge
-            strokePath(1.9f) {
-                moveTo(5f, 19.5f)
-                curveTo(5.5f, 18f, 6f, 15f, 6f, 12f)
-                arcTo(6f, 6f, 0f, false, true, 6.34f, 10f)
-            }
-            // Bottom left ridge
-            strokePath(1.9f) {
-                moveTo(8.65f, 22f)
-                curveTo(8.86f, 21.34f, 9.1f, 20.68f, 9.22f, 20f)
-            }
-            // Right arch
-            strokePath(1.9f) {
-                moveTo(9f, 6.8f)
-                arcTo(6f, 6f, 0f, false, true, 18f, 12f)
-                lineTo(18f, 14f)
-            }
-            // Outer right edge
-            strokePath(1.9f) {
-                moveTo(21.8f, 16f)
-                curveTo(22f, 14f, 21.9f, 10.6f, 21.8f, 10f)
-            }
-        }
-    }
+    val Fingerprint: ImageVector
+        get() = Icons.Default.Fingerprint
 
     /** Lucide `user-round-cog` — used in bottom nav "حسابي" / Account with settings emblem */
     val UserCog: ImageVector by lazy {
@@ -244,34 +231,62 @@ object LucideIcons {
     }
 
     /**
-     * Updated Modern Sales Icon (`ChartNoAxesCombined` — Rising Sales Bars + Upward Trend Arrow) —
-     * used in bottom nav "المبيعات".
+     * Exact Lucide `coins` Icon (`CoinsIcon`) — matching the web app's Collections icon
      */
-    val ShoppingCart: ImageVector by lazy {
-        strokeVector("SalesTrendChart") {
-            // Rising sales bars at base
+    val Coins: ImageVector by lazy {
+        strokeVector("LucideCoins") {
+            // Front circle
             strokePath {
-                moveTo(5f, 21f)
-                verticalLineTo(16f)
-                moveTo(11f, 21f)
-                verticalLineTo(13f)
-                moveTo(17f, 21f)
+                circlePath(8f, 8f, 6f)
+            }
+            // Back circle arc
+            strokePath {
+                moveTo(18.09f, 10.37f)
+                arcTo(6f, 6f, 0f, isMoreThanHalf = true, isPositiveArc = true, 10.34f, 18f)
+            }
+            // "1" digit in front coin
+            strokePath {
+                moveTo(7f, 6f)
+                horizontalLineTo(8f)
                 verticalLineTo(10f)
             }
-            // Upward trend line with arrow head
+            // Mark in back coin
             strokePath {
-                moveTo(3f, 11.5f)
-                lineTo(8.5f, 6.5f)
-                lineTo(12.5f, 9.5f)
-                lineTo(20f, 3f)
-            }
-            strokePath {
-                moveTo(15.5f, 3f)
-                horizontalLineTo(20f)
-                verticalLineTo(7.5f)
+                moveTo(16.71f, 13.88f)
+                lineTo(17.41f, 14.59f)
+                lineTo(14.59f, 17.41f)
             }
         }
     }
+
+    /**
+     * Exact Lucide `chart-no-axes-combined` Icon (`ChartNoAxesCombinedIcon`) — matching the web app's Sales icon
+     */
+    val ChartNoAxesCombined: ImageVector by lazy {
+        strokeVector("LucideChartNoAxesCombined") {
+            // Upward trend line
+            strokePath {
+                moveTo(22f, 3f)
+                lineTo(13.354f, 11.646f)
+                lineTo(9f, 8f)
+                lineTo(2f, 15f)
+            }
+            // 5 vertical bars: x=4, 8, 12, 16, 20
+            strokePath {
+                moveTo(4f, 18f)
+                verticalLineTo(21f)
+                moveTo(8f, 14f)
+                verticalLineTo(21f)
+                moveTo(12f, 16f)
+                verticalLineTo(21f)
+                moveTo(16f, 14f)
+                verticalLineTo(21f)
+                moveTo(20f, 10f)
+                verticalLineTo(21f)
+            }
+        }
+    }
+    val ShoppingCart: ImageVector by lazy { ChartNoAxesCombined }
 
     /**
      * Modern Light Bulb Icon (`Lightbulb`) —

@@ -6,6 +6,7 @@ import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ProvideTextStyle
 import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
@@ -19,10 +20,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.sp
 import androidx.core.view.WindowCompat
+import com.naguibselim.commissionsapp.R
 
 @Immutable
 data class NsColors(
@@ -103,15 +107,40 @@ val DarkNsColors = NsColors(
 val LocalNsColors = staticCompositionLocalOf { LightNsColors }
 val LocalIsArabic = staticCompositionLocalOf { true }
 
-private val NsTypography = Typography(
-    headlineLarge = TextStyle(fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, lineHeight = 36.sp),
-    headlineMedium = TextStyle(fontSize = 22.sp, fontWeight = FontWeight.Bold, lineHeight = 28.sp),
-    titleLarge = TextStyle(fontSize = 18.sp, fontWeight = FontWeight.Bold, lineHeight = 24.sp),
-    titleMedium = TextStyle(fontSize = 15.sp, fontWeight = FontWeight.SemiBold, lineHeight = 21.sp),
-    bodyLarge = TextStyle(fontSize = 15.sp, fontWeight = FontWeight.Normal, lineHeight = 22.sp),
-    bodyMedium = TextStyle(fontSize = 13.5.sp, fontWeight = FontWeight.Normal, lineHeight = 19.sp),
-    labelLarge = TextStyle(fontSize = 13.sp, fontWeight = FontWeight.SemiBold, lineHeight = 18.sp),
-    labelMedium = TextStyle(fontSize = 11.5.sp, fontWeight = FontWeight.Medium, lineHeight = 15.sp)
+val CairoFontFamily = FontFamily(
+    Font(R.font.cairo, FontWeight.Normal),
+    Font(R.font.cairo, FontWeight.Medium),
+    Font(R.font.cairo, FontWeight.SemiBold),
+    Font(R.font.cairo, FontWeight.Bold),
+    Font(R.font.cairo, FontWeight.ExtraBold)
+)
+
+val InterFontFamily = FontFamily(
+    Font(R.font.inter, FontWeight.Normal),
+    Font(R.font.inter, FontWeight.Medium),
+    Font(R.font.inter, FontWeight.SemiBold),
+    Font(R.font.inter, FontWeight.Bold),
+    Font(R.font.inter, FontWeight.ExtraBold)
+)
+
+val LocalAppFontFamily = staticCompositionLocalOf { CairoFontFamily }
+
+fun createNsTypography(fontFamily: FontFamily) = Typography(
+    displayLarge = TextStyle(fontFamily = fontFamily, fontSize = 57.sp, lineHeight = 64.sp),
+    displayMedium = TextStyle(fontFamily = fontFamily, fontSize = 45.sp, lineHeight = 52.sp),
+    displaySmall = TextStyle(fontFamily = fontFamily, fontSize = 36.sp, lineHeight = 44.sp),
+    headlineLarge = TextStyle(fontFamily = fontFamily, fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, lineHeight = 36.sp),
+    headlineMedium = TextStyle(fontFamily = fontFamily, fontSize = 22.sp, fontWeight = FontWeight.Bold, lineHeight = 28.sp),
+    headlineSmall = TextStyle(fontFamily = fontFamily, fontSize = 19.sp, fontWeight = FontWeight.Bold, lineHeight = 25.sp),
+    titleLarge = TextStyle(fontFamily = fontFamily, fontSize = 18.sp, fontWeight = FontWeight.Bold, lineHeight = 24.sp),
+    titleMedium = TextStyle(fontFamily = fontFamily, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, lineHeight = 21.sp),
+    titleSmall = TextStyle(fontFamily = fontFamily, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, lineHeight = 20.sp),
+    bodyLarge = TextStyle(fontFamily = fontFamily, fontSize = 15.sp, fontWeight = FontWeight.Normal, lineHeight = 22.sp),
+    bodyMedium = TextStyle(fontFamily = fontFamily, fontSize = 13.5.sp, fontWeight = FontWeight.Normal, lineHeight = 19.sp),
+    bodySmall = TextStyle(fontFamily = fontFamily, fontSize = 12.sp, fontWeight = FontWeight.Normal, lineHeight = 16.sp),
+    labelLarge = TextStyle(fontFamily = fontFamily, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, lineHeight = 18.sp),
+    labelMedium = TextStyle(fontFamily = fontFamily, fontSize = 11.5.sp, fontWeight = FontWeight.Medium, lineHeight = 15.sp),
+    labelSmall = TextStyle(fontFamily = fontFamily, fontSize = 10.sp, fontWeight = FontWeight.Medium, lineHeight = 14.sp)
 )
 
 @Composable
@@ -178,6 +207,7 @@ fun NsTheme(
         else -> sysDark
     }
     val isAr = language != "en"
+    val appFontFamily = if (isAr) CairoFontFamily else InterFontFamily
     val targetColors = if (useDark) DarkNsColors else LightNsColors
     val colors = animateNsColors(targetColors)
     val direction = if (isAr) LayoutDirection.Rtl else LayoutDirection.Ltr
@@ -233,12 +263,17 @@ fun NsTheme(
     CompositionLocalProvider(
         LocalNsColors provides colors,
         LocalIsArabic provides isAr,
-        LocalLayoutDirection provides direction
+        LocalLayoutDirection provides direction,
+        LocalAppFontFamily provides appFontFamily
     ) {
         MaterialTheme(
             colorScheme = colorScheme,
-            typography = NsTypography,
-            content = content
-        )
+            typography = createNsTypography(appFontFamily)
+        ) {
+            ProvideTextStyle(
+                value = TextStyle(fontFamily = appFontFamily),
+                content = content
+            )
+        }
     }
 }

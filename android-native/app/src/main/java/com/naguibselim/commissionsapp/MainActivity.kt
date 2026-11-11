@@ -513,7 +513,7 @@ private fun NsAndroidBottomNav(
                         // 2. Sales (Second from right)
                         BottomNavSideItem(
                             label = salesLabel,
-                            icon = LucideIcons.ShoppingCart,
+                            icon = LucideIcons.ChartNoAxesCombined,
                             selected = isSales,
                             onClick = { onSelectSellerSection(SellerSection.SALES) },
                             modifier = Modifier.weight(1f)
@@ -544,7 +544,7 @@ private fun NsAndroidBottomNav(
                         // 4. Collections / Customer Accounts (Second from left)
                         BottomNavSideItem(
                             label = collectionsLabel,
-                            icon = LucideIcons.CustomerBalances,
+                            icon = LucideIcons.Coins,
                             selected = isCollections,
                             onClick = { onSelectSellerSection(SellerSection.COLLECTIONS) },
                             modifier = Modifier.weight(1f)
@@ -614,7 +614,7 @@ private fun BottomNavSideItem(
         Text(
             text = label,
             fontSize = 10.sp,
-            fontWeight = FontWeight.Medium,
+            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
             color = tint,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,

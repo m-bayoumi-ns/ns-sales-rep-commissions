@@ -78,9 +78,9 @@ struct MandatoryUpdateDialog: View {
                 // Redirect to Official Download Page Button
                 Button(action: openOfficialDownloadPage) {
                     HStack(spacing: 8) {
-                        Image(systemName: "arrow.up.right.square")
+                        Image(systemName: "arrow.down.circle")
                             .font(.system(size: 16, weight: .bold))
-                        Text(tr("الانتقال لصفحة التحميل", "Go to Download Page", isAr: isAr))
+                        Text(tr("تحميل الآن", "Download Now", isAr: isAr))
                             .font(.system(size: 15, weight: .bold))
                     }
                     .foregroundColor(c.primaryForeground)
