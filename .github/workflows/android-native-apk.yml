@@ -69,7 +69,9 @@ jobs:
       - name: Name the APK
         run: |
           mkdir -p dist
-          cp android-native/app/build/outputs/apk/release/app-release.apk "dist/NS-Commissions-Native-2.0.${GITHUB_RUN_NUMBER}.apk"
+          APK_FILE=$(find android-native/app/build/outputs/apk -name "*.apk" | head -n 1)
+          echo "Found APK at $APK_FILE"
+          cp "$APK_FILE" "dist/NS-Commissions-Native-2.0.${GITHUB_RUN_NUMBER}.apk"
           ls -la dist
 
       - name: Publish APK on the website
