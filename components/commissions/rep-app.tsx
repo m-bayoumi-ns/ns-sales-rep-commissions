@@ -219,31 +219,50 @@ function Row({
   tone?: "good" | "bad" | "muted";
   progress?: number | null;
 }) {
-  return (
-    <li className={cn("flex px-4 py-3", progress !== undefined ? "flex-col gap-2" : "items-center gap-3")}>
-      <div className={cn("flex min-w-0 items-center gap-3", progress !== undefined && "w-full")}>
-        {icon ? <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-accent text-primary">{icon}</span> : null}
-        <div className="flex min-w-0 flex-1 flex-col gap-1">
-          {/* Full name, wrapping onto a second line on narrow screens rather than cut with "…". */}
-          <span className="text-sm font-medium leading-snug break-words">{label}</span>
-          {sub ? <span className="text-xs text-muted-foreground">{sub}</span> : null}
-        </div>
-        {value !== undefined ? (
-          <div className={cn("flex min-w-0 shrink-0 flex-col items-end text-end", progress !== undefined ? "w-[42%]" : "max-w-[42%]")}>
-            <span dir="ltr" className={cn("text-sm font-semibold tabular-nums", tone === "good" && "text-success", tone === "bad" && "text-destructive", tone === "muted" && "text-muted-foreground")}>
+  if (progress !== undefined) {
+    return (
+      <li className="flex flex-col gap-2.5 px-4 py-3.5">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex min-w-0 flex-1 items-center gap-3">
+            {icon ? <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-accent text-primary">{icon}</span> : null}
+            <span className="text-sm font-semibold leading-snug text-foreground">{label}</span>
+          </div>
+          {value !== undefined ? (
+            <span dir="ltr" className={cn("shrink-0 text-base font-bold tabular-nums", tone === "good" && "text-success", tone === "bad" && "text-destructive", tone === "muted" && "text-muted-foreground")}>
               {value}
             </span>
-            {valueSub ? <span className="text-[11px] leading-snug text-muted-foreground">{valueSub}</span> : null}
+          ) : null}
+        </div>
+        <span className="h-2 overflow-hidden rounded-full bg-muted" dir="ltr">
+          <span
+            className={cn("block h-full rounded-full transition-all duration-500", progress == null ? "" : progress >= 100 ? "bg-success" : progress >= 70 ? "bg-warning" : "bg-destructive")}
+            style={{ width: `${Math.min(100, Math.max(0, progress ?? 0))}%` }}
+          />
+        </span>
+        {(sub || valueSub) ? (
+          <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
+            {sub ? <span>{sub}</span> : <span />}
+            {valueSub ? <span className="font-medium text-foreground/85">{valueSub}</span> : null}
           </div>
         ) : null}
+      </li>
+    );
+  }
+
+  return (
+    <li className="flex items-center gap-3 px-4 py-3">
+      {icon ? <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-accent text-primary">{icon}</span> : null}
+      <div className="flex min-w-0 flex-1 flex-col gap-1">
+        <span className="text-sm font-medium leading-snug break-words">{label}</span>
+        {sub ? <span className="text-xs text-muted-foreground">{sub}</span> : null}
       </div>
-      {progress !== undefined ? (
-          <span className="h-1.5 overflow-hidden rounded-full bg-muted" dir="ltr">
-            <span
-              className={cn("block h-full rounded-full", progress == null ? "" : progress >= 100 ? "bg-success" : progress >= 70 ? "bg-warning" : "bg-destructive")}
-              style={{ width: `${Math.min(100, Math.max(0, progress ?? 0))}%` }}
-            />
+      {value !== undefined ? (
+        <div className="flex min-w-0 shrink-0 flex-col items-end text-end">
+          <span dir="ltr" className={cn("text-sm font-semibold tabular-nums", tone === "good" && "text-success", tone === "bad" && "text-destructive", tone === "muted" && "text-muted-foreground")}>
+            {value}
           </span>
+          {valueSub ? <span className="text-[11px] leading-snug text-muted-foreground">{valueSub}</span> : null}
+        </div>
       ) : null}
     </li>
   );

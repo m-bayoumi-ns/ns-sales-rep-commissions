@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { ChartNoAxesCombinedIcon, CoinsIcon, FileTextIcon, UserRoundIcon } from "lucide-react";
+import { ChartNoAxesCombinedIcon, CoinsIcon, FileTextIcon, UserRoundCogIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
@@ -48,7 +48,7 @@ export function AndroidBottomNav({
     <nav aria-label={t("navigation")} dir="rtl" className="android-bottom-nav app-only fixed inset-x-0 bottom-0 z-50 border-t bg-card/95 pb-[env(safe-area-inset-bottom)] shadow-[0_-4px_18px_rgb(0_0_0/0.08)] backdrop-blur">
       <div className="mx-auto grid h-16 max-w-lg grid-cols-5 items-stretch px-2">
         <Link href={accountLink} aria-current={active === "account" ? "page" : undefined} className={itemClass(active === "account")}>
-          <UserRoundIcon aria-hidden className="size-5" />
+          <UserRoundCogIcon aria-hidden className="size-5" />
           <span className="truncate">{t("account")}</span>
         </Link>
         {sectionItem("sales", ChartNoAxesCombinedIcon)}

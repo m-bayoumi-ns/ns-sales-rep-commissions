@@ -131,7 +131,7 @@ export function AppModeMarker() {
           className="mt-1 inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-primary px-5 text-sm font-bold text-primary-foreground shadow-sm transition hover:bg-primary/90"
         >
           <DownloadIcon aria-hidden className="size-4" />
-          {isAr ? "تحميل التحديث الآن" : "Download Update"}
+          {isAr ? "تحميل الآن" : "Download Now"}
         </a>
       </div>
     </div>
@@ -313,17 +313,14 @@ export function AndroidDownloadButton({ className }: { className?: string }) {
   return (
     <a
       href={ANDROID_APK_URL}
-      download="NS-Commissions-WebView.apk"
+      download="NS-Commissions.apk"
       className={cn(
-        "inline-flex h-12 items-center gap-3 rounded-xl bg-primary px-5 text-primary-foreground shadow-sm transition hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
+        "inline-flex h-12 items-center justify-center gap-2.5 rounded-xl bg-primary px-5 text-sm font-bold text-primary-foreground shadow-sm transition hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
         className,
       )}
     >
       <AndroidIcon className="size-5 shrink-0" />
-      <span className="flex flex-col items-start leading-tight">
-        <span className="text-[11px] opacity-80">{t("page.androidSmall")}</span>
-        <span className="text-sm font-semibold">{t("page.androidBig")}</span>
-      </span>
+      <span>{t("page.androidDownload")}</span>
     </a>
   );
 }
@@ -346,12 +343,16 @@ export function OpenInstalledAppLink() {
 export function IosSoonButton({ className }: { className?: string }) {
   const t = useTranslations("androidApp.page");
   return (
-    <button type="button" disabled className={cn("inline-flex h-12 cursor-not-allowed items-center gap-3 rounded-xl border bg-muted/50 px-5 text-muted-foreground opacity-80", className)}>
-      <AppleIcon aria-hidden className="size-5" />
-      <span className="flex flex-col items-start leading-tight">
-        <span className="text-[11px] text-muted-foreground">{t("iosSmall")}</span>
-        <span className="whitespace-nowrap text-sm font-semibold">{t("iosBig")}</span>
-      </span>
+    <button
+      type="button"
+      disabled
+      className={cn(
+        "inline-flex h-12 cursor-not-allowed items-center justify-center gap-2.5 rounded-xl border bg-muted/50 px-5 text-sm font-semibold text-muted-foreground opacity-80",
+        className,
+      )}
+    >
+      <AppleIcon aria-hidden className="size-5 shrink-0" />
+      <span className="whitespace-nowrap">{t("iosNotAvailable")}</span>
     </button>
   );
 }

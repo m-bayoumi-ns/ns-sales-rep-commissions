@@ -405,12 +405,13 @@ fun LoginScreen(
                         // Square Biometric (Fingerprint) Button placed next to the Login Button
                         if (biometricAvailable && onBiometricSignIn != null) {
                             Surface(
-                                shape = RoundedCornerShape(12.dp),
-                                color = c.muted.copy(alpha = 0.7f),
-                                border = BorderStroke(1.2.dp, c.border),
+                                shape = RoundedCornerShape(14.dp),
+                                color = c.accent,
+                                border = BorderStroke(1.2.dp, c.primary.copy(alpha = 0.4f)),
+                                shadowElevation = 1.dp,
                                 modifier = Modifier
-                                    .size(48.dp)
-                                    .clip(RoundedCornerShape(12.dp))
+                                    .size(52.dp)
+                                    .clip(RoundedCornerShape(14.dp))
                                     .clickable(enabled = !signingIn) { onBiometricSignIn() }
                             ) {
                                 Box(
@@ -421,7 +422,7 @@ fun LoginScreen(
                                         imageVector = LucideIcons.Fingerprint,
                                         contentDescription = tr("تسجيل الدخول بالبصمة", "Sign in with Fingerprint"),
                                         tint = c.primary,
-                                        modifier = Modifier.size(24.dp)
+                                        modifier = Modifier.size(28.dp)
                                     )
                                 }
                             }
@@ -478,7 +479,7 @@ fun LoginScreen(
                                         imageVector = LucideIcons.WhatsApp,
                                         contentDescription = tr("تواصل عبر واتساب", "WhatsApp"),
                                         tint = Color.White,
-                                        modifier = Modifier.size(22.dp)
+                                        modifier = Modifier.size(26.dp)
                                     )
                                 }
                             }

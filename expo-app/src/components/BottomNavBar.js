@@ -11,7 +11,7 @@ export function BottomNavBar({ activeTab, onSelectTab, isDark }) {
     { id: "collections", label: "التحصيل", icon: "account-cash-outline", activeIcon: "account-cash", isCustom: "collections" },
     { id: "home", label: "الرئيسية", isCenter: true },
     { id: "sales", label: "المبيعات", icon: "trending-up", activeIcon: "trending-up", isCustom: "sales" },
-    { id: "account", label: "حسابي", icon: "person-outline", activeIcon: "person" },
+    { id: "account", label: "حسابي", isCustom: "account" },
   ];
 
   return (
@@ -63,7 +63,13 @@ export function BottomNavBar({ activeTab, onSelectTab, isDark }) {
               onPress={() => onSelectTab(tab.id)}
               style={styles.tabItem}
             >
-              {tab.isCustom === "collections" ? (
+              {tab.isCustom === "account" ? (
+                <MaterialCommunityIcons
+                  name={isActive ? "account-cog" : "account-cog-outline"}
+                  size={23}
+                  color={isActive ? theme.primary : theme.textMuted}
+                />
+              ) : tab.isCustom === "collections" ? (
                 <MaterialCommunityIcons
                   name="account-multiple-outline"
                   size={22}

@@ -502,7 +502,7 @@ private fun NsAndroidBottomNav(
                         // 1. Account (Rightmost in RTL)
                         BottomNavSideItem(
                             label = accountLabel,
-                            icon = LucideIcons.UserRound,
+                            icon = LucideIcons.UserCog,
                             selected = isAccount,
                             onClick = onSelectAccount,
                             modifier = Modifier.weight(1f)
@@ -743,7 +743,7 @@ private fun MandatoryUpdateDialog(
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = tr("الانتقال لصفحة التحميل", "Go to Download Page"),
+                        text = tr("تحميل الآن", "Download Now"),
                         fontSize = 15.sp,
                         fontWeight = FontWeight.Bold
                     )

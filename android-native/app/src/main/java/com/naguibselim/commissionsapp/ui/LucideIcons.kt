@@ -97,64 +97,110 @@ object LucideIcons {
     }
 
     /**
-     * WhatsApp Brand Vector Icon
+     * WhatsApp Brand Vector Icon (Crisp, solid official silhouette)
      */
     val WhatsApp: ImageVector by lazy {
-        strokeVector("LucideWhatsApp") {
-            // Speech bubble with pointer
-            strokePath(2f) {
-                moveTo(21f, 11.5f)
-                arcTo(8.5f, 8.5f, 0f, isMoreThanHalf = false, isPositiveArc = false, 12f, 3f)
-                arcTo(8.5f, 8.5f, 0f, isMoreThanHalf = false, isPositiveArc = false, 4.5f, 16.5f)
-                lineTo(3f, 21f)
-                lineTo(7.8f, 19.6f)
-                arcTo(8.5f, 8.5f, 0f, isMoreThanHalf = false, isPositiveArc = false, 12f, 20f)
-                arcTo(8.5f, 8.5f, 0f, isMoreThanHalf = false, isPositiveArc = false, 21f, 11.5f)
+        ImageVector.Builder(
+            name = "WhatsApp",
+            defaultWidth = 24.dp,
+            defaultHeight = 24.dp,
+            viewportWidth = 24f,
+            viewportHeight = 24f
+        ).apply {
+            path(fill = SolidColor(Color.White)) {
+                moveTo(12.04f, 2f)
+                curveTo(6.58f, 2f, 2.13f, 6.45f, 2.13f, 11.91f)
+                curveTo(2.13f, 13.66f, 2.59f, 15.36f, 3.45f, 16.86f)
+                lineTo(2.05f, 22f)
+                lineTo(7.3f, 20.62f)
+                curveTo(8.75f, 21.41f, 10.38f, 21.83f, 12.04f, 21.83f)
+                curveTo(17.5f, 21.83f, 21.95f, 17.38f, 21.95f, 11.91f)
+                curveTo(21.95f, 6.45f, 17.5f, 2f, 12.04f, 2f)
+                close()
+                moveTo(17.5f, 16.2f)
+                curveTo(17.27f, 16.85f, 16.38f, 17.38f, 15.68f, 17.53f)
+                curveTo(15.2f, 17.63f, 14.57f, 17.7f, 12.44f, 16.81f)
+                curveTo(9.71f, 15.68f, 7.95f, 12.9f, 7.82f, 12.72f)
+                curveTo(7.68f, 12.54f, 6.72f, 11.27f, 6.72f, 9.94f)
+                curveTo(6.72f, 8.62f, 7.39f, 7.97f, 7.65f, 7.7f)
+                curveTo(7.92f, 7.42f, 8.23f, 7.36f, 8.46f, 7.36f)
+                curveTo(8.61f, 7.36f, 8.74f, 7.36f, 8.85f, 7.37f)
+                curveTo(9.18f, 7.38f, 9.34f, 7.42f, 9.56f, 7.94f)
+                curveTo(9.83f, 8.58f, 10.48f, 10.19f, 10.55f, 10.35f)
+                curveTo(10.64f, 10.51f, 10.71f, 10.71f, 10.6f, 10.93f)
+                curveTo(10.49f, 11.15f, 10.42f, 11.25f, 10.25f, 11.44f)
+                curveTo(10.08f, 11.64f, 9.9f, 11.87f, 9.75f, 12.03f)
+                curveTo(9.58f, 12.2f, 9.4f, 12.38f, 9.59f, 12.71f)
+                curveTo(9.79f, 13.04f, 10.45f, 14.13f, 11.43f, 15.01f)
+                curveTo(12.7f, 16.14f, 13.73f, 16.5f, 14.11f, 16.66f)
+                curveTo(14.48f, 16.82f, 14.7f, 16.78f, 14.92f, 16.53f)
+                curveTo(15.14f, 16.27f, 15.85f, 15.46f, 16.12f, 15.08f)
+                curveTo(16.39f, 14.71f, 16.65f, 14.76f, 17.02f, 14.89f)
+                curveTo(17.38f, 15.02f, 19.33f, 15.98f, 19.73f, 16.19f)
+                curveTo(20.13f, 16.39f, 20.39f, 16.49f, 20.49f, 16.66f)
+                curveTo(20.59f, 16.83f, 20.59f, 17.52f, 20.14f, 18.17f)
+                curveTo(19.69f, 18.81f, 18.23f, 19.46f, 17.5f, 16.2f)
                 close()
             }
-            // Phone handset outline inside
+        }.build()
+    }
+
+    /**
+     * Biometric / Fingerprint Vector Icon (Enhanced Multi-ridge Biometric Pattern)
+     */
+    val Fingerprint: ImageVector by lazy {
+        strokeVector("Fingerprint") {
             strokePath(1.9f) {
-                moveTo(9f, 8.5f)
-                curveTo(8.7f, 8.8f, 8.5f, 9.2f, 8.5f, 9.7f)
-                curveTo(8.5f, 10.7f, 9.1f, 11.8f, 10.2f, 12.9f)
-                curveTo(11.3f, 14.0f, 12.4f, 14.6f, 13.4f, 14.6f)
-                curveTo(13.9f, 14.6f, 14.3f, 14.4f, 14.6f, 14.1f)
-                lineTo(13.5f, 12.8f)
-                curveTo(13.3f, 12.6f, 13.0f, 12.6f, 12.8f, 12.8f)
-                lineTo(12.3f, 13.3f)
-                curveTo(11.8f, 13.0f, 11.0f, 12.2f, 10.7f, 11.7f)
-                lineTo(11.2f, 11.2f)
-                curveTo(11.4f, 11.0f, 11.4f, 10.7f, 11.2f, 10.5f)
-                close()
+                moveTo(12f, 10f)
+                arcTo(2f, 2f, 0f, false, false, 10f, 12f)
+                curveTo(10f, 14.5f, 11f, 16.5f, 11f, 19.5f)
+            }
+            strokePath(1.9f) {
+                moveTo(7.5f, 8.5f)
+                arcTo(4.5f, 4.5f, 0f, false, true, 16.5f, 8.5f)
+                curveTo(16.5f, 10.5f, 15.8f, 12.5f, 15.2f, 14.5f)
+                curveTo(14.6f, 16.5f, 14.2f, 18f, 14.2f, 19.5f)
+            }
+            strokePath(1.9f) {
+                moveTo(5f, 11.5f)
+                arcTo(7f, 7f, 0f, false, true, 19f, 11.5f)
+                curveTo(19f, 14f, 18.4f, 16.5f, 17.8f, 18.5f)
+            }
+            strokePath(1.9f) {
+                moveTo(2.5f, 13.5f)
+                curveTo(2.5f, 8.5f, 6.7f, 4.5f, 12f, 4.5f)
+                curveTo(17.3f, 4.5f, 21.5f, 8.5f, 21.5f, 13.5f)
+                curveTo(21.5f, 15.5f, 21f, 17.5f, 20.5f, 19f)
             }
         }
     }
 
-    /**
-     * Biometric / Fingerprint Vector Icon
-     */
-    val Fingerprint: ImageVector by lazy {
-        strokeVector("LucideFingerprint") {
-            strokePath(1.8f) {
-                moveTo(12f, 10f)
-                arcTo(2f, 2f, 0f, isMoreThanHalf = false, isPositiveArc = false, 10f, 12f)
-                curveTo(10f, 14.5f, 11f, 16.5f, 11f, 19f)
+    /** Lucide `user-round-cog` — used in bottom nav "حسابي" / Account with settings emblem */
+    val UserCog: ImageVector by lazy {
+        strokeVector("UserCog") {
+            // User head
+            strokePath(1.9f) {
+                circlePath(10f, 7f, 3.8f)
             }
-            strokePath(1.8f) {
-                moveTo(7.5f, 8.5f)
-                arcTo(4.5f, 4.5f, 0f, isMoreThanHalf = false, isPositiveArc = true, 16.5f, 8.5f)
-                curveTo(16.5f, 10f, 16f, 11.5f, 15.5f, 13f)
-                curveTo(15f, 14.5f, 14.5f, 16f, 14.5f, 19f)
+            // User body / shoulders (leaving space on right for gear)
+            strokePath(1.9f) {
+                moveTo(14.5f, 18.5f)
+                arcTo(6.5f, 6.5f, 0f, false, false, 3.5f, 18.5f)
             }
+            // Gear center circle
             strokePath(1.8f) {
-                moveTo(5f, 12f)
-                arcTo(7f, 7f, 0f, isMoreThanHalf = false, isPositiveArc = true, 19f, 12f)
-                curveTo(19f, 14f, 18.5f, 16f, 18f, 18f)
+                circlePath(18f, 17f, 1.8f)
             }
+            // Gear teeth
             strokePath(1.8f) {
-                moveTo(2.5f, 14f)
-                curveTo(2.5f, 9f, 6.7f, 4.5f, 12f, 4.5f)
-                curveTo(17.3f, 4.5f, 21.5f, 9f, 21.5f, 14f)
+                moveTo(18f, 14f); lineTo(18f, 14.8f)
+                moveTo(18f, 19.2f); lineTo(18f, 20f)
+                moveTo(15f, 17f); lineTo(15.8f, 17f)
+                moveTo(20.2f, 17f); lineTo(21f, 17f)
+                moveTo(15.9f, 14.9f); lineTo(16.5f, 15.5f)
+                moveTo(19.5f, 18.5f); lineTo(20.1f, 19.1f)
+                moveTo(15.9f, 19.1f); lineTo(16.5f, 18.5f)
+                moveTo(19.5f, 15.5f); lineTo(20.1f, 14.9f)
             }
         }
     }

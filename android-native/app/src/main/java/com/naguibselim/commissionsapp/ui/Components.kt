@@ -213,7 +213,7 @@ fun NsListRow(
                     color = c.foreground,
                     lineHeight = 19.sp
                 )
-                if (!sub.isNullOrBlank()) {
+                if (!hasProgressSlot && !sub.isNullOrBlank()) {
                     Text(
                         text = sub,
                         fontSize = 12.sp,
@@ -233,7 +233,7 @@ fun NsListRow(
                         fontWeight = FontWeight.SemiBold,
                         color = valColor
                     )
-                    if (!valueSub.isNullOrBlank()) {
+                    if (!hasProgressSlot && !valueSub.isNullOrBlank()) {
                         Text(
                             text = valueSub,
                             fontSize = 11.sp,
@@ -247,6 +247,33 @@ fun NsListRow(
         }
         if (hasProgressSlot) {
             AnimatedProgressBar(progress = progress ?: 0.0, isNullProgress = progress == null)
+            if (!sub.isNullOrBlank() || !valueSub.isNullOrBlank()) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    if (!sub.isNullOrBlank()) {
+                        Text(
+                            text = sub,
+                            fontSize = 12.sp,
+                            color = c.mutedForeground,
+                            lineHeight = 16.sp,
+                            modifier = Modifier.weight(1f, fill = false)
+                        )
+                    }
+                    if (!valueSub.isNullOrBlank()) {
+                        Text(
+                            text = valueSub,
+                            fontSize = 11.5.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = c.mutedForeground,
+                            textAlign = TextAlign.End,
+                            lineHeight = 15.sp
+                        )
+                    }
+                }
+            }
         }
     }
 }
