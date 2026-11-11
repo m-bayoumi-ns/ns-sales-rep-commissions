@@ -1,9 +1,16 @@
 package com.naguibselim.commissionsapp.ui
 
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -11,20 +18,19 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -41,14 +47,20 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.naguibselim.commissionsapp.R
 
 @Composable
 fun LtrText(
@@ -93,19 +105,19 @@ fun NsGroupCard(
         ) {
             Text(
                 text = title.uppercase(),
-                fontSize = 11.5.sp,
-                fontWeight = FontWeight.Bold,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.SemiBold,
                 color = c.mutedForeground,
-                letterSpacing = 0.5.sp
+                letterSpacing = 0.3.sp
             )
             action?.invoke()
         }
         Surface(
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(18.dp),
+            shape = RoundedCornerShape(16.dp),
             color = c.card,
             border = BorderStroke(1.dp, c.border),
-            shadowElevation = 1.dp
+            shadowElevation = 0.dp
         ) {
             Column(modifier = Modifier.fillMaxWidth(), content = content)
         }
@@ -113,7 +125,7 @@ fun NsGroupCard(
             Text(
                 text = footer,
                 modifier = Modifier.padding(horizontal = 4.dp),
-                fontSize = 11.5.sp,
+                fontSize = 12.sp,
                 color = c.mutedForeground
             )
         }
@@ -122,7 +134,7 @@ fun NsGroupCard(
 
 @Composable
 fun NsDivider() {
-    HorizontalDivider(thickness = 1.dp, color = LocalNsColors.current.border.copy(alpha = 0.7f))
+    HorizontalDivider(thickness = 1.dp, color = LocalNsColors.current.border)
 }
 
 @Composable
@@ -135,6 +147,7 @@ fun NsListRow(
     valueSub: String? = null,
     tone: String? = null, // "good" | "bad" | "muted" | "warn"
     progress: Double? = null,
+    hasProgressSlot: Boolean = progress != null,
     onClick: (() -> Unit)? = null
 ) {
     val c = LocalNsColors.current
@@ -149,7 +162,7 @@ fun NsListRow(
         modifier = Modifier
             .fillMaxWidth()
             .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
-            .padding(horizontal = 16.dp, vertical = 13.dp),
+            .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         Row(
@@ -160,7 +173,7 @@ fun NsListRow(
             if (icon != null || iconBadgeText != null) {
                 Box(
                     modifier = Modifier
-                        .size(38.dp)
+                        .size(36.dp)
                         .clip(RoundedCornerShape(12.dp))
                         .background(c.accent),
                     contentAlignment = Alignment.Center
@@ -170,12 +183,12 @@ fun NsListRow(
                             imageVector = icon,
                             contentDescription = null,
                             tint = c.primary,
-                            modifier = Modifier.size(18.dp)
+                            modifier = Modifier.size(16.dp)
                         )
                     } else if (iconBadgeText != null) {
                         Text(
                             text = iconBadgeText,
-                            fontSize = 13.sp,
+                            fontSize = 12.sp,
                             fontWeight = FontWeight.Bold,
                             color = c.primary
                         )
@@ -210,7 +223,7 @@ fun NsListRow(
                     LtrText(
                         text = value,
                         fontSize = 14.sp,
-                        fontWeight = FontWeight.Bold,
+                        fontWeight = FontWeight.SemiBold,
                         color = valColor
                     )
                     if (!valueSub.isNullOrBlank()) {
@@ -218,14 +231,15 @@ fun NsListRow(
                             text = valueSub,
                             fontSize = 11.sp,
                             color = c.mutedForeground,
-                            textAlign = TextAlign.End
+                            textAlign = TextAlign.End,
+                            lineHeight = 14.sp
                         )
                     }
                 }
             }
         }
-        if (progress != null) {
-            AnimatedProgressBar(progress = progress)
+        if (hasProgressSlot) {
+            AnimatedProgressBar(progress = progress ?: 0.0, isNullProgress = progress == null)
         }
     }
 }
@@ -234,19 +248,21 @@ fun NsListRow(
 fun AnimatedProgressBar(
     progress: Double,
     modifier: Modifier = Modifier,
-    heightDp: Int = 6
+    heightDp: Int = 6,
+    isNullProgress: Boolean = false
 ) {
     val c = LocalNsColors.current
     var started by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) { started = true }
 
-    val clamped = (progress.coerceIn(0.0, 100.0) / 100.0).toFloat()
+    val clamped = if (isNullProgress) 0f else (progress.coerceIn(0.0, 100.0) / 100.0).toFloat()
     val animated by animateFloatAsState(
         targetValue = if (started) clamped else 0f,
         animationSpec = tween(durationMillis = 700, easing = FastOutSlowInEasing),
         label = "progress"
     )
     val barColor = when {
+        isNullProgress -> Color.Transparent
         progress >= 100.0 -> c.success
         progress >= 70.0 -> c.warning
         else -> c.destructive
@@ -259,13 +275,15 @@ fun AnimatedProgressBar(
                 .clip(CircleShape)
                 .background(c.muted)
         ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth(animated)
-                    .fillMaxHeight()
-                    .clip(CircleShape)
-                    .background(barColor)
-            )
+            if (!isNullProgress && animated > 0f) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth(animated)
+                        .fillMaxHeight()
+                        .clip(CircleShape)
+                        .background(barColor)
+                )
+            }
         }
     }
 }
@@ -396,43 +414,57 @@ fun NsStateCard(
     }
 }
 
+/**
+ * Matches Screenshot 5 (`loading-status-app`):
+ * Clean centered 44dp circular ring with rotating primary arc and the NS monogram inside.
+ */
 @Composable
 fun NsLoadingCard() {
     val c = LocalNsColors.current
-    Surface(
+    val infiniteTransition = rememberInfiniteTransition(label = "nsLoader")
+    val angle by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 360f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 1100, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "spinAngle"
+    )
+
+    Box(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 36.dp),
-        shape = RoundedCornerShape(24.dp),
-        color = c.card,
-        border = BorderStroke(1.dp, c.border)
+            .heightIn(min = 520.dp),
+        contentAlignment = Alignment.Center
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(28.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(14.dp)
+        Box(
+            modifier = Modifier.size(44.dp),
+            contentAlignment = Alignment.Center
         ) {
-            CircularProgressIndicator(
-                color = c.primary,
-                strokeWidth = 3.dp,
-                modifier = Modifier.size(38.dp)
-            )
-            Text(
-                text = tr("جارٍ تحميل أرقام العمولات…", "Loading commission figures…"),
-                style = MaterialTheme.typography.titleMedium,
-                color = c.foreground,
-                textAlign = TextAlign.Center
-            )
-            Text(
-                text = tr(
-                    "قراءة الفواتير والمنتجات وربط التحصيلات بالمندوبين وحساب العمولات والحوافز…",
-                    "Reading invoices, linking collections, and calculating commissions & bonuses…"
-                ),
-                style = MaterialTheme.typography.bodyMedium,
-                color = c.mutedForeground,
-                textAlign = TextAlign.Center
+            val ringTrack = c.primary.copy(alpha = 0.16f)
+            val ringActive = c.primary
+            Canvas(modifier = Modifier.fillMaxSize()) {
+                val stroke = Stroke(width = 2.dp.toPx(), cap = StrokeCap.Round)
+                drawCircle(
+                    color = ringTrack,
+                    style = stroke
+                )
+                rotate(degrees = angle) {
+                    drawArc(
+                        color = ringActive,
+                        startAngle = -90f,
+                        sweepAngle = 90f,
+                        useCenter = false,
+                        style = stroke
+                    )
+                }
+            }
+            Image(
+                painter = painterResource(id = R.drawable.ns_mark),
+                contentDescription = null,
+                colorFilter = ColorFilter.tint(c.primary),
+                modifier = Modifier.size(24.dp)
             )
         }
     }
@@ -482,7 +514,7 @@ fun SegmentedPills(
 fun RegimeBadgeChip(regime: String, onDarkHeader: Boolean = false) {
     val c = LocalNsColors.current
     val label = when (regime) {
-        "full" -> tr("الحوافز مفعلة", "Bonuses active")
+        "full" -> tr("الحوافز مفعلة", "Bonuses on")
         "old" -> tr("النظام القديم", "Old system")
         "low" -> tr("أقل من 50%", "Below 50%")
         else -> tr("بدون هدف", "No target")
@@ -511,7 +543,7 @@ fun RegimeBadgeChip(regime: String, onDarkHeader: Boolean = false) {
         Text(
             text = label,
             fontSize = 11.sp,
-            fontWeight = FontWeight.Bold,
+            fontWeight = FontWeight.SemiBold,
             color = fg
         )
     }

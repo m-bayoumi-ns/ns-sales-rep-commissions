@@ -45,6 +45,7 @@ data class AppUiState(
     val themeMode: String = "system",
     val navDestination: MainNavDestination = MainNavDestination.COMMISSIONS,
     val sellerSection: SellerSection = SellerSection.SUMMARY,
+    val salesResetTick: Int = 0,
     // Commissions
     val selectedMonth: String? = null,
     val selectedRep: String? = null,
@@ -139,7 +140,8 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         _state.update {
             it.copy(
                 navDestination = MainNavDestination.COMMISSIONS,
-                sellerSection = section
+                sellerSection = section,
+                salesResetTick = if (section == SellerSection.SALES) it.salesResetTick + 1 else it.salesResetTick
             )
         }
     }

@@ -1,12 +1,13 @@
 package com.naguibselim.commissionsapp.ui
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -15,19 +16,14 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.DarkMode
 import androidx.compose.material.icons.outlined.ErrorOutline
-import androidx.compose.material.icons.outlined.Language
-import androidx.compose.material.icons.outlined.LightMode
-import androidx.compose.material.icons.outlined.Lock
-import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Visibility
 import androidx.compose.material.icons.outlined.VisibilityOff
 import androidx.compose.material3.Button
@@ -35,8 +31,6 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
@@ -48,9 +42,10 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -62,6 +57,16 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.naguibselim.commissionsapp.R
 
+/**
+ * Matches `app/[locale]/login/page.tsx` + `html[data-app] .login-shell / .login-card` in `app/globals.css`:
+ * - Clean warm gradient background (`#F8F6F2 -> #EFE9E1` in light mode)
+ * - Centered white `rounded-[28dp]` card containing:
+ *   - Top brand header (`ns_mark` + `ns_wordmark` tinted in `c.primary`, `عمولات المندوبين`)
+ *   - `تسجيل الدخول` title + subtitle
+ *   - Email/Username & Password inputs (`rounded-xl`)
+ *   - Primary sign-in button
+ *   - Expandable `هل نسيت كلمة المرور؟` help box
+ */
 @Composable
 fun LoginScreen(
     signingIn: Boolean,
@@ -75,6 +80,7 @@ fun LoginScreen(
     var identifier by rememberSaveable { mutableStateOf("") }
     var password by rememberSaveable { mutableStateOf("") }
     var showPassword by rememberSaveable { mutableStateOf(false) }
+    var showForgotHelp by rememberSaveable { mutableStateOf(false) }
 
     val errorMessage = when (errorCode) {
         "invalid_input" -> tr("أدخل البريد أو اسم المستخدم وكلمة المرور.", "Enter your email/username and password.")
@@ -87,143 +93,92 @@ fun LoginScreen(
         else -> tr("تعذّر تسجيل الدخول. حاول مرة أخرى.", "Could not sign in. Please try again.")
     }
 
+    val shellBrush = if (c.isDark) {
+        Brush.verticalGradient(listOf(Color(0xFF14110E), Color(0xFF191511)))
+    } else {
+        Brush.verticalGradient(listOf(Color(0xFFF8F6F2), Color(0xFFEFE9E1)))
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(c.background)
+            .background(shellBrush)
             .statusBarsPadding()
-            .imePadding()
+            .imePadding(),
+        contentAlignment = Alignment.Center
     ) {
         Column(
             modifier = Modifier
-                .fillMaxSize()
+                .fillMaxWidth()
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 20.dp, vertical = 16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+                .padding(horizontal = 16.dp, vertical = 24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
         ) {
-            // Top controls
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                OutlinedButton(
-                    onClick = onToggleLanguage,
-                    shape = RoundedCornerShape(12.dp),
-                    border = BorderStroke(1.dp, c.border),
-                    modifier = Modifier.height(38.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Outlined.Language,
-                        contentDescription = null,
-                        tint = c.foreground,
-                        modifier = Modifier.size(16.dp)
-                    )
-                    Spacer(modifier = Modifier.size(6.dp))
-                    Text(
-                        text = tr("English", "العربية"),
-                        fontSize = 12.5.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = c.foreground
-                    )
-                }
-                Spacer(modifier = Modifier.size(8.dp))
-                IconButton(
-                    onClick = onToggleTheme,
-                    modifier = Modifier
-                        .size(38.dp)
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(c.card)
-                ) {
-                    Icon(
-                        imageVector = if (c.isDark) Icons.Outlined.LightMode else Icons.Outlined.DarkMode,
-                        contentDescription = null,
-                        tint = c.foreground,
-                        modifier = Modifier.size(18.dp)
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(28.dp))
-
-            // Brand Header Card
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(28.dp))
-                    .background(
-                        Brush.linearGradient(
-                            colors = listOf(c.heroStart, c.heroMid, c.heroEnd)
-                        )
-                    )
-                    .padding(horizontal = 24.dp, vertical = 28.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    Surface(
-                        shape = RoundedCornerShape(20.dp),
-                        color = Color.White.copy(alpha = 0.14f),
-                        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.25f)),
-                        modifier = Modifier.size(68.dp)
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Image(
-                                painter = painterResource(id = R.drawable.splash_mark),
-                                contentDescription = null,
-                                modifier = Modifier.size(44.dp)
-                            )
-                        }
-                    }
-                    Text(
-                        text = tr("نجيب سليم", "NAGUIB SELIM"),
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color(0xFFFDE68A),
-                        letterSpacing = 1.sp
-                    )
-                    Text(
-                        text = tr("عمولات المندوبين", "Sales Rep Commissions"),
-                        fontSize = 24.sp,
-                        fontWeight = FontWeight.ExtraBold,
-                        color = Color.White,
-                        textAlign = TextAlign.Center
-                    )
-                    Text(
-                        text = tr(
-                            "متابعة لحظية للمبيعات والأهداف والتحصيلات وكشف العمولة",
-                            "Live sales, targets, collections & commission statement"
-                        ),
-                        fontSize = 13.sp,
-                        color = Color.White.copy(alpha = 0.78f),
-                        textAlign = TextAlign.Center
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(20.dp))
-
-            // Sign-In Form Card
             Surface(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(24.dp),
+                shape = RoundedCornerShape(28.dp),
                 color = c.card,
                 border = BorderStroke(1.dp, c.border),
-                shadowElevation = 2.dp
+                shadowElevation = 6.dp
             ) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(22.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                        .padding(horizontal = 24.dp, vertical = 28.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Text(
-                        text = tr("تسجيل الدخول", "Sign in to your account"),
-                        style = MaterialTheme.typography.titleLarge,
-                        color = c.foreground
+                    // Brand Logos (`ns-mark.png` + `ns-wordmark.png` tinted in `c.primary`)
+                    Image(
+                        painter = painterResource(id = R.drawable.ns_mark),
+                        contentDescription = null,
+                        contentScale = ContentScale.Fit,
+                        colorFilter = ColorFilter.tint(c.primary),
+                        modifier = Modifier.size(64.dp)
                     )
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Image(
+                        painter = painterResource(id = R.drawable.ns_wordmark),
+                        contentDescription = null,
+                        contentScale = ContentScale.Fit,
+                        colorFilter = ColorFilter.tint(c.primary),
+                        modifier = Modifier
+                            .width(176.dp)
+                            .height(28.dp)
+                    )
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(
+                        text = tr("عمولات المندوبين", "Sales Rep Commissions"),
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = c.mutedForeground
+                    )
+
+                    Spacer(modifier = Modifier.height(22.dp))
+
+                    // Title & Subtitle
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Text(
+                            text = tr("تسجيل الدخول", "Sign in to your account"),
+                            fontSize = 22.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = c.foreground
+                        )
+                        Text(
+                            text = tr(
+                                "أدخل البريد الإلكتروني أو اسم المستخدم وكلمة المرور للوصول إلى لوحة العمولات.",
+                                "Enter your email or username and password to access your commission dashboard."
+                            ),
+                            fontSize = 13.5.sp,
+                            color = c.mutedForeground,
+                            lineHeight = 19.sp
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(18.dp))
 
                     if (errorMessage != null) {
                         StatusBanner(
@@ -231,13 +186,18 @@ fun LoginScreen(
                             tone = "error",
                             icon = Icons.Outlined.ErrorOutline
                         )
+                        Spacer(modifier = Modifier.height(14.dp))
                     }
 
-                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    // Identifier field
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
                         Text(
                             text = tr("البريد أو اسم المستخدم", "Email or username"),
-                            fontSize = 12.5.sp,
-                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Medium,
                             color = c.foreground
                         )
                         OutlinedTextField(
@@ -251,15 +211,8 @@ fun LoginScreen(
                                     color = c.mutedForeground.copy(alpha = 0.7f)
                                 )
                             },
-                            leadingIcon = {
-                                Icon(
-                                    imageVector = Icons.Outlined.Person,
-                                    contentDescription = null,
-                                    tint = c.mutedForeground
-                                )
-                            },
                             singleLine = true,
-                            shape = RoundedCornerShape(14.dp),
+                            shape = RoundedCornerShape(12.dp),
                             keyboardOptions = KeyboardOptions(
                                 keyboardType = KeyboardType.Email,
                                 imeAction = ImeAction.Next
@@ -267,30 +220,29 @@ fun LoginScreen(
                             colors = OutlinedTextFieldDefaults.colors(
                                 focusedBorderColor = c.primary,
                                 unfocusedBorderColor = c.border,
-                                focusedContainerColor = c.card,
-                                unfocusedContainerColor = c.card
+                                focusedContainerColor = c.background,
+                                unfocusedContainerColor = c.background
                             )
                         )
                     }
 
-                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Spacer(modifier = Modifier.height(14.dp))
+
+                    // Password field
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
                         Text(
                             text = tr("كلمة المرور", "Password"),
-                            fontSize = 12.5.sp,
-                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Medium,
                             color = c.foreground
                         )
                         OutlinedTextField(
                             value = password,
                             onValueChange = { password = it },
                             modifier = Modifier.fillMaxWidth(),
-                            leadingIcon = {
-                                Icon(
-                                    imageVector = Icons.Outlined.Lock,
-                                    contentDescription = null,
-                                    tint = c.mutedForeground
-                                )
-                            },
                             trailingIcon = {
                                 IconButton(onClick = { showPassword = !showPassword }) {
                                     Icon(
@@ -302,7 +254,7 @@ fun LoginScreen(
                             },
                             visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
                             singleLine = true,
-                            shape = RoundedCornerShape(14.dp),
+                            shape = RoundedCornerShape(12.dp),
                             keyboardOptions = KeyboardOptions(
                                 keyboardType = KeyboardType.Password,
                                 imeAction = ImeAction.Done
@@ -315,19 +267,21 @@ fun LoginScreen(
                             colors = OutlinedTextFieldDefaults.colors(
                                 focusedBorderColor = c.primary,
                                 unfocusedBorderColor = c.border,
-                                focusedContainerColor = c.card,
-                                unfocusedContainerColor = c.card
+                                focusedContainerColor = c.background,
+                                unfocusedContainerColor = c.background
                             )
                         )
                     }
+
+                    Spacer(modifier = Modifier.height(18.dp))
 
                     Button(
                         onClick = { onSignIn(identifier, password) },
                         enabled = !signingIn,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(50.dp),
-                        shape = RoundedCornerShape(14.dp),
+                            .height(46.dp),
+                        shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = c.primary,
                             contentColor = c.primaryForeground
@@ -336,43 +290,60 @@ fun LoginScreen(
                         if (signingIn) {
                             CircularProgressIndicator(
                                 color = c.primaryForeground,
-                                strokeWidth = 2.5.dp,
-                                modifier = Modifier.size(20.dp)
+                                strokeWidth = 2.2.dp,
+                                modifier = Modifier.size(18.dp)
                             )
-                            Spacer(modifier = Modifier.size(10.dp))
+                            Spacer(modifier = Modifier.size(8.dp))
                             Text(
                                 text = tr("جارٍ تسجيل الدخول…", "Signing in…"),
-                                fontSize = 15.sp,
-                                fontWeight = FontWeight.Bold
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.SemiBold
                             )
                         } else {
                             Text(
                                 text = tr("تسجيل الدخول", "Sign in"),
-                                fontSize = 15.sp,
-                                fontWeight = FontWeight.Bold
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.SemiBold
                             )
                         }
                     }
 
+                    Spacer(modifier = Modifier.height(14.dp))
+
                     Text(
-                        text = tr(
-                            "تتم إدارة الصلاحيات وكلمات المرور من قِبل المسؤول. تحتاج حسابًا؟ تواصل مع الدعم الفني.",
-                            "Permissions and passwords are managed by administrators. Need an account? Contact IT support."
-                        ),
+                        text = tr("هل نسيت كلمة المرور؟", "Forgot your password?"),
                         fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium,
                         color = c.mutedForeground,
                         textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier
+                            .clickable { showForgotHelp = !showForgotHelp }
+                            .padding(vertical = 4.dp)
                     )
+
+                    AnimatedVisibility(visible = showForgotHelp) {
+                        Surface(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 8.dp),
+                            shape = RoundedCornerShape(12.dp),
+                            color = c.muted.copy(alpha = 0.6f),
+                            border = BorderStroke(1.dp, c.border)
+                        ) {
+                            Text(
+                                text = tr(
+                                    "تتم إدارة الصلاحيات وكلمات المرور من قِبل المسؤول. تواصل مع الدعم الفني لإعادة تعيين كلمة المرور.",
+                                    "Permissions and passwords are managed by administrators. Contact IT support to reset your password."
+                                ),
+                                fontSize = 12.sp,
+                                color = c.mutedForeground,
+                                lineHeight = 18.sp,
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp)
+                            )
+                        }
+                    }
                 }
             }
-
-            Spacer(modifier = Modifier.height(24.dp))
-            Text(
-                text = tr("إعداد: محمود بيومي", "Prepared by: Mahmoud Bayoumi"),
-                fontSize = 11.5.sp,
-                color = c.mutedForeground
-            )
         }
     }
 }

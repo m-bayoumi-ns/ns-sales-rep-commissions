@@ -91,6 +91,7 @@ fun CommissionsScreen(
     errorEmail: String?,
     payload: CommissionsViewPayload?,
     section: SellerSection,
+    salesResetTick: Int = 0,
     notifications: NotificationsPayload,
     showNotificationsSheet: Boolean,
     onSelectSection: (SellerSection) -> Unit,
@@ -99,6 +100,7 @@ fun CommissionsScreen(
     onRefresh: () -> Unit,
     onOpenNotifications: (Boolean) -> Unit,
     onOpenAdminSettings: () -> Unit,
+    onOpenAdminAccounts: () -> Unit = {},
     onSignOut: () -> Unit
 ) {
     val c = LocalNsColors.current
@@ -148,16 +150,20 @@ fun CommissionsScreen(
                 payload != null -> {
                     val isAdmin = payload.user.role == "admin"
                     val monthName = Format.monthLabel(payload.clock.month, isAr)
+                    val showStatus = section == SellerSection.SUMMARY || payload.detail == null
 
-                    // Top Filter & Action Bar
+                    // Top MonthBar matching Screenshots 1, 2, 3, 4
                     FilterActionRow(
                         payload = payload,
+                        showStatus = showStatus,
                         unreadCount = notifications.unread,
                         refreshing = refreshing,
                         onOpenMonthPicker = { showMonthSheet = true },
                         onOpenRepPicker = { showRepSheet = true },
                         onRefresh = onRefresh,
-                        onOpenNotifications = { onOpenNotifications(true) }
+                        onOpenNotifications = { onOpenNotifications(true) },
+                        onOpenAdminSettings = onOpenAdminSettings,
+                        onOpenAdminAccounts = onOpenAdminAccounts
                     )
 
                     // Offline cache banner if showing cached copy
@@ -241,6 +247,7 @@ fun CommissionsScreen(
                             settings = payload.settings,
                             clock = payload.clock,
                             section = section,
+                            salesResetTick = salesResetTick,
                             onSelectSection = onSelectSection,
                             showTeamBackLink = payload.reps.size > 1,
                             onBackToTeam = { onSelectRep("all") }
@@ -295,12 +302,15 @@ fun CommissionsScreen(
 @Composable
 private fun FilterActionRow(
     payload: CommissionsViewPayload,
+    showStatus: Boolean,
     unreadCount: Int,
     refreshing: Boolean,
     onOpenMonthPicker: () -> Unit,
     onOpenRepPicker: () -> Unit,
     onRefresh: () -> Unit,
-    onOpenNotifications: () -> Unit
+    onOpenNotifications: () -> Unit,
+    onOpenAdminSettings: () -> Unit,
+    onOpenAdminAccounts: () -> Unit
 ) {
     val c = LocalNsColors.current
     val isAr = LocalIsArabic.current
@@ -309,111 +319,146 @@ private fun FilterActionRow(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
+        // Top row: Month selector on the right (in RTL), Notification bell on the left (in RTL, when showStatus is true)
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            // Month Chip Button
+            // Month Selector Pill (matches Screenshots 1, 2, 3, 4)
             Surface(
-                shape = RoundedCornerShape(14.dp),
+                shape = RoundedCornerShape(10.dp),
                 color = c.card,
                 border = BorderStroke(1.dp, c.border),
+                shadowElevation = 0.5.dp,
                 modifier = Modifier
-                    .weight(1f)
-                    .height(42.dp)
-                    .clip(RoundedCornerShape(14.dp))
+                    .height(38.dp)
+                    .clip(RoundedCornerShape(10.dp))
                     .clickable(onClick = onOpenMonthPicker)
             ) {
                 Row(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(horizontal = 12.dp),
+                    modifier = Modifier.padding(horizontal = 12.dp),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     Icon(
-                        imageVector = Icons.Outlined.CalendarMonth,
+                        imageVector = LucideIcons.CalendarDays,
                         contentDescription = null,
-                        tint = c.primary,
-                        modifier = Modifier.size(18.dp)
+                        tint = c.mutedForeground,
+                        modifier = Modifier.size(16.dp)
                     )
                     Text(
                         text = Format.monthLabel(payload.clock.month, isAr),
-                        fontSize = 13.5.sp,
-                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium,
                         color = c.foreground,
-                        modifier = Modifier.weight(1f),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
+                        maxLines = 1
                     )
-                    // Live / Closed dot
-                    Box(
-                        modifier = Modifier
-                            .size(8.dp)
-                            .clip(CircleShape)
-                            .background(if (payload.clock.closed) c.mutedForeground else c.success)
-                    )
+                    Spacer(modifier = Modifier.width(8.dp))
                     Icon(
                         imageVector = Icons.Outlined.ExpandMore,
                         contentDescription = null,
                         tint = c.mutedForeground,
-                        modifier = Modifier.size(18.dp)
+                        modifier = Modifier.size(16.dp)
                     )
                 }
             }
 
-            // Refresh Button
-            Surface(
-                shape = RoundedCornerShape(14.dp),
-                color = c.card,
-                border = BorderStroke(1.dp, c.border),
-                modifier = Modifier.size(42.dp)
-            ) {
-                IconButton(onClick = onRefresh, enabled = !refreshing) {
-                    if (refreshing) {
-                        CircularProgressIndicator(
-                            color = c.primary,
-                            strokeWidth = 2.dp,
-                            modifier = Modifier.size(18.dp)
-                        )
-                    } else {
-                        Icon(
-                            imageVector = Icons.Outlined.Refresh,
-                            contentDescription = tr("تحديث الآن", "Refresh now"),
-                            tint = c.foreground,
-                            modifier = Modifier.size(19.dp)
-                        )
+            if (showStatus) {
+                // Circular Notification Bell on the left (in RTL), matching Screenshot 2
+                Surface(
+                    shape = CircleShape,
+                    color = c.card,
+                    border = BorderStroke(1.dp, c.border),
+                    shadowElevation = 0.5.dp,
+                    modifier = Modifier.size(38.dp)
+                ) {
+                    IconButton(onClick = onOpenNotifications) {
+                        BadgedBox(
+                            badge = {
+                                if (unreadCount > 0) {
+                                    Badge(
+                                        containerColor = c.destructive,
+                                        contentColor = Color.White
+                                    ) {
+                                        Text(text = if (unreadCount > 9) "9+" else "$unreadCount", fontSize = 9.sp)
+                                    }
+                                }
+                            }
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.Notifications,
+                                contentDescription = tr("الإشعارات", "Notifications"),
+                                tint = c.foreground,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
                     }
                 }
             }
+        }
 
-            // Notifications Bell Button
-            Surface(
-                shape = RoundedCornerShape(14.dp),
-                color = c.card,
-                border = BorderStroke(1.dp, c.border),
-                modifier = Modifier.size(42.dp)
+        // Second row: Live status pill (only shown on Summary/Home tab, matching Screenshot 2)
+        if (showStatus) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                IconButton(onClick = onOpenNotifications) {
-                    BadgedBox(
-                        badge = {
-                            if (unreadCount > 0) {
-                                Badge(
-                                    containerColor = c.destructive,
-                                    contentColor = Color.White
-                                ) {
-                                    Text(text = if (unreadCount > 9) "9+" else "$unreadCount", fontSize = 10.sp)
-                                }
-                            }
-                        }
+                Surface(
+                    shape = RoundedCornerShape(10.dp),
+                    color = c.card,
+                    border = BorderStroke(1.dp, c.border),
+                    shadowElevation = 0.5.dp,
+                    modifier = Modifier
+                        .height(36.dp)
+                        .clip(RoundedCornerShape(10.dp))
+                        .clickable(enabled = !refreshing, onClick = onRefresh)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(7.dp)
                     ) {
-                        Icon(
-                            imageVector = Icons.Outlined.Notifications,
-                            contentDescription = tr("الإشعارات", "Notifications"),
-                            tint = c.foreground,
-                            modifier = Modifier.size(19.dp)
-                        )
+                        if (!payload.clock.closed) {
+                            Box(
+                                modifier = Modifier
+                                    .size(8.dp)
+                                    .clip(CircleShape)
+                                    .background(c.success)
+                            )
+                            Text(
+                                text = "((•))",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = c.mutedForeground
+                            )
+                            Text(
+                                text = tr("مباشر · آخر تحديث منذ 1 دقيقة", "Live · updated 1 min ago"),
+                                fontSize = 12.sp,
+                                color = c.mutedForeground
+                            )
+                            if (refreshing) {
+                                CircularProgressIndicator(
+                                    color = c.primary,
+                                    strokeWidth = 1.8.dp,
+                                    modifier = Modifier.size(14.dp)
+                                )
+                            } else {
+                                Icon(
+                                    imageVector = Icons.Outlined.Refresh,
+                                    contentDescription = tr("تحديث الآن", "Refresh now"),
+                                    tint = c.foreground,
+                                    modifier = Modifier.size(14.dp)
+                                )
+                            }
+                        } else {
+                            Text(
+                                text = tr("شهر مغلق · أرقام نهائية", "Month closed · final figures"),
+                                fontSize = 12.sp,
+                                color = c.mutedForeground
+                            )
+                        }
                     }
                 }
             }
@@ -428,44 +473,89 @@ private fun FilterActionRow(
                     ?: payload.detail?.rep?.name
                     ?: payload.selectedRep
             }
-            Surface(
-                shape = RoundedCornerShape(14.dp),
-                color = c.card,
-                border = BorderStroke(1.dp, c.border),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(42.dp)
-                    .clip(RoundedCornerShape(14.dp))
-                    .clickable(onClick = onOpenRepPicker)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Row(
+                Surface(
+                    shape = RoundedCornerShape(10.dp),
+                    color = c.card,
+                    border = BorderStroke(1.dp, c.border),
                     modifier = Modifier
-                        .fillMaxSize()
-                        .padding(horizontal = 12.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        .weight(1f)
+                        .height(38.dp)
+                        .clip(RoundedCornerShape(10.dp))
+                        .clickable(onClick = onOpenRepPicker)
                 ) {
-                    Icon(
-                        imageVector = if (payload.selectedRep == "all") Icons.Outlined.Groups else Icons.Outlined.Person,
-                        contentDescription = null,
-                        tint = c.primary,
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Text(
-                        text = selectedLabel,
-                        fontSize = 13.5.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = c.foreground,
-                        modifier = Modifier.weight(1f),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                    Icon(
-                        imageVector = Icons.Outlined.ExpandMore,
-                        contentDescription = null,
-                        tint = c.mutedForeground,
-                        modifier = Modifier.size(18.dp)
-                    )
+                    Row(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(horizontal = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(
+                            imageVector = if (payload.selectedRep == "all") Icons.Outlined.Groups else Icons.Outlined.Person,
+                            contentDescription = null,
+                            tint = c.primary,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Text(
+                            text = selectedLabel,
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = c.foreground,
+                            modifier = Modifier.weight(1f),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        Icon(
+                            imageVector = Icons.Outlined.ExpandMore,
+                            contentDescription = null,
+                            tint = c.mutedForeground,
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
+                }
+
+                if (payload.user.role == "admin") {
+                    Surface(
+                        shape = RoundedCornerShape(10.dp),
+                        color = c.card,
+                        border = BorderStroke(1.dp, c.border),
+                        modifier = Modifier
+                            .height(38.dp)
+                            .clip(RoundedCornerShape(10.dp))
+                            .clickable(onClick = onOpenAdminSettings)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Icon(Icons.Outlined.Settings, contentDescription = null, tint = c.primary, modifier = Modifier.size(15.dp))
+                            Text(tr("الإعدادات", "Settings"), fontSize = 12.sp, fontWeight = FontWeight.Medium, color = c.foreground)
+                        }
+                    }
+                    Surface(
+                        shape = RoundedCornerShape(10.dp),
+                        color = c.card,
+                        border = BorderStroke(1.dp, c.border),
+                        modifier = Modifier
+                            .height(38.dp)
+                            .clip(RoundedCornerShape(10.dp))
+                            .clickable(onClick = onOpenAdminAccounts)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Icon(Icons.Outlined.Groups, contentDescription = null, tint = c.primary, modifier = Modifier.size(15.dp))
+                            Text(tr("الحسابات", "Accounts"), fontSize = 12.sp, fontWeight = FontWeight.Medium, color = c.foreground)
+                        }
+                    }
                 }
             }
         }

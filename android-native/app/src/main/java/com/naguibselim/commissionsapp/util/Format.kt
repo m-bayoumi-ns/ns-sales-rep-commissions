@@ -14,13 +14,9 @@ object Format {
     private val usLocale = Locale.US
 
     fun number(value: Double?): String {
-        if (value == null || value.isNaN()) return "—"
-        val rounded = (value * 10.0).roundToLong() / 10.0
-        val fmt = NumberFormat.getNumberInstance(usLocale).apply {
-            maximumFractionDigits = if (rounded % 1.0 == 0.0) 0 else 1
-            minimumFractionDigits = 0
-        }
-        return fmt.format(rounded)
+        if (value == null || value.isNaN() || value.isInfinite()) return "—"
+        val fmt = NumberFormat.getIntegerInstance(usLocale)
+        return fmt.format(value.roundToLong())
     }
 
     fun integer(value: Number?): String {
@@ -29,46 +25,54 @@ object Format {
     }
 
     fun currency(value: Double?, isAr: Boolean): String {
-        if (value == null || value.isNaN()) return "—"
-        val num = integer(value)
+        if (value == null || value.isNaN() || value.isInfinite()) return "—"
+        val num = number(value)
         return if (isAr) "$num ج.م" else "$num EGP"
     }
 
+    private fun twoDecimalsMax(value: Double): String {
+        val fmt = NumberFormat.getNumberInstance(usLocale).apply {
+            maximumFractionDigits = 2
+            minimumFractionDigits = 0
+        }
+        return fmt.format(value)
+    }
+
     fun compactCurrency(value: Double?, isAr: Boolean): String {
-        if (value == null || value.isNaN()) return "—"
+        if (value == null || value.isNaN() || value.isInfinite()) return "—"
         val absVal = abs(value)
         val sign = if (value < 0) "-" else ""
-        val formatted = when {
-            absVal >= 1_000_000 -> {
-                val m = absVal / 1_000_000.0
-                val str = String.format(usLocale, if (m >= 10) "%.1f" else "%.2f", m).trimEnd('0').trimEnd('.')
-                if (isAr) "$sign$str مليون" else "$sign${str}M"
+        return if (isAr) {
+            when {
+                absVal >= 1_000_000.0 -> "$sign${twoDecimalsMax(absVal / 1_000_000.0)} مليون ج.م"
+                absVal >= 1_000.0 -> "$sign${twoDecimalsMax(absVal / 1_000.0)} ألف ج.م"
+                else -> currency(value, true)
             }
-            absVal >= 10_000 -> {
-                val k = absVal / 1_000.0
-                val str = String.format(usLocale, if (k >= 100) "%.0f" else "%.1f", k).trimEnd('0').trimEnd('.')
-                if (isAr) "$sign$str ألف" else "$sign${str}K"
+        } else {
+            when {
+                absVal >= 1_000_000.0 -> "$sign${twoDecimalsMax(absVal / 1_000_000.0)}M EGP"
+                absVal >= 1_000.0 -> "$sign${twoDecimalsMax(absVal / 1_000.0)}K EGP"
+                else -> currency(value, false)
             }
-            else -> integer(value)
         }
-        return formatted
     }
 
     fun percent(value: Double?): String {
-        if (value == null || value.isNaN()) return "—"
-        val rounded = (value * 10.0).roundToLong() / 10.0
-        val str = if (rounded % 1.0 == 0.0) {
-            rounded.toLong().toString()
-        } else {
-            String.format(usLocale, "%.1f", rounded)
+        if (value == null || value.isNaN() || value.isInfinite()) return "—"
+        val fmt = NumberFormat.getNumberInstance(usLocale).apply {
+            minimumFractionDigits = 1
+            maximumFractionDigits = 1
         }
-        return "$str%"
+        return "${fmt.format(value)}%"
     }
 
     fun rate(value: Double?): String {
-        if (value == null || value.isNaN()) return "—"
-        val str = String.format(usLocale, "%.2f", value).trimEnd('0').trimEnd('.')
-        return "$str%"
+        if (value == null || value.isNaN() || value.isInfinite()) return "—"
+        val fmt = NumberFormat.getNumberInstance(usLocale).apply {
+            minimumFractionDigits = 0
+            maximumFractionDigits = 3
+        }
+        return "${fmt.format(value)}%"
     }
 
     fun monthLabel(month: String, isAr: Boolean): String {
@@ -92,8 +96,16 @@ object Format {
     fun shortDayLabel(dayIso: String, isAr: Boolean): String {
         return try {
             val d = LocalDate.parse(dayIso)
-            val loc = if (isAr) Locale("ar", "EG") else Locale.UK
-            d.format(DateTimeFormatter.ofPattern("d MMM", loc))
+            val arMonths = arrayOf(
+                "يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو",
+                "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"
+            )
+            val enMonths = arrayOf(
+                "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+                "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+            )
+            val idx = d.monthValue - 1
+            if (isAr) "${d.dayOfMonth} ${arMonths[idx]}" else "${d.dayOfMonth} ${enMonths[idx]}"
         } catch (_: Throwable) {
             dayIso
         }
@@ -102,8 +114,20 @@ object Format {
     fun weekdayDayLabel(dayIso: String, isAr: Boolean): String {
         return try {
             val d = LocalDate.parse(dayIso)
-            val loc = if (isAr) Locale("ar", "EG") else Locale.UK
-            d.format(DateTimeFormatter.ofPattern("EEEE، d MMMM", loc))
+            val arWeekdays = arrayOf(
+                "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت", "الأحد"
+            )
+            val arMonths = arrayOf(
+                "يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو",
+                "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"
+            )
+            if (isAr) {
+                val w = arWeekdays[d.dayOfWeek.value - 1]
+                val m = arMonths[d.monthValue - 1]
+                "$w، ${d.dayOfMonth} $m"
+            } else {
+                d.format(DateTimeFormatter.ofPattern("EEEE, d MMMM", Locale.UK))
+            }
         } catch (_: Throwable) {
             dayIso
         }
@@ -114,8 +138,8 @@ object Format {
         return try {
             val instant = Instant.parse(iso)
             val zone = ZoneId.of("Africa/Cairo")
-            val loc = if (isAr) Locale("ar", "EG") else Locale.UK
-            DateTimeFormatter.ofPattern("d MMM yyyy · hh:mm a", loc).withZone(zone).format(instant)
+            val loc = if (isAr) Locale.forLanguageTag("ar-EG-u-nu-latn") else Locale.UK
+            DateTimeFormatter.ofPattern("d MMM yyyy · HH:mm", loc).withZone(zone).format(instant)
         } catch (_: Throwable) {
             iso.take(16).replace('T', ' ')
         }

@@ -11,54 +11,62 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
-import androidx.compose.foundation.BorderStroke
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.AccountBalanceWallet
-import androidx.compose.material.icons.outlined.Analytics
-import androidx.compose.material.icons.outlined.DarkMode
-import androidx.compose.material.icons.outlined.Dashboard
-import androidx.compose.material.icons.outlined.Groups
-import androidx.compose.material.icons.outlined.LightMode
-import androidx.compose.material.icons.outlined.Payments
-import androidx.compose.material.icons.outlined.Person
-import androidx.compose.material.icons.outlined.ReceiptLong
-import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
 import androidx.core.content.ContextCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.naguibselim.commissionsapp.notify.Notifier
@@ -70,6 +78,7 @@ import com.naguibselim.commissionsapp.ui.AppViewModel
 import com.naguibselim.commissionsapp.ui.CommissionsScreen
 import com.naguibselim.commissionsapp.ui.LocalNsColors
 import com.naguibselim.commissionsapp.ui.LoginScreen
+import com.naguibselim.commissionsapp.ui.LucideIcons
 import com.naguibselim.commissionsapp.ui.MainNavDestination
 import com.naguibselim.commissionsapp.ui.NsTheme
 import com.naguibselim.commissionsapp.ui.SellerSection
@@ -157,37 +166,18 @@ private fun MainAuthenticatedShell(
     val currentUser = state.commissionsData?.user
         ?: state.accountData?.user
         ?: state.forcedPasswordUser
-    val isAdmin = currentUser?.role == "admin"
     val isForcedPassword = state.forcedPasswordUser != null
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         containerColor = c.background,
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
-        topBar = {
-            NsTopAppBar(
-                userName = currentUser?.displayName ?: currentUser?.name,
-                role = currentUser?.role,
-                themeMode = state.themeMode,
-                onToggleLanguage = { viewModel.toggleLanguage() },
-                onToggleTheme = {
-                    val next = when (state.themeMode) {
-                        "dark" -> "light"
-                        "light" -> "dark"
-                        else -> "dark"
-                    }
-                    viewModel.setThemeMode(next)
-                }
-            )
-        },
         bottomBar = {
             if (!isForcedPassword) {
-                NsBottomBar(
-                    isAdmin = isAdmin,
-                    hasSingleSellerDetail = state.commissionsData?.detail != null && !isAdmin,
+                NsAndroidBottomNav(
                     navDestination = state.navDestination,
                     sellerSection = state.sellerSection,
-                    onSelectDestination = { viewModel.navigateTo(it) },
+                    onSelectAccount = { viewModel.navigateTo(MainNavDestination.ACCOUNT) },
                     onSelectSellerSection = { viewModel.selectSellerSection(it) }
                 )
             }
@@ -196,6 +186,7 @@ private fun MainAuthenticatedShell(
         Box(
             modifier = Modifier
                 .fillMaxSize()
+                .statusBarsPadding()
                 .padding(innerPadding)
         ) {
             if (isForcedPassword) {
@@ -224,6 +215,7 @@ private fun MainAuthenticatedShell(
                             errorEmail = state.commissionsEmail,
                             payload = state.commissionsData,
                             section = state.sellerSection,
+                            salesResetTick = state.salesResetTick,
                             notifications = state.notifications,
                             showNotificationsSheet = state.showNotificationsSheet,
                             onSelectSection = { viewModel.selectSellerSection(it) },
@@ -233,6 +225,9 @@ private fun MainAuthenticatedShell(
                             onOpenNotifications = { viewModel.openNotifications(it) },
                             onOpenAdminSettings = {
                                 viewModel.navigateTo(MainNavDestination.ADMIN_SETTINGS)
+                            },
+                            onOpenAdminAccounts = {
+                                viewModel.navigateTo(MainNavDestination.ADMIN_ACCOUNTS)
                             },
                             onSignOut = { viewModel.signOut() }
                         )
@@ -252,6 +247,12 @@ private fun MainAuthenticatedShell(
                             onSendTestNotification = { viewModel.sendTestNotification() },
                             onSetThemeMode = { viewModel.setThemeMode(it) },
                             onSetLanguage = { viewModel.setLanguage(it) },
+                            onOpenAdminSettings = {
+                                viewModel.navigateTo(MainNavDestination.ADMIN_SETTINGS)
+                            },
+                            onOpenAdminAccounts = {
+                                viewModel.navigateTo(MainNavDestination.ADMIN_ACCOUNTS)
+                            },
                             onSignOut = { viewModel.signOut() }
                         )
                     }
@@ -288,247 +289,210 @@ private fun MainAuthenticatedShell(
     }
 }
 
+/**
+ * Matches `components/layout/android-bottom-nav.tsx` and Screenshots 1, 2, 3, 4:
+ * Fixed `dir="rtl"` 5-column bottom bar:
+ * [الحساب (Right)] [المبيعات] [Floating NS Circle: الرئيسية (Center)] [التحصيل] [الكشف (Left)]
+ */
 @Composable
-private fun NsTopAppBar(
-    userName: String?,
-    role: String?,
-    themeMode: String,
-    onToggleLanguage: () -> Unit,
-    onToggleTheme: () -> Unit
+private fun NsAndroidBottomNav(
+    navDestination: MainNavDestination,
+    sellerSection: SellerSection,
+    onSelectAccount: () -> Unit,
+    onSelectSellerSection: (SellerSection) -> Unit
 ) {
     val c = LocalNsColors.current
-    Surface(
-        color = c.card,
-        shadowElevation = 1.dp
-    ) {
-        Column(modifier = Modifier.statusBarsPadding()) {
-            Row(
+    val isCommissions = navDestination == MainNavDestination.COMMISSIONS
+    val isAccount = navDestination == MainNavDestination.ACCOUNT
+    val isSummary = isCommissions && sellerSection == SellerSection.SUMMARY
+    val isSales = isCommissions && sellerSection == SellerSection.SALES
+    val isCollections = isCommissions && sellerSection == SellerSection.COLLECTIONS
+    val isStatement = isCommissions && sellerSection == SellerSection.STATEMENT
+
+    // Animated warm brown gradient for the center floating NS button (`.android-home-button`)
+    val infinite = rememberInfiniteTransition(label = "homeBtnGradient")
+    val shift by infinite.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 5000, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "gradientShift"
+    )
+    val homeBrush = Brush.linearGradient(
+        colors = listOf(
+            Color(0xFF4A2D16),
+            Color(0xFF76502F),
+            Color(0xFFA77543),
+            Color(0xFF59371E),
+            Color(0xFF4A2D16)
+        ),
+        start = Offset(shift * 80f, 0f),
+        end = Offset(160f + shift * 80f, 160f)
+    )
+
+    val accountLabel = tr("الحساب", "Account")
+    val salesLabel = tr("المبيعات", "Sales")
+    val homeLabel = tr("الرئيسية", "Home")
+    val collectionsLabel = tr("التحصيل", "Collections")
+    val statementLabel = tr("الكشف", "Statement")
+
+    // Always RTL layout order matching `dir="rtl"` in `android-bottom-nav.tsx`
+    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(Color.Transparent)
+        ) {
+            // Protruding curved arch behind the floating center button (`-top-4 size-[4.5rem] rounded-t-full border-x border-t bg-card`)
+            val domeShape = RoundedCornerShape(topStart = 36.dp, topEnd = 36.dp)
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .offset(y = (-16).dp)
+                    .size(72.dp)
+                    .clip(domeShape)
+                    .background(c.card)
+                    .border(1.dp, c.border, domeShape)
+                    .zIndex(0f)
+            )
+
+            // Main bar surface (`h-16 border-t bg-card/95`)
+            Surface(
+                color = c.card,
+                shadowElevation = 8.dp,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 14.dp, vertical = 10.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
+                    .zIndex(1f)
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Image(
-                        painter = painterResource(id = R.drawable.splash_mark),
-                        contentDescription = null,
+                Column(modifier = Modifier.navigationBarsPadding()) {
+                    HorizontalDivider(thickness = 1.dp, color = c.border)
+                    Row(
                         modifier = Modifier
-                            .size(34.dp)
-                            .clip(RoundedCornerShape(9.dp))
-                    )
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = tr("عمولات المندوبين", "Sales Rep Commissions"),
-                            fontSize = 15.sp,
-                            fontWeight = FontWeight.ExtraBold,
-                            color = c.foreground,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
+                            .fillMaxWidth()
+                            .height(64.dp)
+                            .padding(horizontal = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        // 1. Account (Rightmost in RTL)
+                        BottomNavSideItem(
+                            label = accountLabel,
+                            icon = LucideIcons.UserRound,
+                            selected = isAccount,
+                            onClick = onSelectAccount,
+                            modifier = Modifier.weight(1f)
                         )
-                        if (!userName.isNullOrBlank()) {
-                            val roleLabel = when (role) {
-                                "admin" -> tr("مسؤول", "Admin")
-                                "manager" -> tr("مدير", "Manager")
-                                else -> tr("مندوب مبيعات", "Sales Rep")
-                            }
+
+                        // 2. Sales (Second from right)
+                        BottomNavSideItem(
+                            label = salesLabel,
+                            icon = LucideIcons.ShoppingCart,
+                            selected = isSales,
+                            onClick = { onSelectSellerSection(SellerSection.SALES) },
+                            modifier = Modifier.weight(1f)
+                        )
+
+                        // 3. Center slot for Home ("الرئيسية") label below the floating circle
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxHeight()
+                                .clickable(
+                                    interactionSource = remember { MutableInteractionSource() },
+                                    indication = null,
+                                    onClick = { onSelectSellerSection(SellerSection.SUMMARY) }
+                                )
+                                .padding(bottom = 8.dp),
+                            contentAlignment = Alignment.BottomCenter
+                        ) {
                             Text(
-                                text = "$userName · $roleLabel",
-                                fontSize = 11.5.sp,
-                                color = c.mutedForeground,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
+                                text = homeLabel,
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = if (isSummary) c.primary else c.mutedForeground,
+                                maxLines = 1
                             )
                         }
-                    }
-                }
 
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    Surface(
-                        shape = RoundedCornerShape(10.dp),
-                        color = c.muted,
-                        border = BorderStroke(1.dp, c.border),
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(10.dp))
-                            .clickable(onClick = onToggleLanguage)
-                    ) {
-                        Text(
-                            text = tr("EN", "عربي"),
-                            fontSize = 11.5.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = c.foreground,
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                        // 4. Collections (Second from left)
+                        BottomNavSideItem(
+                            label = collectionsLabel,
+                            icon = LucideIcons.HandCoins,
+                            selected = isCollections,
+                            onClick = { onSelectSellerSection(SellerSection.COLLECTIONS) },
+                            modifier = Modifier.weight(1f)
                         )
-                    }
 
-                    IconButton(
-                        onClick = onToggleTheme,
-                        modifier = Modifier.size(34.dp)
-                    ) {
-                        Icon(
-                            imageVector = if (c.isDark) Icons.Outlined.LightMode else Icons.Outlined.DarkMode,
-                            contentDescription = null,
-                            tint = c.mutedForeground,
-                            modifier = Modifier.size(19.dp)
+                        // 5. Statement (Leftmost in RTL)
+                        BottomNavSideItem(
+                            label = statementLabel,
+                            icon = LucideIcons.FileText,
+                            selected = isStatement,
+                            onClick = { onSelectSellerSection(SellerSection.STATEMENT) },
+                            modifier = Modifier.weight(1f)
                         )
                     }
                 }
             }
-            HorizontalDivider(thickness = 1.dp, color = c.border)
+
+            // Floating Center NS Circle Button (`-top-7 size-14 rounded-full border-4 border-background shadow-md`)
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .offset(y = (-26).dp)
+                    .zIndex(2f)
+                    .size(56.dp)
+                    .shadow(elevation = 6.dp, shape = CircleShape)
+                    .clip(CircleShape)
+                    .background(homeBrush)
+                    .border(4.dp, c.background, CircleShape)
+                    .clickable { onSelectSellerSection(SellerSection.SUMMARY) },
+                contentAlignment = Alignment.Center
+            ) {
+                Image(
+                    painter = painterResource(id = R.drawable.ns_mark),
+                    contentDescription = homeLabel,
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier.size(36.dp)
+                )
+            }
         }
     }
 }
 
-private data class BottomNavItem(
-    val label: String,
-    val icon: ImageVector,
-    val active: Boolean,
-    val onClick: () -> Unit
-)
-
 @Composable
-private fun NsBottomBar(
-    isAdmin: Boolean,
-    hasSingleSellerDetail: Boolean,
-    navDestination: MainNavDestination,
-    sellerSection: SellerSection,
-    onSelectDestination: (MainNavDestination) -> Unit,
-    onSelectSellerSection: (SellerSection) -> Unit
+private fun BottomNavSideItem(
+    label: String,
+    icon: ImageVector,
+    selected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     val c = LocalNsColors.current
-
-    val items = if (isAdmin) {
-        listOf(
-            BottomNavItem(
-                label = tr("العمولات", "Commissions"),
-                icon = Icons.Outlined.Payments,
-                active = navDestination == MainNavDestination.COMMISSIONS,
-                onClick = { onSelectDestination(MainNavDestination.COMMISSIONS) }
-            ),
-            BottomNavItem(
-                label = tr("الإعدادات", "Settings"),
-                icon = Icons.Outlined.Settings,
-                active = navDestination == MainNavDestination.ADMIN_SETTINGS,
-                onClick = { onSelectDestination(MainNavDestination.ADMIN_SETTINGS) }
-            ),
-            BottomNavItem(
-                label = tr("الحسابات", "Accounts"),
-                icon = Icons.Outlined.Groups,
-                active = navDestination == MainNavDestination.ADMIN_ACCOUNTS,
-                onClick = { onSelectDestination(MainNavDestination.ADMIN_ACCOUNTS) }
-            ),
-            BottomNavItem(
-                label = tr("حسابي", "My Account"),
-                icon = Icons.Outlined.Person,
-                active = navDestination == MainNavDestination.ACCOUNT,
-                onClick = { onSelectDestination(MainNavDestination.ACCOUNT) }
-            )
-        )
-    } else if (hasSingleSellerDetail) {
-        listOf(
-            BottomNavItem(
-                label = tr("الملخص", "Summary"),
-                icon = Icons.Outlined.Dashboard,
-                active = navDestination == MainNavDestination.COMMISSIONS && sellerSection == SellerSection.SUMMARY,
-                onClick = { onSelectSellerSection(SellerSection.SUMMARY) }
-            ),
-            BottomNavItem(
-                label = tr("المبيعات", "Sales"),
-                icon = Icons.Outlined.Analytics,
-                active = navDestination == MainNavDestination.COMMISSIONS && sellerSection == SellerSection.SALES,
-                onClick = { onSelectSellerSection(SellerSection.SALES) }
-            ),
-            BottomNavItem(
-                label = tr("التحصيل", "Collections"),
-                icon = Icons.Outlined.AccountBalanceWallet,
-                active = navDestination == MainNavDestination.COMMISSIONS && sellerSection == SellerSection.COLLECTIONS,
-                onClick = { onSelectSellerSection(SellerSection.COLLECTIONS) }
-            ),
-            BottomNavItem(
-                label = tr("كشف العمولة", "Statement"),
-                icon = Icons.Outlined.ReceiptLong,
-                active = navDestination == MainNavDestination.COMMISSIONS && sellerSection == SellerSection.STATEMENT,
-                onClick = { onSelectSellerSection(SellerSection.STATEMENT) }
-            ),
-            BottomNavItem(
-                label = tr("حسابي", "Account"),
-                icon = Icons.Outlined.Person,
-                active = navDestination == MainNavDestination.ACCOUNT,
-                onClick = { onSelectDestination(MainNavDestination.ACCOUNT) }
-            )
-        )
-    } else {
-        listOf(
-            BottomNavItem(
-                label = tr("العمولات", "Commissions"),
-                icon = Icons.Outlined.Payments,
-                active = navDestination == MainNavDestination.COMMISSIONS,
-                onClick = { onSelectDestination(MainNavDestination.COMMISSIONS) }
-            ),
-            BottomNavItem(
-                label = tr("حسابي", "My Account"),
-                icon = Icons.Outlined.Person,
-                active = navDestination == MainNavDestination.ACCOUNT,
-                onClick = { onSelectDestination(MainNavDestination.ACCOUNT) }
-            )
-        )
-    }
-
-    Surface(
-        color = c.card,
-        shadowElevation = 8.dp
+    val tint = if (selected) c.primary else c.mutedForeground
+    Column(
+        modifier = modifier
+            .fillMaxHeight()
+            .clickable(onClick = onClick)
+            .padding(vertical = 6.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
     ) {
-        Column(modifier = Modifier.navigationBarsPadding()) {
-            HorizontalDivider(thickness = 1.dp, color = c.border)
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 6.dp, vertical = 6.dp),
-                horizontalArrangement = Arrangement.SpaceEvenly,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                items.forEach { item ->
-                    Column(
-                        modifier = Modifier
-                            .weight(1f)
-                            .clip(RoundedCornerShape(14.dp))
-                            .clickable(onClick = item.onClick)
-                            .padding(vertical = 6.dp, horizontal = 2.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(3.dp)
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .clip(CircleShape)
-                                .background(if (item.active) c.accent else androidx.compose.ui.graphics.Color.Transparent)
-                                .padding(horizontal = 14.dp, vertical = 4.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = item.icon,
-                                contentDescription = item.label,
-                                tint = if (item.active) c.primary else c.mutedForeground,
-                                modifier = Modifier.size(20.dp)
-                            )
-                        }
-                        Text(
-                            text = item.label,
-                            fontSize = 10.5.sp,
-                            fontWeight = if (item.active) FontWeight.Bold else FontWeight.Medium,
-                            color = if (item.active) c.primary else c.mutedForeground,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    }
-                }
-            }
-        }
+        Icon(
+            imageVector = icon,
+            contentDescription = label,
+            tint = tint,
+            modifier = Modifier.size(20.dp)
+        )
+        Text(
+            text = label,
+            fontSize = 10.sp,
+            fontWeight = FontWeight.Medium,
+            color = tint,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.padding(top = 4.dp)
+        )
     }
 }

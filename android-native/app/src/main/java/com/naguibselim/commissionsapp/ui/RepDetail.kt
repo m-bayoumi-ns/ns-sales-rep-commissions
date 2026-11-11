@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -30,29 +31,21 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
+import androidx.compose.material.icons.automirrored.outlined.TrendingUp
 import androidx.compose.material.icons.outlined.AccessTime
-import androidx.compose.material.icons.outlined.AccountBalanceWallet
 import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.Bolt
-import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.Clear
 import androidx.compose.material.icons.outlined.ExpandLess
 import androidx.compose.material.icons.outlined.ExpandMore
 import androidx.compose.material.icons.outlined.Flag
-import androidx.compose.material.icons.outlined.Groups
-import androidx.compose.material.icons.outlined.Inventory2
 import androidx.compose.material.icons.outlined.Layers
 import androidx.compose.material.icons.outlined.Lightbulb
-import androidx.compose.material.icons.outlined.Payments
-import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.RadioButtonUnchecked
-import androidx.compose.material.icons.outlined.ReceiptLong
 import androidx.compose.material.icons.outlined.RemoveCircleOutline
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.Straighten
-import androidx.compose.material.icons.outlined.TrackChanges
-import androidx.compose.material.icons.outlined.TrendingUp
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -72,34 +65,33 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathEffect
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.naguibselim.commissionsapp.data.AdjustmentModel
-import com.naguibselim.commissionsapp.data.BucketResultModel
 import com.naguibselim.commissionsapp.data.CommissionSettingsModel
-import com.naguibselim.commissionsapp.data.DailyPoint
 import com.naguibselim.commissionsapp.data.MonthClock
 import com.naguibselim.commissionsapp.data.ProductSoldRow
-import com.naguibselim.commissionsapp.data.RangeResultModel
 import com.naguibselim.commissionsapp.data.RepDetailModel
+import com.naguibselim.commissionsapp.data.RulesModel
 import com.naguibselim.commissionsapp.util.Format
 import kotlin.math.abs
 import kotlin.math.ceil
 import kotlin.math.max
+import kotlin.math.min
 
 @Composable
 fun RepDetailView(
@@ -107,276 +99,268 @@ fun RepDetailView(
     settings: CommissionSettingsModel,
     clock: MonthClock,
     section: SellerSection,
+    salesResetTick: Int = 0,
     onSelectSection: (SellerSection) -> Unit,
     showTeamBackLink: Boolean,
     onBackToTeam: () -> Unit
 ) {
     val c = LocalNsColors.current
     val isAr = LocalIsArabic.current
-    val rep = detail.rep
-    val r = rep.result
 
     Column(
         modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(14.dp)
+        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         if (showTeamBackLink) {
             Row(
                 modifier = Modifier
                     .clip(RoundedCornerShape(10.dp))
                     .clickable(onClick = onBackToTeam)
-                    .padding(horizontal = 6.dp, vertical = 4.dp),
+                    .padding(vertical = 4.dp, horizontal = 4.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 Icon(
                     imageVector = if (isAr) Icons.AutoMirrored.Outlined.KeyboardArrowRight else Icons.AutoMirrored.Outlined.KeyboardArrowLeft,
                     contentDescription = null,
-                    tint = c.primary,
+                    tint = c.mutedForeground,
                     modifier = Modifier.size(18.dp)
                 )
                 Text(
-                    text = tr("كل المندوبين (ملخص الفريق)", "All sellers (team summary)"),
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = c.primary
+                    text = tr("كل المندوبين", "All sellers"),
+                    fontSize = 13.5.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = c.mutedForeground
                 )
             }
         }
 
-        // Main Hero + Content Card
+        // Single outer rounded-3xl white card wrapping the header (on Summary) and the active tab body
         Surface(
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(26.dp),
+            shape = RoundedCornerShape(24.dp),
             color = c.card,
             border = BorderStroke(1.dp, c.border),
-            shadowElevation = 2.dp
+            shadowElevation = 1.dp
         ) {
             Column(modifier = Modifier.fillMaxWidth()) {
-                // Hero Balance Header
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(
-                            Brush.linearGradient(
-                                colors = listOf(c.heroStart, c.heroMid, c.heroEnd)
-                            )
-                        )
-                        .padding(horizontal = 20.dp, vertical = 20.dp)
-                ) {
-                    Column(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalArrangement = Arrangement.spacedBy(18.dp)
-                    ) {
-                        // Top Row: Avatar, Rep Name, Month & Day, Regime Chip
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(44.dp)
-                                    .clip(CircleShape)
-                                    .background(Color.White.copy(alpha = 0.15f))
-                                    .border(1.5.dp, Color.White.copy(alpha = 0.28f), CircleShape),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Outlined.Person,
-                                    contentDescription = null,
-                                    tint = Color.White,
-                                    modifier = Modifier.size(22.dp)
-                                )
-                            }
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = rep.name,
-                                    fontSize = 16.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color.White,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
-                                )
-                                val subText = buildString {
-                                    append(Format.monthLabel(clock.month, isAr))
-                                    append(" · ")
-                                    if (clock.closed) {
-                                        append(tr("شهر مغلق", "Closed month"))
-                                    } else {
-                                        append(
-                                            tr(
-                                                "اليوم ${clock.elapsedDays} من ${clock.monthDays}",
-                                                "Day ${clock.elapsedDays} of ${clock.monthDays}"
-                                            )
-                                        )
-                                    }
-                                }
-                                Text(
-                                    text = subText,
-                                    fontSize = 12.sp,
-                                    color = Color.White.copy(alpha = 0.72f)
-                                )
-                            }
-                            RegimeBadgeChip(regime = r.regime, onDarkHeader = true)
-                        }
-
-                        // Center Earned Commission
-                        Column(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(4.dp)
-                        ) {
-                            Text(
-                                text = if (clock.closed) tr("عمولتك هذا الشهر", "Commission this month") else tr("عمولتك حتى الآن", "Earned so far"),
-                                fontSize = 13.5.sp,
-                                color = Color.White.copy(alpha = 0.78f)
-                            )
-                            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
-                                Row(
-                                    verticalAlignment = Alignment.Bottom,
-                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                                ) {
-                                    Text(
-                                        text = Format.integer(r.total),
-                                        fontSize = 44.sp,
-                                        fontWeight = FontWeight.ExtraBold,
-                                        color = Color.White,
-                                        letterSpacing = (-1).sp
-                                    )
-                                    Text(
-                                        text = if (isAr) "ج.م" else "EGP",
-                                        fontSize = 18.sp,
-                                        fontWeight = FontWeight.SemiBold,
-                                        color = Color.White.copy(alpha = 0.72f),
-                                        modifier = Modifier.padding(bottom = 6.dp)
-                                    )
-                                }
-                            }
-                            if (r.regime != "full") {
-                                val regimeText = when (r.regime) {
-                                    "old" -> tr(
-                                        "النظام القديم — حقق ${Format.number(settings.rules.oldSystemUntilPct)}% من الهدف لتفعيل الحوافز",
-                                        "Old system — reach ${Format.number(settings.rules.oldSystemUntilPct)}% of target to unlock bonuses"
-                                    )
-                                    "low" -> tr(
-                                        "أقل من ${Format.number(settings.rules.lowAchievementPct)}% من الهدف — ${Format.number(settings.rules.lowRate)}% من المبيعات فقط",
-                                        "Below ${Format.number(settings.rules.lowAchievementPct)}% of target — ${Format.number(settings.rules.lowRate)}% of sales only"
-                                    )
-                                    else -> tr("لم يُحدد هدف هذا الشهر", "No target set for this month")
-                                }
-                                Text(
-                                    text = regimeText,
-                                    fontSize = 12.sp,
-                                    color = Color.White.copy(alpha = 0.74f),
-                                    textAlign = TextAlign.Center
-                                )
-                            }
-                        }
-
-                        // Level Road
-                        if (r.achievement != null) {
-                            LevelRoadBar(
-                                achievement = r.achievement,
-                                projected = if (clock.closed) null else rep.projectedAchievement,
-                                low = settings.rules.lowAchievementPct,
-                                old = settings.rules.oldSystemUntilPct
-                            )
-                        }
-
-                        // 3 Mini KPIs
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(RoundedCornerShape(16.dp))
-                                .background(Color.White.copy(alpha = 0.11f))
-                                .padding(vertical = 11.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            HeroMiniStat(
-                                label = tr("المبيعات", "Sales"),
-                                value = Format.compactCurrency(r.sales, isAr),
-                                modifier = Modifier.weight(1f)
-                            )
-                            Box(
-                                modifier = Modifier
-                                    .width(1.dp)
-                                    .height(28.dp)
-                                    .background(Color.White.copy(alpha = 0.16f))
-                            )
-                            HeroMiniStat(
-                                label = if (clock.closed) tr("الهدف الإجمالي", "Total target") else tr("الهدف حتى اليوم", "Target to date"),
-                                value = r.totalTargetToDate?.let { Format.compactCurrency(it, isAr) } ?: "—",
-                                modifier = Modifier.weight(1f)
-                            )
-                            Box(
-                                modifier = Modifier
-                                    .width(1.dp)
-                                    .height(28.dp)
-                                    .background(Color.White.copy(alpha = 0.16f))
-                            )
-                            HeroMiniStat(
-                                label = tr("المحقق", "Achieved"),
-                                value = Format.percent(r.achievement),
-                                modifier = Modifier.weight(1f)
-                            )
-                        }
-                    }
+                // Balance header is shown ONLY on the Summary ("الرئيسية") tab, matching Screenshot 2
+                if (section == SellerSection.SUMMARY) {
+                    BalanceHeaderCard(detail = detail, settings = settings, clock = clock)
                 }
 
-                // Section Tab Bar inside card
-                Box(modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp)) {
-                    SegmentedPills(
-                        options = listOf(
-                            SellerSection.SUMMARY.key to tr("الملخص", "Summary"),
-                            SellerSection.SALES.key to tr("المبيعات", "Sales"),
-                            SellerSection.COLLECTIONS.key to tr("التحصيل", "Collections"),
-                            SellerSection.STATEMENT.key to tr("الكشف", "Statement")
-                        ),
-                        selected = section.key,
-                        onSelect = { key ->
-                            SellerSection.entries.find { it.key == key }?.let(onSelectSection)
-                        }
-                    )
-                }
-
-                HorizontalDivider(color = c.border)
-
-                // Active Section Content
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 18.dp),
-                    verticalArrangement = Arrangement.spacedBy(20.dp)
+                        .padding(horizontal = 16.dp, vertical = 20.dp),
+                    verticalArrangement = Arrangement.spacedBy(24.dp)
                 ) {
                     when (section) {
-                        SellerSection.SUMMARY -> SummarySectionContent(detail = detail, settings = settings, clock = clock)
-                        SellerSection.SALES -> SalesSectionContent(detail = detail, clock = clock)
-                        SellerSection.COLLECTIONS -> CollectionsSectionContent(detail = detail, clock = clock)
-                        SellerSection.STATEMENT -> StatementSectionContent(detail = detail, settings = settings)
+                        SellerSection.SUMMARY -> SummarySection(detail = detail, settings = settings, clock = clock)
+                        SellerSection.SALES -> SalesSection(detail = detail, salesResetTick = salesResetTick)
+                        SellerSection.COLLECTIONS -> CollectionsSection(detail = detail, clock = clock)
+                        SellerSection.STATEMENT -> StatementSection(detail = detail, settings = settings)
                     }
                 }
             }
         }
 
-        Text(
-            text = if (clock.closed) {
-                tr("أرقام نهائية لشهر مغلق.", "Final figures for a closed month.")
-            } else {
-                tr("تتحدث تلقائيًا كل بضع دقائق مع ترحيل الفواتير والمدفوعات.", "Updates automatically every few minutes as invoices and payments are posted.")
-            },
-            fontSize = 11.5.sp,
-            color = c.mutedForeground,
-            textAlign = TextAlign.Center,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 8.dp)
-        )
+        // Footer note is shown ONLY on the Summary ("الرئيسية") tab, matching Screenshot 2
+        if (section == SellerSection.SUMMARY) {
+            Text(
+                text = if (clock.closed) {
+                    tr("أرقام نهائية لشهر مغلق.", "Final figures for a closed month.")
+                } else {
+                    tr(
+                        "تتحدث تلقائيًا كل بضع دقائق مع ترحيل الفواتير والمدفوعات.",
+                        "Updates automatically every few minutes as invoices and payments are posted."
+                    )
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 2.dp, bottom = 8.dp),
+                textAlign = TextAlign.Center,
+                fontSize = 11.5.sp,
+                color = c.mutedForeground
+            )
+        }
     }
 }
 
 @Composable
-private fun HeroMiniStat(label: String, value: String, modifier: Modifier = Modifier) {
+private fun BalanceHeaderCard(
+    detail: RepDetailModel,
+    settings: CommissionSettingsModel,
+    clock: MonthClock
+) {
+    val c = LocalNsColors.current
+    val isAr = LocalIsArabic.current
+    val rep = detail.rep
+    val r = rep.result
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(
+                Brush.linearGradient(
+                    colors = listOf(c.heroStart, c.heroMid, c.heroEnd)
+                )
+            )
+            .padding(horizontal = 20.dp, vertical = 22.dp)
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(18.dp)) {
+            // Top identity row
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(44.dp)
+                        .clip(CircleShape)
+                        .background(Color.White.copy(alpha = 0.15f))
+                        .border(2.dp, Color.White.copy(alpha = 0.25f), CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = LucideIcons.UserRound,
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = rep.name,
+                        color = Color.White,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    val monthStr = Format.monthLabel(clock.month, isAr)
+                    val dayStr = if (clock.closed) {
+                        tr("شهر مغلق", "Month closed")
+                    } else {
+                        tr("اليوم ${clock.elapsedDays} من ${clock.monthDays}", "Day ${clock.elapsedDays} of ${clock.monthDays}")
+                    }
+                    Text(
+                        text = "$monthStr · $dayStr",
+                        color = Color.White.copy(alpha = 0.72f),
+                        fontSize = 12.sp
+                    )
+                }
+                RegimeBadgeChip(regime = r.regime, onDarkHeader = true)
+            }
+
+            // Center commission figure
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Text(
+                    text = if (clock.closed) tr("عمولتك هذا الشهر", "Your commission this month")
+                    else tr("عمولتك حتى الآن", "Your commission so far"),
+                    color = Color.White.copy(alpha = 0.75f),
+                    fontSize = 13.5.sp
+                )
+                CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+                    Row(
+                        verticalAlignment = Alignment.Bottom,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(
+                            text = Format.number(r.total),
+                            color = Color.White,
+                            fontSize = 46.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            lineHeight = 50.sp
+                        )
+                        Text(
+                            text = if (isAr) "ج.م" else "EGP",
+                            color = Color.White.copy(alpha = 0.72f),
+                            fontSize = 19.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            modifier = Modifier.padding(bottom = 6.dp)
+                        )
+                    }
+                }
+                if (r.regime != "full") {
+                    val regimeNote = when (r.regime) {
+                        "old" -> tr(
+                            "النظام القديم — حقق ${Format.integer(settings.rules.oldSystemUntilPct)}% من الهدف لتفعيل الحوافز",
+                            "Old system — reach ${Format.integer(settings.rules.oldSystemUntilPct)}% of target to unlock bonuses"
+                        )
+                        "low" -> tr(
+                            "أقل من ${Format.integer(settings.rules.lowAchievementPct)}% من الهدف — ${Format.rate(settings.rules.lowRate)} من المبيعات فقط",
+                            "Below ${Format.integer(settings.rules.lowAchievementPct)}% of target — ${Format.rate(settings.rules.lowRate)} of sales only"
+                        )
+                        else -> tr("لم يُحدد هدف هذا الشهر", "No target set this month")
+                    }
+                    Text(
+                        text = regimeNote,
+                        color = Color.White.copy(alpha = 0.72f),
+                        fontSize = 12.sp,
+                        textAlign = TextAlign.Center
+                    )
+                }
+            }
+
+            // Level Road Bar
+            if (r.achievement != null) {
+                LevelRoadBar(
+                    achievement = r.achievement,
+                    projected = if (clock.closed) null else rep.projectedAchievement,
+                    low = settings.rules.lowAchievementPct,
+                    old = settings.rules.oldSystemUntilPct
+                )
+            }
+
+            // 3 Mini KPIs row
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(Color.White.copy(alpha = 0.10f))
+                    .padding(vertical = 12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                MiniHeaderStat(
+                    label = tr("المبيعات", "Sales"),
+                    value = Format.compactCurrency(r.sales, isAr),
+                    modifier = Modifier.weight(1f)
+                )
+                Box(
+                    modifier = Modifier
+                        .width(1.dp)
+                        .height(30.dp)
+                        .background(Color.White.copy(alpha = 0.15f))
+                )
+                MiniHeaderStat(
+                    label = if (clock.closed) tr("الهدف الإجمالي", "Total target") else tr("الهدف حتى اليوم", "Target to date"),
+                    value = if (r.totalTargetToDate != null) Format.compactCurrency(r.totalTargetToDate, isAr) else "—",
+                    modifier = Modifier.weight(1f)
+                )
+                Box(
+                    modifier = Modifier
+                        .width(1.dp)
+                        .height(30.dp)
+                        .background(Color.White.copy(alpha = 0.15f))
+                )
+                MiniHeaderStat(
+                    label = tr("المحقق", "Achieved"),
+                    value = Format.percent(r.achievement),
+                    modifier = Modifier.weight(1f)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun MiniHeaderStat(label: String, value: String, modifier: Modifier = Modifier) {
     Column(
         modifier = modifier.padding(horizontal = 6.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -384,17 +368,18 @@ private fun HeroMiniStat(label: String, value: String, modifier: Modifier = Modi
     ) {
         Text(
             text = label,
+            color = Color.White.copy(alpha = 0.65f),
             fontSize = 11.sp,
-            color = Color.White.copy(alpha = 0.68f),
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
         )
-        LtrText(
+        Text(
             text = value,
-            fontSize = 14.sp,
-            fontWeight = FontWeight.Bold,
             color = Color.White,
-            maxLines = 1
+            fontSize = 13.5.sp,
+            fontWeight = FontWeight.Bold,
+            textAlign = TextAlign.Center,
+            maxLines = 2
         )
     }
 }
@@ -406,28 +391,28 @@ private fun LevelRoadBar(
     low: Double,
     old: Double
 ) {
-    val maxVal = max(110.0, (ceil(max(achievement, projected ?: 0.0) / 10.0) * 10.0 + 10.0).coerceAtMost(160.0))
-    var started by remember { mutableStateOf(false) }
-    LaunchedEffect(Unit) { started = true }
+    val targetLabel = tr("الهدف", "Target")
+    var entered by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) { entered = true }
 
-    val achFraction = ((achievement.coerceIn(0.0, maxVal)) / maxVal).toFloat()
-    val projFraction = (((projected ?: 0.0).coerceIn(0.0, maxVal)) / maxVal).toFloat()
+    val maxVal = max(110.0, min(160.0, ceil(max(achievement, projected ?: 0.0) / 10.0) * 10.0 + 10.0))
+    val frac = { v: Double -> (v.coerceIn(0.0, maxVal) / maxVal).toFloat() }
 
     val animAch by animateFloatAsState(
-        targetValue = if (started) achFraction else 0f,
+        targetValue = if (entered) frac(achievement) else 0f,
         animationSpec = tween(durationMillis = 900, easing = FastOutSlowInEasing),
-        label = "roadAch"
+        label = "ach"
     )
     val animProj by animateFloatAsState(
-        targetValue = if (started) projFraction else 0f,
+        targetValue = if (entered && projected != null && projected > achievement) frac(projected) else 0f,
         animationSpec = tween(durationMillis = 900, easing = FastOutSlowInEasing),
-        label = "roadProj"
+        label = "proj"
     )
 
     val marks = listOf(
         low to "${Format.integer(low)}%",
         old to "${Format.integer(old)}%",
-        100.0 to tr("الهدف", "Target")
+        100.0 to targetLabel
     )
 
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
@@ -438,14 +423,14 @@ private fun LevelRoadBar(
                     .height(20.dp),
                 contentAlignment = Alignment.CenterStart
             ) {
-                val trackWidth = maxWidth
+                val widthDp = maxWidth
                 // Track
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(10.dp)
                         .clip(CircleShape)
-                        .background(Color.White.copy(alpha = 0.16f))
+                        .background(Color.White.copy(alpha = 0.15f))
                 )
                 // Projected bar
                 if (projected != null && projected > achievement) {
@@ -454,7 +439,7 @@ private fun LevelRoadBar(
                             .fillMaxWidth(animProj)
                             .height(10.dp)
                             .clip(CircleShape)
-                            .background(Color.White.copy(alpha = 0.28f))
+                            .background(Color.White.copy(alpha = 0.25f))
                     )
                 }
                 // Achieved bar
@@ -470,41 +455,43 @@ private fun LevelRoadBar(
                         )
                 )
                 // Milestone dots
-                marks.forEach { (mVal, _) ->
-                    val frac = (mVal / maxVal).toFloat().coerceIn(0f, 1f)
-                    val reached = achievement >= mVal
+                marks.forEach { (v, _) ->
+                    val f = frac(v)
+                    val passed = achievement >= v
                     Box(
                         modifier = Modifier
-                            .offset(x = (trackWidth * frac) - 6.dp)
-                            .size(12.dp)
+                            .offset(x = (widthDp * f) - 7.dp)
+                            .size(14.dp)
                             .clip(CircleShape)
-                            .background(if (reached) Color(0xFF6EE7B7) else Color(0xFF4A2D16))
-                            .border(2.dp, if (reached) Color.White else Color.White.copy(alpha = 0.6f), CircleShape)
+                            .background(if (passed) Color(0xFF6EE7B7) else Color(0xFF4A2D16))
+                            .border(2.dp, if (passed) Color.White else Color.White.copy(alpha = 0.6f), CircleShape)
                     )
                 }
-                // Current thumb
+                // Current position indicator
                 Box(
                     modifier = Modifier
-                        .offset(x = (trackWidth * animAch) - 9.dp)
+                        .offset(x = (widthDp * animAch) - 9.dp)
                         .size(18.dp)
                         .clip(CircleShape)
                         .background(Color(0xFFFCD34D))
                         .border(3.dp, Color.White, CircleShape)
                 )
             }
+            // Labels row
             BoxWithConstraints(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .padding(top = 4.dp)
                     .height(16.dp)
             ) {
-                val trackWidth = maxWidth
-                marks.forEach { (mVal, label) ->
-                    val frac = (mVal / maxVal).toFloat().coerceIn(0f, 1f)
+                val widthDp = maxWidth
+                marks.forEach { (v, label) ->
+                    val f = frac(v)
                     Text(
                         text = label,
-                        fontSize = 10.sp,
                         color = Color.White.copy(alpha = 0.72f),
-                        modifier = Modifier.offset(x = (trackWidth * frac) - 18.dp)
+                        fontSize = 10.sp,
+                        modifier = Modifier.offset(x = (widthDp * f) - 16.dp)
                     )
                 }
             }
@@ -512,11 +499,11 @@ private fun LevelRoadBar(
     }
 }
 
-// ---------------------------------------------------------------------------
-// TAB 1: SUMMARY
-// ---------------------------------------------------------------------------
+// ============================================================================
+// TAB 1: SUMMARY (Matches Screenshot 2)
+// ============================================================================
 @Composable
-private fun SummarySectionContent(
+private fun SummarySection(
     detail: RepDetailModel,
     settings: CommissionSettingsModel,
     clock: MonthClock
@@ -529,32 +516,29 @@ private fun SummarySectionContent(
     val flagged = r.belowMinimum || rep.minimumRisk
 
     if (flagged) {
-        val alertText = if (r.belowMinimum) {
+        val msg = if (r.belowMinimum) {
             tr(
                 "مبيعاتك في نهاية الشهر أقل من الحد الأدنى ${Format.currency(settings.rules.minimumSales, isAr)}.",
-                "Your month-end sales are below the ${Format.currency(settings.rules.minimumSales, isAr)} minimum."
+                "Your month-end sales are below the minimum of ${Format.currency(settings.rules.minimumSales, isAr)}."
             )
         } else {
             tr(
                 "بهذا المعدل سينتهي الشهر عند حوالي ${Format.currency(rep.projectedSales, isAr)}، أقل من الحد الأدنى ${Format.currency(settings.rules.minimumSales, isAr)}.",
-                "At this pace the month finishes around ${Format.currency(rep.projectedSales, isAr)}, below the ${Format.currency(settings.rules.minimumSales, isAr)} minimum."
+                "At this pace the month ends at about ${Format.currency(rep.projectedSales, isAr)}, below the minimum of ${Format.currency(settings.rules.minimumSales, isAr)}."
             )
         }
-        StatusBanner(
-            text = alertText,
-            tone = "error",
-            icon = Icons.Outlined.Flag
-        )
+        StatusBanner(text = msg, tone = "error", icon = Icons.Outlined.Flag)
     }
 
-    // Group 1: My Targets
+    // 1. My Targets Group ("أهدافي")
     NsGroupCard(title = tr("أهدافي", "My targets")) {
         NsListRow(
-            icon = Icons.Outlined.TrackChanges,
+            icon = LucideIcons.Target,
             label = if (clock.closed) tr("الهدف الإجمالي", "Total target") else tr("الهدف حتى اليوم", "Target to date"),
-            sub = "${Format.compactCurrency(r.sales, isAr)} / ${r.totalTargetToDate?.let { Format.compactCurrency(it, isAr) } ?: "—"}",
+            sub = "${Format.compactCurrency(r.sales, isAr)} / ${if (r.totalTargetToDate != null) Format.compactCurrency(r.totalTargetToDate, isAr) else "—"}",
             value = Format.percent(r.achievement),
-            progress = r.achievement
+            progress = r.achievement,
+            hasProgressSlot = true
         )
 
         listOf("slow" to r.slowCategory, "digital" to r.digitalCategory).forEach { (key, cat) ->
@@ -566,11 +550,11 @@ private fun SummarySectionContent(
             }
             val valSub = when {
                 cat.targetToDate == null -> null
-                cat.achieved >= cat.targetToDate -> tr("تحقق الهدف", "Target met")
+                cat.achieved >= cat.targetToDate -> tr("تحقق الهدف", "Target reached")
                 else -> {
                     val rem = cat.targetToDate - cat.achieved
                     val remStr = if (cat.unit == "amount") Format.compactCurrency(rem, isAr) else "${Format.integer(ceil(rem))} $qtyUnit"
-                    tr("المتبقي $remStr", "$remStr left")
+                    tr("المتبقي $remStr", "$remStr remaining")
                 }
             }
             NsListRow(
@@ -579,7 +563,8 @@ private fun SummarySectionContent(
                 sub = "${fmt(cat.achieved)} / ${fmt(cat.targetToDate)}",
                 value = if (cat.targetToDate != null) Format.percent(cat.achievement) else "—",
                 valueSub = valSub,
-                progress = if (cat.targetToDate != null) cat.achievement else null
+                progress = if (cat.targetToDate != null) cat.achievement else null,
+                hasProgressSlot = true
             )
         }
 
@@ -592,11 +577,11 @@ private fun SummarySectionContent(
                 else "${Format.number(v)} $qtyUnit"
             }
             val valSub = if (range.achieved >= target) {
-                tr("تحقق الهدف", "Target met")
+                tr("تحقق الهدف", "Target reached")
             } else {
                 val rem = target - range.achieved
                 val remStr = if (range.unit == "amount") Format.compactCurrency(rem, isAr) else "${Format.integer(ceil(rem))} $qtyUnit"
-                tr("المتبقي $remStr", "$remStr left")
+                tr("المتبقي $remStr", "$remStr remaining")
             }
             NsListRow(
                 iconBadgeText = range.key,
@@ -604,138 +589,203 @@ private fun SummarySectionContent(
                 sub = "${fmt(range.achieved)} / ${fmt(range.targetToDate)}",
                 value = Format.percent(range.achievement),
                 valueSub = valSub,
-                progress = range.achievement
+                progress = range.achievement,
+                hasProgressSlot = true
             )
         }
 
         NsDivider()
         NsListRow(
-            icon = Icons.Outlined.Payments,
-            label = if (clock.closed) tr("التحصيل مقابل المبيعات", "Collections vs sales") else tr("التحصيل مقابل مبيعات الشهر حتى الآن", "Collections vs sales to date"),
+            icon = LucideIcons.HandCoins,
+            label = if (clock.closed) tr("التحصيل مقابل المبيعات", "Collections against sales")
+            else tr("التحصيل مقابل مبيعات الشهر حتى الآن", "Collections against MTD sales"),
             sub = "${Format.compactCurrency(r.collections, isAr)} / ${Format.compactCurrency(r.sales, isAr)} ${tr("المحصّل / المبيعات", "collected / sales")}",
             value = Format.percent(r.collectionRatio),
             valueSub = tr("المطبق على عمولة البنود: ${Format.percent(r.collectionFactor)}", "Applied to line commission: ${Format.percent(r.collectionFactor)}"),
-            progress = r.collectionFactor
+            progress = r.collectionFactor,
+            hasProgressSlot = true
         )
     }
 
-    // Group 2: Pace
+    // 2. My Pace Group ("معدلي") — value inline with label, matching Screenshot 2
     if (!clock.closed && r.totalTarget != null) {
         NsGroupCard(title = tr("معدلي", "My pace")) {
-            NsListRow(
-                icon = Icons.Outlined.TrendingUp,
-                label = tr("المتوقع نهاية الشهر", "Projected month-end"),
-                sub = Format.percent(rep.projectedAchievement),
-                value = Format.compactCurrency(rep.projectedSales, isAr)
+            InlineValueRow(
+                icon = Icons.AutoMirrored.Outlined.TrendingUp,
+                labelPrefix = tr("المتوقع نهاية الشهر", "Expected by month end"),
+                inlineValue = Format.compactCurrency(rep.projectedSales, isAr),
+                sub = Format.percent(rep.projectedAchievement)
             )
             NsDivider()
-            NsListRow(
+            InlineValueRow(
                 icon = Icons.Outlined.AccessTime,
-                label = tr("المطلوب يوميًا", "Needed per day"),
-                sub = tr("متبقٍ ${clock.remainingDays} يوم", "${clock.remainingDays} days remaining"),
-                value = rep.perDayToTarget?.let { Format.compactCurrency(it, isAr) } ?: tr("تحقق", "Reached"),
-                tone = if (rep.perDayToTarget == null) "good" else null
+                labelPrefix = tr("المطلوب يوميًا", "Needed per day"),
+                inlineValue = if (rep.perDayToTarget != null) Format.compactCurrency(rep.perDayToTarget, isAr) else tr("تحقق", "Reached"),
+                inlineValueColor = if (rep.perDayToTarget == null) c.success else c.foreground,
+                sub = tr("${clock.remainingDays} يوم متبقٍ", "${clock.remainingDays} days left")
             )
         }
     }
 
-    // Group 3: Earn More Tips
+    // 3. How to Earn More Group ("كيف تزيد عمولتك")
     val tips = remember(detail, settings, isAr) { buildEarnMoreTips(detail, settings, isAr) }
     NsGroupCard(
         title = tr("كيف تزيد عمولتك", "How to earn more"),
-        footer = tr("محسوبة من أرقام اليوم.", "Calculated from today's figures.")
+        footer = tr("محسوبة من أرقام اليوم.", "Worked out from today's figures.")
     ) {
         if (tips.isEmpty()) {
             Text(
-                text = tr("لا يوجد ما يُفعّل — أحسنت.", "Nothing left to unlock — great work!"),
-                fontSize = 13.5.sp,
-                color = c.mutedForeground,
-                textAlign = TextAlign.Center,
+                text = tr("لا يوجد ما يُفعّل — أحسنت.", "Nothing left to unlock — well done."),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 22.dp, horizontal = 16.dp)
+                    .padding(horizontal = 16.dp, vertical = 22.dp),
+                textAlign = TextAlign.Center,
+                fontSize = 13.5.sp,
+                color = c.mutedForeground
             )
         } else {
             tips.forEachIndexed { idx, tip ->
                 if (idx > 0) NsDivider()
-                val bg = when {
-                    tip.highlightWarn -> c.warningSoft
-                    else -> Color.Transparent
-                }
+                val isWarnBg = (tip.tone == "warn" && tip.key != "slowMin") || tip.condition
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(bg)
-                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                        .background(if (isWarnBg) c.warningSoft else Color.Transparent)
+                        .padding(horizontal = 16.dp, vertical = 13.dp),
                     verticalAlignment = Alignment.Top,
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     Icon(
                         imageVector = Icons.Outlined.Lightbulb,
                         contentDescription = null,
-                        tint = if (tip.highlightWarn) c.warning else c.primary,
+                        tint = if (isWarnBg) c.warning else c.foreground,
                         modifier = Modifier
                             .padding(top = 2.dp)
-                            .size(18.dp)
+                            .size(16.dp)
                     )
-                    Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                        if (tip.rewardAmount != null) {
-                            Text(
-                                text = tip.rewardAmount,
-                                fontSize = 13.5.sp,
-                                fontWeight = FontWeight.ExtraBold,
-                                color = c.success
-                            )
+                    val annotated = buildAnnotatedString {
+                        if (!tip.rewardAmount.isNullOrBlank()) {
+                            withStyle(SpanStyle(color = c.success, fontWeight = FontWeight.Bold)) {
+                                append(tip.rewardAmount)
+                                append(" ")
+                            }
                         }
-                        Text(
-                            text = tip.text,
-                            fontSize = 13.sp,
-                            fontWeight = if (tip.highlightWarn) FontWeight.SemiBold else FontWeight.Normal,
-                            color = if (tip.highlightWarn) c.warning else c.foreground,
-                            lineHeight = 18.sp
-                        )
+                        withStyle(
+                            SpanStyle(
+                                color = if (isWarnBg) c.warning else c.foreground,
+                                fontWeight = if (tip.condition) FontWeight.SemiBold else FontWeight.Normal
+                            )
+                        ) {
+                            append(tip.text)
+                        }
                     }
+                    Text(
+                        text = annotated,
+                        fontSize = 13.5.sp,
+                        lineHeight = 19.sp,
+                        modifier = Modifier.weight(1f)
+                    )
                 }
             }
         }
     }
 
-    // Group 4: This Month
+    // 4. This Month Group ("هذا الشهر") — value inline with label, matching Screenshot 2
     NsGroupCard(title = tr("هذا الشهر", "This month")) {
-        NsListRow(
-            icon = Icons.Outlined.ReceiptLong,
-            label = tr("الفواتير", "Invoices"),
-            sub = tr("${rep.customers} عميل", "${rep.customers} customers"),
-            value = Format.integer(rep.invoices)
+        InlineValueRow(
+            icon = LucideIcons.ReceiptText,
+            labelPrefix = tr("الفواتير", "Invoices"),
+            inlineValue = Format.integer(rep.invoices),
+            sub = tr("${rep.customers} عميل", "${rep.customers} customers")
         )
         NsDivider()
-        NsListRow(
-            icon = Icons.Outlined.Payments,
-            label = tr("المبيعات المسددة", "Paid invoice sales"),
-            sub = tr("${Format.number(settings.rules.cashSharePct)}% تستحق حافزًا", "${Format.number(settings.rules.cashSharePct)}% earns a bonus"),
-            value = Format.percent(r.cashShare),
-            tone = if ((r.cashShare ?: 0.0) >= settings.rules.cashSharePct) "good" else null
+        val cashGood = (r.cashShare ?: 0.0) >= settings.rules.cashSharePct
+        InlineValueRow(
+            icon = LucideIcons.Banknote,
+            labelPrefix = tr("المبيعات المسددة", "This month's invoices paid"),
+            inlineValue = Format.percent(r.cashShare),
+            inlineValueColor = if (cashGood) c.success else c.foreground,
+            sub = tr("${Format.integer(settings.rules.cashSharePct)}% تستحق حافزًا", "${Format.integer(settings.rules.cashSharePct)}% earns a bonus")
         )
     }
 }
 
-private data class TipItem(
+@Composable
+private fun InlineValueRow(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    labelPrefix: String,
+    inlineValue: String,
+    inlineValueColor: Color = LocalNsColors.current.foreground,
+    sub: String
+) {
+    val c = LocalNsColors.current
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .size(36.dp)
+                .clip(RoundedCornerShape(12.dp))
+                .background(c.accent),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = c.primary,
+                modifier = Modifier.size(16.dp)
+            )
+        }
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(2.dp)
+        ) {
+            val text = buildAnnotatedString {
+                withStyle(SpanStyle(color = c.foreground, fontWeight = FontWeight.Medium)) {
+                    append(labelPrefix)
+                    append(" ")
+                }
+                withStyle(SpanStyle(color = inlineValueColor, fontWeight = FontWeight.Bold)) {
+                    append(inlineValue)
+                }
+            }
+            Text(
+                text = text,
+                fontSize = 14.sp,
+                lineHeight = 19.sp
+            )
+            Text(
+                text = sub,
+                fontSize = 12.sp,
+                color = c.mutedForeground,
+                lineHeight = 16.sp
+            )
+        }
+    }
+}
+
+private data class EarnTip(
     val key: String,
     val text: String,
+    val tone: String, // "good" | "todo" | "warn"
     val rewardAmount: String? = null,
-    val highlightWarn: Boolean = false
+    val condition: Boolean = false
 )
 
 private fun buildEarnMoreTips(
     detail: RepDetailModel,
     settings: CommissionSettingsModel,
     isAr: Boolean
-): List<TipItem> {
+): List<EarnTip> {
     val r = detail.rep.result
     val rules = settings.rules
     val money = { v: Double -> Format.currency(ceil(v), isAr) }
-    val uom = trLang(isAr, "م", "m")
-    val tips = mutableListOf<TipItem>()
+    val uom = if (isAr) "م" else "m"
+    val tips = mutableListOf<EarnTip>()
     val target = r.totalTargetToDate
     var hasUnmetTargets = false
 
@@ -743,38 +793,38 @@ private fun buildEarnMoreTips(
         if (r.regime == "low") {
             val gap = money((target * rules.lowAchievementPct) / 100.0 - r.sales)
             tips.add(
-                TipItem(
+                EarnTip(
                     key = "low",
+                    tone = "warn",
                     text = trLang(
                         isAr,
-                        "حقق مبيعات إضافية $gap لتتجاوز ${Format.number(rules.lowAchievementPct)}% من الهدف وتخرج من نسبة 0.1%.",
-                        "Sell $gap more to pass ${Format.number(rules.lowAchievementPct)}% of target and leave the 0.1% rate."
-                    ),
-                    highlightWarn = true
+                        "حقق مبيعات إضافية $gap لتتجاوز ${Format.integer(rules.lowAchievementPct)}% من الهدف وتخرج من نسبة 0.1%.",
+                        "Sell $gap more to pass ${Format.integer(rules.lowAchievementPct)}% of target and leave the 0.1% rate."
+                    )
                 )
             )
         }
         if (r.regime == "low" || r.regime == "old") {
             val gap = money((target * rules.oldSystemUntilPct) / 100.0 - r.sales)
             tips.add(
-                TipItem(
+                EarnTip(
                     key = "full",
+                    tone = "warn",
                     text = trLang(
                         isAr,
-                        "حقق مبيعات إضافية $gap لتصل إلى ${Format.number(rules.oldSystemUntilPct)}% من الهدف وتفعّل الحوافز.",
-                        "Sell $gap more to reach ${Format.number(rules.oldSystemUntilPct)}% of target and unlock bonuses."
-                    ),
-                    highlightWarn = true
+                        "حقق مبيعات إضافية $gap لتصل إلى ${Format.integer(rules.oldSystemUntilPct)}% من الهدف وتفعّل الحوافز.",
+                        "Sell $gap more to reach ${Format.integer(rules.oldSystemUntilPct)}% of target and unlock bonuses."
+                    )
                 )
             )
         }
         if (r.sales < target) hasUnmetTargets = true
     } else {
         tips.add(
-            TipItem(
+            EarnTip(
                 key = "noTarget",
-                text = trLang(isAr, "لم يُحدد هدف إجمالي لهذا المندوب هذا الشهر.", "No total target is set for this seller this month."),
-                highlightWarn = true
+                tone = "warn",
+                text = trLang(isAr, "لم يُحدد هدف إجمالي لهذا المندوب هذا الشهر.", "No total target is set for this rep this month.")
             )
         )
     }
@@ -788,14 +838,15 @@ private fun buildEarnMoreTips(
 
     if (hasUnmetTargets) {
         tips.add(
-            TipItem(
+            EarnTip(
                 key = "target",
+                tone = "todo",
                 text = trLang(
                     isAr,
-                    "حقق جميع الأهداف للحصول على زيادة ${Format.number(rules.allTargetsBonusPct)}% على العمولة.",
-                    "Meet all targets to earn a +${Format.number(rules.allTargetsBonusPct)}% commission bonus."
+                    "حقق جميع الأهداف للحصول على زيادة ${Format.integer(rules.allTargetsBonusPct)}% على العمولة.",
+                    "Meet all targets to earn a ${Format.integer(rules.allTargetsBonusPct)}% commission increase."
                 ),
-                highlightWarn = true
+                condition = true
             )
         )
     }
@@ -803,15 +854,16 @@ private fun buildEarnMoreTips(
     val slow = r.slowCategory
     if (slow.targetToDate != null && slow.achievement != null && slow.achievement < rules.slowMinPct) {
         val need = (slow.targetToDate * rules.slowMinPct) / 100.0 - slow.achieved
-        val gapStr = if (slow.unit == "amount") money(need) else "${Format.integer(ceil(need))} $uom"
         val deduction = r.adjustments.find { it.key == "slowDeduction" }?.amount ?: 0.0
+        val gapStr = if (slow.unit == "amount") money(need) else "${Format.integer(ceil(need))} $uom"
         tips.add(
-            TipItem(
+            EarnTip(
                 key = "slowMin",
+                tone = "warn",
                 text = trLang(
                     isAr,
-                    "احصل على المبلغ عند زيادة مبيعات الراكد $gapStr وبلوغ ${Format.number(rules.slowMinPct)}% من هدف الراكد، وتجنب الخصم.",
-                    "Recover this amount by increasing slow-moving sales by $gapStr to reach ${Format.number(rules.slowMinPct)}% of target."
+                    "احصل على المبلغ عند زيادة مبيعات الراكد $gapStr وبلوغ ${Format.integer(rules.slowMinPct)}% من هدف الراكد، وتجنب الخصم.",
+                    "Earn this amount by selling $gapStr more slow-moving, reaching ${Format.integer(rules.slowMinPct)}% of its target, and avoiding the deduction."
                 ),
                 rewardAmount = if (deduction < 0) money(abs(deduction)) else null
             )
@@ -821,14 +873,16 @@ private fun buildEarnMoreTips(
     if (r.sales > 0) {
         if (r.collectionFactor < 100.0) {
             val colAdj = r.adjustments.find { it.key == "collectionShare" }
-            if (colAdj != null && colAdj.amount < 0) {
+            if (colAdj != null) {
+                val gap = money(r.sales - r.collections)
                 tips.add(
-                    TipItem(
-                        key = "colFull",
+                    EarnTip(
+                        key = "commissionAtFullCollection",
+                        tone = "todo",
                         text = trLang(
                             isAr,
-                            "قيمة الخصم الحالي بسبب فرق نسبة التحصيل. حصّل ${money(r.sales - r.collections)} لتجنب الخصم.",
-                            "Current deduction due to collection ratio. Collect ${money(r.sales - r.collections)} more to recover it."
+                            "قيمة الخصم الحالي بسبب فرق نسبة التحصيل. حصّل $gap لتجنب الخصم.",
+                            "is currently deducted due to the collection-rate gap. Collect $gap more to avoid the deduction."
                         ),
                         rewardAmount = money(abs(colAdj.amount))
                     )
@@ -837,12 +891,13 @@ private fun buildEarnMoreTips(
         }
         if ((r.cashShare ?: 0.0) < rules.cashSharePct) {
             tips.add(
-                TipItem(
+                EarnTip(
                     key = "cash",
+                    tone = "todo",
                     text = trLang(
                         isAr,
-                        "ارفع نسبة المبيعات المسددة الحالية ${Format.percent(r.cashShare)} إلى ${Format.number(rules.cashSharePct)}% لاستحقاق الحافز.",
-                        "Raise paid invoice sales from ${Format.percent(r.cashShare)} to ${Format.number(rules.cashSharePct)}% to earn the bonus."
+                        "ارفع نسبة المبيعات المسددة الحالية ${Format.percent(r.cashShare)} إلى ${Format.integer(rules.cashSharePct)}% لاستحقاق الحافز.",
+                        "Raise paid invoice sales from ${Format.percent(r.cashShare)} to ${Format.integer(rules.cashSharePct)}% to earn the bonus."
                     ),
                     rewardAmount = money(rules.cashBonus)
                 )
@@ -851,8 +906,9 @@ private fun buildEarnMoreTips(
         val collectNeed = (r.sales * rules.collectionPct) / 100.0 - r.collections
         if (collectNeed >= 0) {
             tips.add(
-                TipItem(
+                EarnTip(
                     key = "collect",
+                    tone = "todo",
                     text = trLang(
                         isAr,
                         "حصّل ${money(collectNeed + 1)} إضافية لتستحق حافز التحصيل.",
@@ -870,8 +926,9 @@ private fun buildEarnMoreTips(
             .filter { it.from == ladder.threshold }
             .maxOfOrNull { it.amount } ?: 0.0
         tips.add(
-            TipItem(
+            EarnTip(
                 key = "ladder",
+                tone = "todo",
                 text = trLang(
                     isAr,
                     "حقق مبيعات إضافية ${money(ladder.threshold - r.sales)} لتصل إلى حافز المبيعات التالي عند ${Format.compactCurrency(ladder.threshold, isAr)}.",
@@ -885,12 +942,13 @@ private fun buildEarnMoreTips(
     if (r.allTargetsMet) {
         tips.add(
             0,
-            TipItem(
+            EarnTip(
                 key = "great",
+                tone = "good",
                 text = trLang(
                     isAr,
-                    "تحققت كل الأهداف — حافز +${Format.number(rules.allTargetsBonusPct)}% مستحق.",
-                    "All targets met — +${Format.number(rules.allTargetsBonusPct)}% bonus earned!"
+                    "تحققت كل الأهداف — حافز +${Format.integer(rules.allTargetsBonusPct)}% مستحق.",
+                    "Every target is met — the +${Format.integer(rules.allTargetsBonusPct)}% bonus is earned."
                 )
             )
         )
@@ -898,10 +956,10 @@ private fun buildEarnMoreTips(
     return tips
 }
 
-// ---------------------------------------------------------------------------
-// TAB 2: SALES
-// ---------------------------------------------------------------------------
-private data class DaySalesAgg(
+// ============================================================================
+// TAB 2: SALES (Matches Screenshot 4 — 4 large chooser cards first, then list)
+// ============================================================================
+private data class DayAggRow(
     val day: String,
     val invoices: Int,
     val refunds: Int,
@@ -913,207 +971,293 @@ private data class DaySalesAgg(
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun SalesSectionContent(
+private fun SalesSection(
     detail: RepDetailModel,
-    clock: MonthClock
+    salesResetTick: Int
 ) {
     val c = LocalNsColors.current
     val isAr = LocalIsArabic.current
-    var selectedView by rememberSaveable { mutableStateOf("days") } // "days" | "customers" | "invoices" | "products"
-    var query by rememberSaveable { mutableStateOf("") }
-    var showAll by rememberSaveable { mutableStateOf(false) }
+    var mobileView by rememberSaveable(salesResetTick) { mutableStateOf<String?>(null) } // null | "days" | "customers" | "invoices" | "products"
+    var query by rememberSaveable(mobileView) { mutableStateOf("") }
+    var showAll by rememberSaveable(mobileView) { mutableStateOf(false) }
 
+    // Screenshot 4: When mobileView == null, show "اختر طريقة عرض العمولة" and 4 large cards
+    if (mobileView == null) {
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Text(
+                text = tr("اختر طريقة عرض العمولة", "Choose a commission view"),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 4.dp),
+                textAlign = TextAlign.Center,
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+                color = c.foreground
+            )
+
+            val views = listOf(
+                Triple("days", tr("حسب اليوم", "By day"), LucideIcons.CalendarDays),
+                Triple("customers", tr("حسب العميل", "By customer"), LucideIcons.Users),
+                Triple("invoices", tr("حسب الفاتورة", "By invoice"), LucideIcons.ReceiptText),
+                Triple("products", tr("حسب المنتج", "By product"), LucideIcons.Package)
+            )
+
+            views.forEach { (key, label, icon) ->
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 80.dp)
+                        .clip(RoundedCornerShape(16.dp))
+                        .clickable {
+                            mobileView = key
+                            showAll = false
+                            query = ""
+                        },
+                    shape = RoundedCornerShape(16.dp),
+                    color = c.card,
+                    border = BorderStroke(1.dp, c.border),
+                    shadowElevation = 1.dp
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 16.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(44.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(c.accent),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = icon,
+                                contentDescription = null,
+                                tint = c.primary,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                        Text(
+                            text = label,
+                            modifier = Modifier.weight(1f),
+                            fontSize = 15.5.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = c.foreground
+                        )
+                        Icon(
+                            imageVector = if (isAr) Icons.AutoMirrored.Outlined.KeyboardArrowLeft else Icons.AutoMirrored.Outlined.KeyboardArrowRight,
+                            contentDescription = null,
+                            tint = c.mutedForeground,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                }
+            }
+        }
+        return
+    }
+
+    val currentView = mobileView ?: "days"
     val q = query.trim().lowercase()
-    val matches = { text: String -> q.isEmpty() || text.lowercase().contains(q) }
+    val match = { text: String -> q.isEmpty() || text.lowercase().contains(q) }
 
     val products = remember(detail.products, q) {
-        detail.products.filter { matches("${it.productName} ${it.code ?: ""} ${it.color ?: ""} ${it.invoices.joinToString(" ")}") }
+        detail.products.filter { match("${it.productName} ${it.code ?: ""} ${it.color ?: ""} ${it.invoices.joinToString(" ")}") }
     }
     val invoices = remember(detail.invoiceRows, q) {
-        detail.invoiceRows.filter { matches("${it.name} ${it.customer}") }
+        detail.invoiceRows.filter { match("${it.name} ${it.customer}") }
     }
     val customers = remember(detail.customerRows, q) {
-        detail.customerRows.filter { matches(it.name) }
+        detail.customerRows.filter { match(it.name) }
     }
     val days = remember(detail.invoiceRows, q) {
         val map = linkedMapOf<String, Triple<Int, Int, MutableSet<String>>>()
-        val sums = linkedMapOf<String, Pair<Double, Pair<Double, Double>>>()
+        val sums = linkedMapOf<String, Triple<Double, Double, Double>>()
         for (row in detail.invoiceRows) {
-            if (!matches("${row.name} ${row.customer} ${row.day}")) continue
-            val cur = map.getOrPut(row.day) { Triple(0, 0, mutableSetOf()) }
-            val nextInv = if (row.refund) cur.first else cur.first + 1
-            val nextRef = if (row.refund) cur.second + 1 else cur.second
-            cur.third.add(row.customer)
-            map[row.day] = Triple(nextInv, nextRef, cur.third)
-
-            val s = sums.getOrPut(row.day) { 0.0 to (0.0 to 0.0) }
-            sums[row.day] = (s.first + row.qty) to ((s.second.first + row.amount) to (s.second.second + row.commission))
+            if (!match("${row.name} ${row.customer} ${row.day}")) continue
+            val prev = map[row.day] ?: Triple(0, 0, mutableSetOf())
+            prev.third.add(row.customer)
+            map[row.day] = Triple(
+                prev.first + if (row.refund) 0 else 1,
+                prev.second + if (row.refund) 1 else 0,
+                prev.third
+            )
+            val s = sums[row.day] ?: Triple(0.0, 0.0, 0.0)
+            sums[row.day] = Triple(s.first + row.qty, s.second + row.amount, s.third + row.commission)
         }
         map.keys.sortedDescending().map { d ->
-            val meta = map[d]!!
+            val m = map[d]!!
             val s = sums[d]!!
-            DaySalesAgg(
+            DayAggRow(
                 day = d,
-                invoices = meta.first,
-                refunds = meta.second,
-                customersCount = meta.third.size,
+                invoices = m.first,
+                refunds = m.second,
+                customersCount = m.third.size,
                 qty = s.first,
-                amount = s.second.first,
-                commission = s.second.second
+                amount = s.second,
+                commission = s.third
             )
         }
     }
 
-    val totalLineCommission = remember(detail.invoiceRows) {
-        detail.invoiceRows.sumOf { it.commission }
-    }
-
-    // Native Daily Chart
-    if (detail.daily.isNotEmpty()) {
-        DailySalesChartCard(
-            points = detail.daily,
-            target = detail.rep.result.totalTarget,
-            asOf = clock.asOf
-        )
-    }
-
-    // View Selector
-    SegmentedPills(
-        options = listOf(
-            "days" to tr("حسب اليوم", "By day"),
-            "customers" to tr("حسب العميل", "By customer"),
-            "invoices" to tr("حسب الفاتورة", "By invoice"),
-            "products" to tr("حسب المنتج", "By product")
-        ),
-        selected = selectedView,
-        onSelect = {
-            selectedView = it
-            showAll = false
-        }
-    )
-
-    val count = when (selectedView) {
+    val count = when (currentView) {
         "products" -> products.size
         "invoices" -> invoices.size
         "customers" -> customers.size
         else -> days.size
     }
 
-    val searchPlaceholder = when (selectedView) {
-        "products" -> tr("ابحث عن منتج أو لون أو فاتورة", "Search product, color or invoice")
+    // Back button to return to the 4 sales view choices
+    Row(
+        modifier = Modifier
+            .clip(RoundedCornerShape(8.dp))
+            .clickable {
+                mobileView = null
+                query = ""
+            }
+            .padding(horizontal = 4.dp, vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        Icon(
+            imageVector = if (isAr) Icons.AutoMirrored.Outlined.KeyboardArrowRight else Icons.AutoMirrored.Outlined.KeyboardArrowLeft,
+            contentDescription = null,
+            tint = c.primary,
+            modifier = Modifier.size(18.dp)
+        )
+        Text(
+            text = tr("اختر طريقة عرض العمولة", "Choose a commission view"),
+            fontSize = 13.5.sp,
+            fontWeight = FontWeight.Medium,
+            color = c.primary
+        )
+    }
+
+    val searchPlaceholder = when (currentView) {
+        "products" -> tr("ابحث عن منتج أو لون أو فاتورة", "Search product, colour or invoice")
+        "invoices" -> tr("ابحث برقم الفاتورة أو العميل", "Search invoice number or customer")
         "customers" -> tr("ابحث عن عميل", "Search customer")
-        else -> tr("ابحث برقم الفاتورة أو العميل", "Search invoice number or customer")
+        else -> tr("ابحث برقم الفاتورة أو العميل", "Search invoice or customer")
     }
 
     OutlinedTextField(
         value = query,
         onValueChange = { query = it },
-        modifier = Modifier.fillMaxWidth(),
-        placeholder = {
-            Text(text = searchPlaceholder, fontSize = 13.sp, color = c.mutedForeground)
-        },
+        placeholder = { Text(searchPlaceholder, fontSize = 13.sp) },
         leadingIcon = {
-            Icon(imageVector = Icons.Outlined.Search, contentDescription = null, tint = c.mutedForeground, modifier = Modifier.size(18.dp))
+            Icon(Icons.Outlined.Search, contentDescription = null, modifier = Modifier.size(18.dp))
         },
-        trailingIcon = {
-            if (query.isNotEmpty()) {
+        trailingIcon = if (query.isNotEmpty()) {
+            {
                 IconButton(onClick = { query = "" }) {
-                    Icon(imageVector = Icons.Outlined.Clear, contentDescription = null, tint = c.mutedForeground, modifier = Modifier.size(18.dp))
+                    Icon(Icons.Outlined.Clear, contentDescription = null, modifier = Modifier.size(18.dp))
                 }
             }
-        },
+        } else null,
         singleLine = true,
-        shape = RoundedCornerShape(14.dp),
+        shape = CircleShape,
         colors = OutlinedTextFieldDefaults.colors(
-            focusedBorderColor = c.primary,
-            unfocusedBorderColor = c.border,
             focusedContainerColor = c.card,
-            unfocusedContainerColor = c.card
-        )
+            unfocusedContainerColor = c.card,
+            focusedBorderColor = c.primary,
+            unfocusedBorderColor = c.border
+        ),
+        modifier = Modifier.fillMaxWidth()
     )
 
-    val titleLabel = when (selectedView) {
+    val viewTitle = when (currentView) {
         "products" -> tr("المنتجات المباعة ($count)", "Products sold ($count)")
         "invoices" -> tr("الفواتير ($count)", "Invoices ($count)")
         "customers" -> tr("العملاء ($count)", "Customers ($count)")
         else -> tr("الأيام ($count)", "Days ($count)")
     }
 
-    NsGroupCard(
-        title = titleLabel,
-        footer = tr(
-            "المبالغ هي عمولة البنود (الإجمالي ${Format.number(totalLineCommission)}) قبل تعديل التحصيل والحوافز. الشركات الشقيقة غير محتسبة.",
-            "Amounts are line commissions (total ${Format.number(totalLineCommission)}) before collection scaling and bonuses. Sister companies excluded."
-        )
-    ) {
+    NsGroupCard(title = viewTitle) {
         if (count == 0) {
             Text(
-                text = tr("لا توجد مبيعات مطابقة.", "No matching sales."),
-                fontSize = 13.5.sp,
-                color = c.mutedForeground,
-                textAlign = TextAlign.Center,
+                text = tr("لا توجد مبيعات هذا الشهر بعد.", "No sales yet this month."),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 26.dp)
+                    .padding(vertical = 28.dp),
+                textAlign = TextAlign.Center,
+                fontSize = 13.5.sp,
+                color = c.mutedForeground
             )
         } else {
             val limit = if (showAll) Int.MAX_VALUE else 20
-            when (selectedView) {
+            when (currentView) {
                 "days" -> {
                     days.take(limit).forEachIndexed { idx, row ->
                         if (idx > 0) NsDivider()
+                        val dayNum = row.day.takeLast(2).toIntOrNull()?.toString() ?: row.day
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(horizontal = 14.dp, vertical = 12.dp),
+                                .padding(horizontal = 16.dp, vertical = 12.dp),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
                             Box(
                                 modifier = Modifier
-                                    .size(38.dp)
+                                    .size(36.dp)
                                     .clip(RoundedCornerShape(12.dp))
                                     .background(c.accent),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Text(
-                                    text = row.day.takeLast(2).toIntOrNull()?.toString() ?: row.day.takeLast(2),
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.ExtraBold,
+                                    text = dayNum,
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Bold,
                                     color = c.primary
                                 )
                             }
-                            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Column(
+                                modifier = Modifier.weight(1f),
+                                verticalArrangement = Arrangement.spacedBy(3.dp)
+                            ) {
                                 Text(
                                     text = Format.weekdayDayLabel(row.day, isAr),
                                     fontSize = 14.sp,
-                                    fontWeight = FontWeight.SemiBold,
+                                    fontWeight = FontWeight.Medium,
                                     color = c.foreground
                                 )
-                                val sub = buildString {
+                                val invSub = buildString {
                                     append(tr("${row.invoices} فاتورة", "${row.invoices} invoices"))
-                                    if (row.refunds > 0) append(" · " + tr("${row.refunds} إشعار دائن", "${row.refunds} credit notes"))
-                                    append(" · " + tr("${row.customersCount} عميل", "${row.customersCount} customers"))
+                                    if (row.refunds > 0) {
+                                        append(" · ")
+                                        append(tr("${row.refunds} إشعار دائن", "${row.refunds} credit notes"))
+                                    }
+                                    append(" · ")
+                                    append(tr("${row.customersCount} عميل", "${row.customersCount} customers"))
                                 }
-                                Text(text = sub, fontSize = 11.5.sp, color = c.mutedForeground)
+                                Text(text = invSub, fontSize = 11.5.sp, color = c.mutedForeground)
                                 FlowRow(
                                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                                     verticalArrangement = Arrangement.spacedBy(4.dp)
                                 ) {
-                                    SmallFigurePill(
+                                    DayFigurePill(
                                         icon = Icons.Outlined.Straighten,
-                                        text = "${tr("الأمتار", "Meters")}: ${Format.number(row.qty)} ${tr("م", "m")}"
+                                        label = tr("الأمتار", "Meters"),
+                                        value = Format.number(row.qty),
+                                        unit = tr("م", "m")
                                     )
-                                    SmallFigurePill(
-                                        icon = Icons.Outlined.Payments,
-                                        text = "${tr("المبيعات", "Sales")}: ${Format.number(row.amount)} ${tr("ج.م", "EGP")}"
+                                    DayFigurePill(
+                                        icon = LucideIcons.Banknote,
+                                        label = tr("المبيعات", "Sales"),
+                                        value = Format.number(row.amount),
+                                        unit = tr("ج.م", "EGP")
                                     )
                                 }
                             }
                             LtrText(
-                                text = (if (row.commission >= 0) "+" else "") + Format.number(row.commission),
+                                text = "${if (row.commission >= 0) "+" else ""}${Format.number(row.commission)}",
                                 fontSize = 14.sp,
-                                fontWeight = FontWeight.Bold,
+                                fontWeight = FontWeight.SemiBold,
                                 color = if (row.commission < 0) c.destructive else c.success
                             )
                         }
@@ -1125,8 +1269,8 @@ private fun SalesSectionContent(
                         NsListRow(
                             iconBadgeText = "${idx + 1}",
                             label = row.name,
-                            sub = tr("${row.invoices} فاتورة", "${row.invoices} invoices") + " · " + Format.currency(row.amount, isAr),
-                            value = (if (row.commission >= 0) "+" else "") + Format.number(row.commission),
+                            sub = "${tr("${row.invoices} فاتورة", "${row.invoices} invoices")} · ${Format.number(row.amount)}",
+                            value = "${if (row.commission >= 0) "+" else ""}${Format.number(row.commission)}",
                             tone = if (row.commission < 0) "bad" else "good"
                         )
                     }
@@ -1137,33 +1281,36 @@ private fun SalesSectionContent(
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(horizontal = 14.dp, vertical = 12.dp),
+                                .padding(horizontal = 16.dp, vertical = 12.dp),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
                             Box(
                                 modifier = Modifier
-                                    .size(38.dp)
+                                    .size(36.dp)
                                     .clip(RoundedCornerShape(12.dp))
                                     .background(if (row.refund) c.destructiveSoft else c.accent),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Icon(
-                                    imageVector = Icons.Outlined.ReceiptLong,
+                                    imageVector = LucideIcons.ReceiptText,
                                     contentDescription = null,
                                     tint = if (row.refund) c.destructive else c.primary,
-                                    modifier = Modifier.size(18.dp)
+                                    modifier = Modifier.size(16.dp)
                                 )
                             }
-                            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                            Column(
+                                modifier = Modifier.weight(1f),
+                                verticalArrangement = Arrangement.spacedBy(2.dp)
+                            ) {
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                                 ) {
                                     LtrText(
                                         text = row.name,
-                                        fontSize = 13.5.sp,
-                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.SemiBold,
                                         color = c.foreground
                                     )
                                     if (row.refund) {
@@ -1190,15 +1337,15 @@ private fun SalesSectionContent(
                                     overflow = TextOverflow.Ellipsis
                                 )
                                 Text(
-                                    text = "${Format.shortDayLabel(row.day, isAr)} · ${tr("${row.lines} بند", "${row.lines} lines")} · ${Format.currency(row.amount, isAr)}",
+                                    text = "${Format.shortDayLabel(row.day, isAr)} · ${tr("${row.lines} بند", "${row.lines} lines")} · ${Format.number(row.amount)}",
                                     fontSize = 11.5.sp,
                                     color = c.mutedForeground
                                 )
                             }
                             LtrText(
-                                text = (if (row.commission >= 0) "+" else "") + Format.number(row.commission),
+                                text = "${if (row.commission >= 0) "+" else ""}${Format.number(row.commission)}",
                                 fontSize = 14.sp,
-                                fontWeight = FontWeight.Bold,
+                                fontWeight = FontWeight.SemiBold,
                                 color = if (row.commission < 0) c.destructive else c.success
                             )
                         }
@@ -1216,37 +1363,37 @@ private fun SalesSectionContent(
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(horizontal = 14.dp, vertical = 12.dp),
+                                .padding(horizontal = 16.dp, vertical = 12.dp),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
                             Box(
                                 modifier = Modifier
-                                    .size(38.dp)
+                                    .size(36.dp)
                                     .clip(RoundedCornerShape(12.dp))
                                     .background(c.accent),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Icon(
-                                    imageVector = Icons.Outlined.Inventory2,
+                                    imageVector = LucideIcons.Package,
                                     contentDescription = null,
                                     tint = c.primary,
-                                    modifier = Modifier.size(18.dp)
+                                    modifier = Modifier.size(16.dp)
                                 )
                             }
-                            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                            Column(
+                                modifier = Modifier.weight(1f),
+                                verticalArrangement = Arrangement.spacedBy(3.dp)
+                            ) {
                                 Text(
-                                    text = buildString {
-                                        append(row.productName)
-                                        if (!row.color.isNullOrBlank()) append(" · ${row.color}")
-                                    },
+                                    text = row.productName + (row.color?.let { " · $it" } ?: ""),
                                     fontSize = 13.5.sp,
                                     fontWeight = FontWeight.Medium,
                                     color = c.foreground
                                 )
                                 LtrText(
-                                    text = "${Format.number(row.qty)} ${row.uom ?: ""} × ${Format.number(row.avgPrice)} = ${Format.number(row.amount)}",
-                                    fontSize = 11.5.sp,
+                                    text = "${Format.number(row.qty)} ${row.uom ?: ""} × ${if (row.avgPrice == null) "—" else Format.number(row.avgPrice)} = ${Format.number(row.amount)}",
+                                    fontSize = 12.sp,
                                     color = c.mutedForeground
                                 )
                                 if (row.invoices.isNotEmpty()) {
@@ -1271,7 +1418,7 @@ private fun SalesSectionContent(
                                         if (row.invoices.size > 3) {
                                             Text(
                                                 text = "+${row.invoices.size - 3}",
-                                                fontSize = 10.5.sp,
+                                                fontSize = 10.sp,
                                                 fontWeight = FontWeight.Bold,
                                                 color = c.primary
                                             )
@@ -1281,10 +1428,10 @@ private fun SalesSectionContent(
                             }
                             Column(horizontalAlignment = Alignment.End) {
                                 LtrText(
-                                    text = (if (row.commission >= 0) "+" else "") + Format.number(row.commission),
+                                    text = "+${Format.number(row.commission)}",
                                     fontSize = 14.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = if (row.commission < 0) c.destructive else c.success
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = c.success
                                 )
                                 Text(
                                     text = "$bucketLabel · ${Format.rate(row.rate)}",
@@ -1296,215 +1443,63 @@ private fun SalesSectionContent(
                     }
                 }
             }
+        }
+    }
 
-            if (count > 20) {
-                NsDivider()
-                TextButton(
-                    onClick = { showAll = !showAll },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(
-                        text = if (showAll) tr("عرض أقل", "Show less") else tr("عرض ${count - 20} أخرى", "Show ${count - 20} more"),
-                        fontWeight = FontWeight.Bold,
-                        color = c.primary
-                    )
-                }
+    if (count > 20) {
+        Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+            TextButton(onClick = { showAll = !showAll }) {
+                Text(
+                    text = if (showAll) tr("عرض أقل", "Show fewer") else tr("عرض ${count - 20} أخرى", "Show ${count - 20} more"),
+                    color = c.primary,
+                    fontWeight = FontWeight.SemiBold
+                )
             }
         }
     }
+
+    val totalLineCommission = remember(detail.invoiceRows) {
+        detail.invoiceRows.sumOf { it.commission }
+    }
+    Text(
+        text = tr(
+            "المبالغ هي عمولة البنود (الإجمالي ${Format.number(totalLineCommission)}) قبل تعديل التحصيل والحوافز. الشركات الشقيقة غير محتسبة.",
+            "Amounts are line commission (${Format.number(totalLineCommission)} in total), before the collections adjustment and bonuses. Group companies are not counted."
+        ),
+        fontSize = 12.sp,
+        color = c.mutedForeground,
+        modifier = Modifier.padding(horizontal = 4.dp)
+    )
 }
 
 @Composable
-private fun SmallFigurePill(icon: androidx.compose.ui.graphics.vector.ImageVector, text: String) {
+private fun DayFigurePill(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    label: String,
+    value: String,
+    unit: String
+) {
     val c = LocalNsColors.current
     Row(
         modifier = Modifier
             .clip(RoundedCornerShape(6.dp))
             .background(c.muted)
-            .padding(horizontal = 6.dp, vertical = 3.dp),
+            .padding(horizontal = 6.dp, vertical = 2.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(4.dp)
     ) {
-        Icon(imageVector = icon, contentDescription = null, tint = c.mutedForeground, modifier = Modifier.size(12.dp))
-        Text(text = text, fontSize = 11.sp, color = c.foreground, fontWeight = FontWeight.Medium)
-    }
-}
-
-@Composable
-private fun DailySalesChartCard(
-    points: List<DailyPoint>,
-    target: Double?,
-    asOf: String
-) {
-    val c = LocalNsColors.current
-    val isAr = LocalIsArabic.current
-    var selectedIdx by remember { mutableIntStateOf(-1) }
-
-    val recordedPoints = remember(points, asOf) {
-        points.filter { it.day <= asOf }
-    }
-    val maxDaily = remember(points) {
-        points.maxOfOrNull { max(0.0, it.sales) }?.coerceAtLeast(1.0) ?: 1.0
-    }
-    val cumulativeList = remember(points, asOf) {
-        var sum = 0.0
-        points.map { pt ->
-            if (pt.day <= asOf) {
-                sum += pt.sales
-                sum
-            } else null
-        }
-    }
-    val maxCum = remember(cumulativeList, target) {
-        val m = cumulativeList.filterNotNull().maxOrNull() ?: 0.0
-        max(m, target ?: 0.0).coerceAtLeast(1.0)
-    }
-
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(18.dp),
-        color = c.card,
-        border = BorderStroke(1.dp, c.border)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(14.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = tr("المبيعات اليومية مقابل معدل الهدف", "Daily sales vs target pace"),
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = c.foreground
-                )
-                if (selectedIdx in points.indices) {
-                    val pt = points[selectedIdx]
-                    Text(
-                        text = "${Format.shortDayLabel(pt.day, isAr)}: ${Format.compactCurrency(pt.sales, isAr)}",
-                        fontSize = 11.5.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = c.primary
-                    )
-                }
-            }
-
-            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
-                Canvas(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(145.dp)
-                ) {
-                    val count = points.size.coerceAtLeast(1)
-                    val slotWidth = size.width / count
-                    val barWidth = (slotWidth * 0.62f).coerceAtLeast(3f)
-
-                    // Grid lines
-                    for (i in 1..3) {
-                        val y = size.height * (i / 4f)
-                        drawLine(
-                            color = c.border,
-                            start = Offset(0f, y),
-                            end = Offset(size.width, y),
-                            strokeWidth = 1f
-                        )
-                    }
-
-                    // Daily Bars
-                    points.forEachIndexed { i, pt ->
-                        val v = pt.sales.coerceAtLeast(0.0)
-                        val ratio = (v / maxDaily).toFloat().coerceIn(0f, 1f)
-                        val h = ratio * (size.height * 0.85f)
-                        val x = i * slotWidth + (slotWidth - barWidth) / 2f
-                        if (h > 1f) {
-                            drawRoundRect(
-                                color = c.primary.copy(alpha = if (pt.day <= asOf) 0.78f else 0.2f),
-                                topLeft = Offset(x, size.height - h),
-                                size = Size(barWidth, h),
-                                cornerRadius = CornerRadius(4f, 4f)
-                            )
-                        }
-                    }
-
-                    // Target Pace dashed line
-                    if (target != null && target > 0 && count > 1) {
-                        val endY = size.height - ((target / maxCum).toFloat().coerceIn(0f, 1f) * (size.height * 0.9f))
-                        drawLine(
-                            color = c.mutedForeground.copy(alpha = 0.65f),
-                            start = Offset(slotWidth / 2f, size.height),
-                            end = Offset(size.width - slotWidth / 2f, endY),
-                            strokeWidth = 2.5f,
-                            pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 8f), 0f)
-                        )
-                    }
-
-                    // Cumulative solid line
-                    val cumPath = Path()
-                    var startedLine = false
-                    cumulativeList.forEachIndexed { i, cum ->
-                        if (cum != null) {
-                            val x = i * slotWidth + slotWidth / 2f
-                            val y = size.height - ((cum / maxCum).toFloat().coerceIn(0f, 1f) * (size.height * 0.9f))
-                            if (!startedLine) {
-                                cumPath.moveTo(x, y)
-                                startedLine = true
-                            } else {
-                                cumPath.lineTo(x, y)
-                            }
-                        }
-                    }
-                    if (startedLine) {
-                        drawPath(
-                            path = cumPath,
-                            color = Color(0xFF2F5DB8),
-                            style = Stroke(width = 4.5f)
-                        )
-                    }
-                }
-            }
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(14.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                LegendDot(color = c.primary, label = tr("المبيعات اليومية", "Daily sales"))
-                LegendDot(color = Color(0xFF2F5DB8), label = tr("الإجمالي التراكمي", "Cumulative"))
-                if (target != null && target > 0) {
-                    LegendDot(color = c.mutedForeground, label = tr("معدل الهدف", "Target pace"))
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun LegendDot(color: Color, label: String) {
-    val c = LocalNsColors.current
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(5.dp)
-    ) {
-        Box(
-            modifier = Modifier
-                .size(8.dp)
-                .clip(CircleShape)
-                .background(color)
-        )
+        Icon(icon, contentDescription = null, tint = c.mutedForeground, modifier = Modifier.size(13.dp))
         Text(text = label, fontSize = 11.sp, color = c.mutedForeground)
+        LtrText(text = value, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = c.foreground)
+        Text(text = unit, fontSize = 11.sp, color = c.mutedForeground)
     }
 }
 
-// ---------------------------------------------------------------------------
-// TAB 3: COLLECTIONS
-// ---------------------------------------------------------------------------
+// ============================================================================
+// TAB 3: COLLECTIONS (Matches Screenshot 1)
+// ============================================================================
 @Composable
-private fun CollectionsSectionContent(
+private fun CollectionsSection(
     detail: RepDetailModel,
     clock: MonthClock
 ) {
@@ -1513,11 +1508,11 @@ private fun CollectionsSectionContent(
     val r = detail.rep.result
     val col = detail.collections
 
-    // Gradient Hero Card for Collections
+    // Collections Hero Card (Screenshot 1)
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(22.dp))
+            .clip(RoundedCornerShape(24.dp))
             .background(
                 Brush.linearGradient(
                     colors = listOf(c.collectionsStart, c.collectionsMid, c.collectionsEnd)
@@ -1528,45 +1523,47 @@ private fun CollectionsSectionContent(
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(42.dp)
-                            .clip(RoundedCornerShape(14.dp))
-                            .background(Color.White.copy(alpha = 0.12f)),
+                            .size(44.dp)
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(Color.White.copy(alpha = 0.10f))
+                            .border(1.dp, Color.White.copy(alpha = 0.15f), RoundedCornerShape(16.dp)),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
-                            imageVector = Icons.Outlined.Payments,
+                            imageVector = LucideIcons.HandCoins,
                             contentDescription = null,
                             tint = Color(0xFFFEF3C7),
-                            modifier = Modifier.size(22.dp)
+                            modifier = Modifier.size(20.dp)
                         )
                     }
                     Text(
-                        text = tr("المحصَّل هذا الشهر", "Collected this month"),
+                        text = tr("المحصّل هذا الشهر", "Collected this month"),
+                        color = Color.White.copy(alpha = 0.92f),
                         fontSize = 14.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = Color.White.copy(alpha = 0.92f)
+                        fontWeight = FontWeight.SemiBold
                     )
                 }
                 Box(
                     modifier = Modifier
                         .clip(CircleShape)
                         .background(Color(0xBF3B2414))
-                        .padding(horizontal = 12.dp, vertical = 5.dp)
+                        .border(1.dp, Color(0xCC3B2414), CircleShape)
+                        .padding(horizontal = 12.dp, vertical = 6.dp)
                 ) {
                     LtrText(
                         text = Format.percent(r.collectionRatio),
+                        color = Color.White,
                         fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White
+                        fontWeight = FontWeight.Bold
                     )
                 }
             }
@@ -1577,37 +1574,36 @@ private fun CollectionsSectionContent(
             ) {
                 LtrText(
                     text = Format.number(r.collections),
+                    color = Color.White,
                     fontSize = 34.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                    color = Color.White
+                    fontWeight = FontWeight.ExtraBold
                 )
                 Text(
                     text = if (isAr) "ج.م" else "EGP",
+                    color = Color.White.copy(alpha = 0.80f),
                     fontSize = 16.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = Color.White.copy(alpha = 0.8f),
                     modifier = Modifier.padding(bottom = 4.dp)
                 )
             }
         }
     }
 
-    // By Source
     NsGroupCard(title = tr("حسب المصدر", "By source")) {
         NsListRow(
-            icon = Icons.Outlined.AccountBalanceWallet,
-            label = tr("مدفوعات", "Customer payments"),
+            icon = LucideIcons.Wallet,
+            label = tr("مدفوعات", "Payments"),
             value = Format.number(col.payment)
         )
         NsDivider()
         NsListRow(
-            icon = Icons.Outlined.ReceiptLong,
-            label = tr("شيكات محصلة", "Collected cheques"),
+            icon = LucideIcons.ReceiptText,
+            label = tr("شيكات محصلة", "Cheques collected"),
             value = Format.number(col.cheque)
         )
         NsDivider()
         NsListRow(
-            icon = Icons.Outlined.Payments,
+            icon = LucideIcons.Banknote,
             label = tr("مقبوضات خزينة", "Treasury receipts"),
             value = Format.number(col.manual)
         )
@@ -1622,38 +1618,20 @@ private fun CollectionsSectionContent(
         }
     }
 
-    // Customers Debt Today
     NsGroupCard(title = tr("عملائي", "My customers")) {
         NsListRow(
-            icon = Icons.Outlined.Groups,
-            label = tr("المستحق عليهم اليوم", "Owed by customers today"),
-            sub = if (clock.closed) tr("تظهر للشهر الحالي فقط", "Shown for the open month only") else tr("إجمالي مديونية عملائك المفتوحة", "Total open receivables of your customers"),
-            value = detail.rep.receivables?.let { Format.currency(it, isAr) } ?: "—"
+            icon = LucideIcons.Users,
+            label = tr("المستحق عليهم اليوم", "They owe today"),
+            sub = if (clock.closed) tr("تظهر للشهر الحالي فقط", "Shown for the current month only")
+            else tr("إجمالي مديونية عملائك المفتوحة", "Total open debt of your customers"),
+            value = if (detail.rep.receivables == null) "—" else Format.currency(detail.rep.receivables, isAr)
         )
-    }
-
-    // Latest collection days
-    val collectionDays = remember(detail.daily) {
-        detail.daily.filter { it.collections != 0.0 }.sortedByDescending { it.day }.take(10)
-    }
-    if (collectionDays.isNotEmpty()) {
-        NsGroupCard(title = tr("آخر أيام التحصيل", "Recent collection days")) {
-            collectionDays.forEachIndexed { idx, pt ->
-                if (idx > 0) NsDivider()
-                NsListRow(
-                    icon = Icons.Outlined.CalendarMonth,
-                    label = Format.weekdayDayLabel(pt.day, isAr),
-                    value = Format.currency(pt.collections, isAr),
-                    tone = if (pt.collections > 0) "good" else "bad"
-                )
-            }
-        }
     }
 }
 
-// ---------------------------------------------------------------------------
-// TAB 4: STATEMENT
-// ---------------------------------------------------------------------------
+// ============================================================================
+// TAB 4: STATEMENT (Matches Screenshot 3)
+// ============================================================================
 private data class StatementBucketLine(
     val key: String,
     val label: String,
@@ -1664,7 +1642,7 @@ private data class StatementBucketLine(
 )
 
 @Composable
-private fun StatementSectionContent(
+private fun StatementSection(
     detail: RepDetailModel,
     settings: CommissionSettingsModel
 ) {
@@ -1672,146 +1650,158 @@ private fun StatementSectionContent(
     val isAr = LocalIsArabic.current
     val r = detail.rep.result
     val rules = settings.rules
+
     val replaced = r.regime == "low" || (r.regime == "old" && rules.oldSystemMode != "base")
     val useOldSystemTiers = r.regime == "old" && rules.oldSystemMode == "tiers"
     val activeTiers = if (useOldSystemTiers) rules.oldSystemTiers else settings.tiers
-    val activeBuckets: List<BucketResultModel> = if (useOldSystemTiers) {
-        r.oldTiers
-    } else {
-        r.tiers.map { BucketResultModel(it.key, it.qty, it.amount, it.commission, it.rate) }
-    }
 
-    val lines = remember(activeBuckets, activeTiers, r.slowCategory, r.digitalCategory, settings, isAr) {
-        val list = mutableListOf<StatementBucketLine>()
-        activeBuckets.forEachIndexed { index, bucket ->
-            val tier = activeTiers.getOrNull(index)
-            val sub = if (tier == null || tier.to == null) {
-                trLang(isAr, "سعر ${Format.number(tier?.from ?: 0.0)} فأكثر", "Price ${Format.number(tier?.from ?: 0.0)}+")
-            } else {
-                trLang(isAr, "سعر ${Format.number(tier.from)}–${Format.number(tier.to)}", "Price ${Format.number(tier.from)}–${Format.number(tier.to)}")
+    val lines = buildList {
+        if (useOldSystemTiers) {
+            r.oldTiers.forEachIndexed { idx, b ->
+                val tier = activeTiers.getOrNull(idx)
+                val sub = if (tier?.to == null) {
+                    tr("سعر ${Format.number(tier?.from ?: 0.0)} فأكثر", "price ${Format.number(tier?.from ?: 0.0)}+")
+                } else {
+                    tr("سعر ${Format.number(tier.from)}–${Format.number(tier.to)}", "price ${Format.number(tier.from)}–${Format.number(tier.to)}")
+                }
+                add(StatementBucketLine(b.key, tr("الشريحة ${b.key}", "Range ${b.key}"), sub, b.amount, Format.rate(b.rate), b.commission))
             }
-            list.add(
-                StatementBucketLine(
-                    key = bucket.key,
-                    label = trLang(isAr, "الشريحة ${bucket.key}", "Range ${bucket.key}"),
-                    sub = sub,
-                    amount = bucket.amount,
-                    rate = Format.rate(bucket.rate),
-                    commission = bucket.commission
-                )
-            )
+        } else {
+            r.tiers.forEachIndexed { idx, b ->
+                val tier = activeTiers.getOrNull(idx)
+                val sub = if (tier?.to == null) {
+                    tr("سعر ${Format.number(tier?.from ?: 0.0)} فأكثر", "price ${Format.number(tier?.from ?: 0.0)}+")
+                } else {
+                    tr("سعر ${Format.number(tier.from)}–${Format.number(tier.to)}", "price ${Format.number(tier.from)}–${Format.number(tier.to)}")
+                }
+                add(StatementBucketLine(b.key, tr("الشريحة ${b.key}", "Range ${b.key}"), sub, b.amount, Format.rate(b.rate), b.commission))
+            }
         }
-        listOf("slow" to r.slowCategory, "digital" to r.digitalCategory).forEach { (key, cat) ->
-            val rate = if (key == "slow") settings.slowRate else settings.digitalRate
-            list.add(
-                StatementBucketLine(
-                    key = key,
-                    label = if (key == "slow") trLang(isAr, "الراكد", "Slow-moving") else trLang(isAr, "الديجيتال", "Digital"),
-                    sub = trLang(isAr, "نسبة الفئة", "Category rate"),
-                    amount = cat.amount,
-                    rate = Format.rate(rate),
-                    commission = cat.commission
-                )
+        add(
+            StatementBucketLine(
+                key = "slow",
+                label = tr("الراكد", "Slow-moving"),
+                sub = tr("نسبة الفئة", "category rate"),
+                amount = r.slowCategory.amount,
+                rate = Format.rate(settings.slowRate),
+                commission = r.slowCategory.commission
             )
-        }
-        list.filter { it.amount != 0.0 || it.commission != 0.0 }
-    }
+        )
+        add(
+            StatementBucketLine(
+                key = "digital",
+                label = tr("الديجيتال", "Digital"),
+                sub = tr("نسبة الفئة", "category rate"),
+                amount = r.digitalCategory.amount,
+                rate = Format.rate(settings.digitalRate),
+                commission = r.digitalCategory.commission
+            )
+        )
+    }.filter { it.amount != 0.0 || it.commission != 0.0 }
 
-    var openBucketKey by rememberSaveable { mutableStateOf<String?>(null) }
+    var openKey by rememberSaveable { mutableStateOf<String?>(null) }
     val canOpen = { key: String ->
-        (rules.statementDetails[key] != false) && detail.products.any { it.bucket == key }
+        rules.statementDetails[key] != false && detail.products.any { it.bucket == key }
     }
 
-    val adjustments = remember(r.adjustments) {
-        r.adjustments.filter { it.key != "lowRate" && it.key != "oldRate" && it.key != "oldTiers" && it.key != "collectionShare" }
+    val adjustments = r.adjustments.filter {
+        it.key != "lowRate" && it.key != "oldRate" && it.key != "oldTiers" && it.key != "collectionShare"
     }
-    val collectionShare = remember(r.adjustments) {
-        r.adjustments.find { it.key == "collectionShare" }
+    val collectionShare = r.adjustments.find { it.key == "collectionShare" }
+
+    val regimeShortLabel = when (r.regime) {
+        "full" -> tr("النظام الكامل", "Full system")
+        "old" -> tr("النظام القديم", "Old system")
+        "low" -> tr("0.1% من المبيعات", "0.1% of sales")
+        else -> tr("بدون هدف", "No target")
     }
 
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(16.dp),
         color = c.card,
-        border = BorderStroke(1.dp, c.border)
+        border = BorderStroke(1.dp, c.border),
+        shadowElevation = 1.dp
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(20.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            // Header
+            // Header row
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Icon(imageVector = Icons.Outlined.AutoAwesome, contentDescription = null, tint = c.primary, modifier = Modifier.size(18.dp))
+                    Icon(
+                        imageVector = Icons.Outlined.AutoAwesome,
+                        contentDescription = null,
+                        tint = c.primary,
+                        modifier = Modifier.size(16.dp)
+                    )
                     Text(
                         text = tr("كشف العمولة", "Commission statement"),
-                        fontSize = 14.5.sp,
-                        fontWeight = FontWeight.Bold,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.SemiBold,
                         color = c.foreground
                     )
-                }
-                val shortLevel = when (r.regime) {
-                    "full" -> tr("النظام الكامل", "Full system")
-                    "old" -> tr("النظام القديم", "Old system")
-                    "low" -> tr("0.1% من المبيعات", "0.1% of sales")
-                    else -> tr("بدون هدف", "No target")
                 }
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(8.dp))
                         .background(c.successSoft)
-                        .border(1.dp, c.success.copy(alpha = 0.35f), RoundedCornerShape(8.dp))
+                        .border(1.dp, c.success.copy(alpha = 0.4f), RoundedCornerShape(8.dp))
                         .padding(horizontal = 10.dp, vertical = 4.dp)
                 ) {
                     Text(
-                        text = shortLevel,
+                        text = regimeShortLabel,
                         fontSize = 11.5.sp,
-                        fontWeight = FontWeight.Bold,
+                        fontWeight = FontWeight.SemiBold,
                         color = c.success
                     )
                 }
             }
 
-            HorizontalDivider(color = c.border)
+            DashedHorizontalLine(color = c.border)
 
             // Buckets list
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            val dimAlpha = if (r.regime == "low" && replaced) 0.5f else 1f
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .alpha(dimAlpha),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
                 lines.forEach { line ->
                     val openable = canOpen(line.key)
-                    val isOpen = openable && openBucketKey == line.key
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(10.dp))
-                            .then(
-                                if (openable) Modifier.clickable {
-                                    openBucketKey = if (isOpen) null else line.key
-                                } else Modifier
-                            )
-                            .padding(vertical = 4.dp)
-                    ) {
+                    val isOpen = openable && openKey == line.key
+                    Column(modifier = Modifier.fillMaxWidth()) {
                         Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(8.dp))
+                                .then(
+                                    if (openable) Modifier.clickable { openKey = if (isOpen) null else line.key }
+                                    else Modifier
+                                )
+                                .padding(vertical = 4.dp),
+                            verticalAlignment = Alignment.Bottom,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            Column(modifier = Modifier.weight(1f)) {
+                            Column(modifier = Modifier.weight(1f, fill = false)) {
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.spacedBy(4.dp)
                                 ) {
                                     Text(
                                         text = line.label,
-                                        fontSize = 13.5.sp,
+                                        fontSize = 14.sp,
                                         fontWeight = FontWeight.Medium,
                                         color = c.foreground
                                     )
@@ -1826,10 +1816,16 @@ private fun StatementSectionContent(
                                 }
                                 LtrText(
                                     text = "${Format.number(line.amount)} × ${line.rate} · ${line.sub}",
-                                    fontSize = 11.5.sp,
+                                    fontSize = 11.sp,
                                     color = c.mutedForeground
                                 )
                             }
+                            DottedLeader(
+                                color = c.border,
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .padding(bottom = 5.dp)
+                            )
                             LtrText(
                                 text = Format.number(line.commission),
                                 fontSize = 14.sp,
@@ -1838,7 +1834,6 @@ private fun StatementSectionContent(
                             )
                         }
                         if (isOpen) {
-                            Spacer(modifier = Modifier.height(8.dp))
                             BucketProductsTable(
                                 rows = detail.products.filter { it.bucket == line.key }
                             )
@@ -1846,28 +1841,34 @@ private fun StatementSectionContent(
                     }
                 }
 
-                // Line Commission Subtotal
-                val lineBase = if (useOldSystemTiers) {
+                // Base line commission total
+                val baseVal = if (useOldSystemTiers) {
                     r.adjustments.find { it.key == "oldTiers" }?.amount ?: r.base
                 } else r.base
 
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(c.accent.copy(alpha = 0.65f))
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(c.accent.copy(alpha = 0.6f))
                         .padding(horizontal = 10.dp, vertical = 8.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.Bottom,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Text(
                         text = tr("عمولة البنود", "Line commission"),
-                        fontSize = 13.5.sp,
+                        fontSize = 14.sp,
                         fontWeight = FontWeight.Bold,
                         color = c.foreground
                     )
+                    DottedLeader(
+                        color = c.border,
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(bottom = 5.dp)
+                    )
                     LtrText(
-                        text = Format.number(lineBase),
+                        text = Format.number(baseVal),
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Bold,
                         color = c.foreground
@@ -1875,62 +1876,74 @@ private fun StatementSectionContent(
                 }
             }
 
-            HorizontalDivider(color = c.border)
+            DashedHorizontalLine(color = c.border)
 
-            // Adjustments & Collection Scaling
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            // Adjustments
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
                 if (collectionShare != null) {
-                    StatementAdjustmentItem(
+                    StatementAdjustmentRow(
                         item = collectionShare,
-                        settings = settings,
-                        replaced = false
+                        rules = rules,
+                        replaced = false,
+                        isAr = isAr
                     )
                 }
-                adjustments.forEach { adj ->
-                    StatementAdjustmentItem(
-                        item = adj,
-                        settings = settings,
-                        replaced = replaced
+                adjustments.forEach { item ->
+                    StatementAdjustmentRow(
+                        item = item,
+                        rules = rules,
+                        replaced = replaced,
+                        isAr = isAr
                     )
                 }
                 if (replaced && !(r.regime == "old" && rules.oldSystemMode == "tiers")) {
-                    val repLabel = if (r.regime == "low") {
-                        tr("أقل من 50%: ${Format.number(rules.lowRate)}% من إجمالي المبيعات بدلًا مما سبق", "Below 50%: ${Format.number(rules.lowRate)}% of total sales instead")
-                    } else {
-                        tr("النظام القديم: ${Format.number(rules.oldRate)}% من إجمالي المبيعات", "Old system: ${Format.number(rules.oldRate)}% of total sales")
+                    val replaceText = when {
+                        r.regime == "low" -> tr(
+                            "أقل من 50%: ${Format.rate(rules.lowRate)} من إجمالي المبيعات بدلًا مما سبق",
+                            "Below 50%: ${Format.rate(rules.lowRate)} of total sales replaces the above"
+                        )
+                        else -> tr(
+                            "النظام القديم: ${Format.rate(rules.oldRate)} من إجمالي المبيعات",
+                            "Old system: ${Format.rate(rules.oldRate)} of total sales"
+                        )
                     }
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clip(RoundedCornerShape(10.dp))
+                            .clip(RoundedCornerShape(8.dp))
                             .background(c.warningSoft)
                             .padding(horizontal = 10.dp, vertical = 8.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = repLabel,
-                            fontSize = 12.5.sp,
+                            text = replaceText,
+                            fontSize = 13.sp,
                             color = c.warning,
                             modifier = Modifier.weight(1f)
                         )
                         LtrText(
                             text = Format.number(r.beforeCollection),
                             fontSize = 13.5.sp,
-                            fontWeight = FontWeight.Bold,
+                            fontWeight = FontWeight.SemiBold,
                             color = c.warning
                         )
                     }
                 }
             }
 
-            HorizontalDivider(color = c.border)
+            DashedHorizontalLine(color = c.border)
 
             // Final You Earn
             Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.Bottom
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 2.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
                     text = tr("تستحق", "You earn"),
@@ -1945,7 +1958,59 @@ private fun StatementSectionContent(
                     color = c.success
                 )
             }
+
+            if (r.regime == "old" && rules.oldSystemMode == "base") {
+                Text(
+                    text = tr(
+                        "النظام القديم (${Format.integer(rules.lowAchievementPct)}%–${Format.integer(rules.oldSystemUntilPct)}% من الهدف): تُصرف عمولة البنود بدون حوافز أو خصومات.",
+                        "Old system (${Format.integer(rules.lowAchievementPct)}%–${Format.integer(rules.oldSystemUntilPct)}% of target): the line commission is paid without bonuses or deductions."
+                    ),
+                    fontSize = 12.sp,
+                    color = c.mutedForeground
+                )
+            } else if (r.regime == "old" && rules.oldSystemMode == "tiers") {
+                Text(
+                    text = tr(
+                        "تُحسب الأصناف العادية بشرائح النظام القديم، بينما تحتفظ أصناف الراكد والديجيتال بنسب فئاتها.",
+                        "Regular products use the old-system tiers; slow-moving and digital products keep their category rates."
+                    ),
+                    fontSize = 12.sp,
+                    color = c.mutedForeground
+                )
+            }
         }
+    }
+}
+
+@Composable
+private fun DashedHorizontalLine(color: Color, modifier: Modifier = Modifier) {
+    Canvas(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(1.dp)
+    ) {
+        drawLine(
+            color = color,
+            start = Offset(0f, 0f),
+            end = Offset(size.width, 0f),
+            strokeWidth = 1.dp.toPx(),
+            pathEffect = PathEffect.dashPathEffect(floatArrayOf(6.dp.toPx(), 4.dp.toPx()), 0f)
+        )
+    }
+}
+
+@Composable
+private fun DottedLeader(color: Color, modifier: Modifier = Modifier) {
+    Canvas(
+        modifier = modifier.height(1.dp)
+    ) {
+        drawLine(
+            color = color,
+            start = Offset(0f, 0f),
+            end = Offset(size.width, 0f),
+            strokeWidth = 1.dp.toPx(),
+            pathEffect = PathEffect.dashPathEffect(floatArrayOf(2.dp.toPx(), 3.dp.toPx()), 0f)
+        )
     }
 }
 
@@ -1953,9 +2018,11 @@ private fun StatementSectionContent(
 private fun BucketProductsTable(rows: List<ProductSoldRow>) {
     val c = LocalNsColors.current
     Surface(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 6.dp, bottom = 8.dp),
         shape = RoundedCornerShape(12.dp),
-        color = c.muted.copy(alpha = 0.55f),
+        color = c.muted.copy(alpha = 0.45f),
         border = BorderStroke(1.dp, c.border)
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
@@ -1964,112 +2031,111 @@ private fun BucketProductsTable(rows: List<ProductSoldRow>) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(c.muted)
-                    .padding(horizontal = 10.dp, vertical = 6.dp),
+                    .padding(horizontal = 10.dp, vertical = 7.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
                     text = tr("المنتج", "Product"),
+                    modifier = Modifier.weight(1.6f),
                     fontSize = 11.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = c.mutedForeground,
-                    modifier = Modifier.weight(1.8f)
+                    fontWeight = FontWeight.SemiBold,
+                    color = c.mutedForeground
                 )
                 Text(
-                    text = tr("السعر بعد الخصم", "Net price"),
+                    text = tr("السعر بعد الخصم", "Price net"),
+                    modifier = Modifier.weight(1f),
                     fontSize = 11.sp,
-                    fontWeight = FontWeight.Bold,
+                    fontWeight = FontWeight.SemiBold,
                     color = c.mutedForeground,
-                    textAlign = TextAlign.End,
-                    modifier = Modifier.weight(1f)
+                    textAlign = TextAlign.End
                 )
                 Text(
                     text = tr("الكمية (م)", "Qty (m)"),
+                    modifier = Modifier.weight(0.9f),
                     fontSize = 11.sp,
-                    fontWeight = FontWeight.Bold,
+                    fontWeight = FontWeight.SemiBold,
                     color = c.mutedForeground,
-                    textAlign = TextAlign.End,
-                    modifier = Modifier.weight(1f)
+                    textAlign = TextAlign.End
                 )
                 Text(
                     text = tr("العمولة", "Commission"),
+                    modifier = Modifier.weight(1f),
                     fontSize = 11.sp,
-                    fontWeight = FontWeight.Bold,
+                    fontWeight = FontWeight.SemiBold,
                     color = c.mutedForeground,
-                    textAlign = TextAlign.End,
-                    modifier = Modifier.weight(1f)
+                    textAlign = TextAlign.End
                 )
             }
+
             rows.forEach { row ->
-                HorizontalDivider(color = c.border.copy(alpha = 0.6f))
+                NsDivider()
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 10.dp, vertical = 6.dp),
+                        .padding(horizontal = 10.dp, vertical = 7.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = buildString {
-                            append(Format.plainProductName(row.productName))
-                            if (!row.color.isNullOrBlank()) append(" · ${row.color}")
-                        },
+                        text = Format.plainProductName(row.productName) + (row.color?.let { " · $it" } ?: ""),
+                        modifier = Modifier.weight(1.6f),
                         fontSize = 11.5.sp,
-                        color = c.foreground,
-                        modifier = Modifier.weight(1.8f)
+                        color = c.foreground
                     )
                     LtrText(
-                        text = Format.number(row.avgPrice),
+                        text = if (row.avgPrice == null) "—" else Format.number(row.avgPrice),
+                        modifier = Modifier.weight(1f),
                         fontSize = 11.5.sp,
                         color = c.foreground,
-                        textAlign = TextAlign.End,
-                        modifier = Modifier.weight(1f)
+                        textAlign = TextAlign.End
                     )
                     LtrText(
                         text = Format.number(row.qty),
+                        modifier = Modifier.weight(0.9f),
                         fontSize = 11.5.sp,
                         color = c.foreground,
-                        textAlign = TextAlign.End,
-                        modifier = Modifier.weight(1f)
+                        textAlign = TextAlign.End
                     )
                     LtrText(
                         text = Format.number(row.commission),
+                        modifier = Modifier.weight(1f),
                         fontSize = 11.5.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = if (row.commission < 0) c.destructive else c.success,
-                        textAlign = TextAlign.End,
-                        modifier = Modifier.weight(1f)
+                        textAlign = TextAlign.End
                     )
                 }
             }
-            HorizontalDivider(color = c.border)
+
+            NsDivider()
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(c.muted)
-                    .padding(horizontal = 10.dp, vertical = 6.dp),
+                    .padding(horizontal = 10.dp, vertical = 7.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
                     text = tr("الإجمالي", "Total"),
+                    modifier = Modifier.weight(2.6f),
                     fontSize = 11.5.sp,
                     fontWeight = FontWeight.Bold,
-                    color = c.foreground,
-                    modifier = Modifier.weight(2.8f)
+                    color = c.foreground
                 )
                 LtrText(
                     text = Format.number(rows.sumOf { it.qty }),
+                    modifier = Modifier.weight(0.9f),
                     fontSize = 11.5.sp,
                     fontWeight = FontWeight.Bold,
                     color = c.foreground,
-                    textAlign = TextAlign.End,
-                    modifier = Modifier.weight(1f)
+                    textAlign = TextAlign.End
                 )
                 LtrText(
                     text = Format.number(rows.sumOf { it.commission }),
+                    modifier = Modifier.weight(1f),
                     fontSize = 11.5.sp,
                     fontWeight = FontWeight.Bold,
                     color = c.foreground,
-                    textAlign = TextAlign.End,
-                    modifier = Modifier.weight(1f)
+                    textAlign = TextAlign.End
                 )
             }
         }
@@ -2077,47 +2143,55 @@ private fun BucketProductsTable(rows: List<ProductSoldRow>) {
 }
 
 @Composable
-private fun StatementAdjustmentItem(
+private fun StatementAdjustmentRow(
     item: AdjustmentModel,
-    settings: CommissionSettingsModel,
-    replaced: Boolean
+    rules: RulesModel,
+    replaced: Boolean,
+    isAr: Boolean
 ) {
     val c = LocalNsColors.current
-    val isAr = LocalIsArabic.current
-    val rules = settings.rules
     val independent = item.key == "cash" || item.key == "collection" || item.key == "slowDeduction"
-    val earned = if (item.key == "collectionShare") item.applies else item.met && item.applies && (independent || !replaced)
+    val earned = if (item.key == "collectionShare") item.applies else (item.met && item.applies && (independent || !replaced))
+
+    val icon = when {
+        !earned -> Icons.Outlined.RadioButtonUnchecked
+        item.amount < 0 -> Icons.Outlined.RemoveCircleOutline
+        else -> Icons.Outlined.CheckCircle
+    }
+    val iconTint = when {
+        !earned -> c.mutedForeground
+        item.amount < 0 -> c.destructive
+        else -> c.success
+    }
 
     val label = when (item.key) {
-        "allTargets" -> tr("تحقيق كل الأهداف: +${Format.number(rules.allTargetsBonusPct)}% من عمولة البنود", "All targets met: +${Format.number(rules.allTargetsBonusPct)}% of line commission")
-        "slowDeduction" -> tr("الراكد أقل من ${Format.number(rules.slowMinPct)}% من هدفه: خصم ${Format.number(rules.slowDeductionPct)}%", "Slow-moving below ${Format.number(rules.slowMinPct)}% of target: -${Format.number(rules.slowDeductionPct)}% deduction")
-        "cash" -> tr("المبيعات المسددة ≥ ${Format.number(rules.cashSharePct)}% من المبيعات", "Paid invoice sales ≥ ${Format.number(rules.cashSharePct)}% of sales")
-        "collection" -> tr("التحصيلات أكثر من ${Format.number(rules.collectionPct)}% من المبيعات", "Collections > ${Format.number(rules.collectionPct)}% of sales")
-        "salesLadder" -> tr("حافز المبيعات الشهرية", "Monthly sales ladder bonus")
-        "collectionShare" -> tr("تعديل العمولة حسب نسبة التحصيل", "Commission scaling by collection ratio")
+        "allTargets" -> tr("تحقيق كل الأهداف: +${Format.integer(rules.allTargetsBonusPct)}% من عمولة البنود", "All targets met: +${Format.integer(rules.allTargetsBonusPct)}% of the line commission")
+        "slowDeduction" -> tr("الراكد أقل من ${Format.integer(rules.slowMinPct)}% من هدفه: خصم ${Format.integer(rules.slowDeductionPct)}%", "Slow-moving under ${Format.integer(rules.slowMinPct)}% of target: −${Format.integer(rules.slowDeductionPct)}%")
+        "cash" -> tr("المبيعات المسددة ≥ ${Format.integer(rules.cashSharePct)}% من المبيعات", "Paid invoice sales ≥ ${Format.integer(rules.cashSharePct)}% of sales")
+        "collection" -> tr("التحصيلات أكثر من ${Format.integer(rules.collectionPct)}% من المبيعات", "Collections above ${Format.integer(rules.collectionPct)}% of sales")
+        "salesLadder" -> tr("حافز المبيعات الشهرية", "Monthly sales bonus")
+        "collectionShare" -> tr("تعديل العمولة حسب نسبة التحصيل", "Commission adjusted by collections")
         else -> item.key
     }
 
     val statusText = when {
-        item.met && !item.applies && !replaced -> tr("تحقق، لكنه لا يُصرف في النظام الحالي", "Met, but not paid under current system")
-        item.key == "salesLadder" -> {
-            if (item.met) tr("مستحق عند مبيعات ${Format.compactCurrency(item.current, isAr)}", "Earned at sales ${Format.compactCurrency(item.current, isAr)}")
-            else if (item.threshold != null) tr("الحافز التالي عند ${Format.compactCurrency(item.threshold, isAr)}", "Next bonus at ${Format.compactCurrency(item.threshold, isAr)}")
-            else tr("لم يتحقق بعد", "Not met yet")
+        item.met && !item.applies && !replaced -> tr("تحقق، لكنه لا يُصرف في النظام الحالي", "Met, but not paid under the current system")
+        item.key == "salesLadder" -> when {
+            item.met -> tr("مستحق عند مبيعات ${Format.compactCurrency(item.current, isAr)}", "Earned at ${Format.compactCurrency(item.current, isAr)} of sales")
+            item.threshold != null -> tr("الحافز التالي عند ${Format.compactCurrency(item.threshold, isAr)}", "Next bonus at ${Format.compactCurrency(item.threshold, isAr)}")
+            else -> tr("لم يتحقق بعد", "Not reached yet")
         }
         item.current == null -> tr("لا توجد بيانات بعد", "No data yet")
-        else -> tr(
-            "الآن ${Format.percent(item.current)} · المطلوب ${Format.percent(item.threshold)}",
-            "Now ${Format.percent(item.current)} · Required ${Format.percent(item.threshold)}"
-        )
+        else -> tr("الآن ${Format.percent(item.current)} · المطلوب ${Format.percent(item.threshold)}", "Now ${Format.percent(item.current)} · needs ${Format.percent(item.threshold)}")
     }
 
     val gateText = item.gate?.let { g ->
-        if (g.met) {
-            tr("تحقيق الهدف ${Format.percent(g.achievement)} · المطلوب ${Format.percent(g.required)} ✓", "Target achievement ${Format.percent(g.achievement)} · Required ${Format.percent(g.required)} ✓")
+        val base = if (g.met) {
+            tr("تحقيق الهدف ${Format.percent(g.achievement)} · المطلوب ${Format.percent(g.required)} ✓", "Target achievement ${Format.percent(g.achievement)} · needs ${Format.percent(g.required)} ✓")
         } else {
-            tr("يحتاج أيضًا ${Format.percent(g.required)} من الهدف · الآن ${Format.percent(g.achievement)}", "Also needs ${Format.percent(g.required)} target achievement · Now ${Format.percent(g.achievement)}")
+            tr("يحتاج أيضًا ${Format.percent(g.required)} من الهدف · الآن ${Format.percent(g.achievement)}", "Also needs ${Format.percent(g.required)} of target · now ${Format.percent(g.achievement)}")
         }
+        if (g.preset) base else "$base ${tr("(لا يوجد حد أدنى محفوظ لهذا الشهر ← 100%)", "(no minimum saved for this month → 100%)")}"
     }
 
     Row(
@@ -2126,22 +2200,18 @@ private fun StatementAdjustmentItem(
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         Icon(
-            imageVector = if (earned) {
-                if (item.amount < 0) Icons.Outlined.RemoveCircleOutline else Icons.Outlined.CheckCircle
-            } else Icons.Outlined.RadioButtonUnchecked,
+            imageVector = icon,
             contentDescription = null,
-            tint = if (earned) {
-                if (item.amount < 0) c.destructive else c.success
-            } else c.mutedForeground,
+            tint = iconTint,
             modifier = Modifier
                 .padding(top = 2.dp)
                 .size(16.dp)
         )
-        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = label,
-                fontSize = 13.sp,
-                fontWeight = if (earned) FontWeight.SemiBold else FontWeight.Normal,
+                fontSize = 13.5.sp,
+                fontWeight = if (earned) FontWeight.Medium else FontWeight.Normal,
                 color = if (earned) c.foreground else c.mutedForeground
             )
             Text(
@@ -2153,19 +2223,19 @@ private fun StatementAdjustmentItem(
                 Text(
                     text = gateText,
                     fontSize = 11.sp,
-                    color = if (item.gate.met) c.mutedForeground else c.warning
+                    color = if (item.gate?.met == true) c.mutedForeground else c.warning
                 )
             }
         }
         LtrText(
-            text = if (earned) {
-                (if (item.amount > 0) "+" else "") + Format.number(item.amount)
-            } else "—",
+            text = if (earned) "${if (item.amount > 0) "+" else ""}${Format.number(item.amount)}" else "—",
             fontSize = 13.5.sp,
-            fontWeight = FontWeight.Bold,
-            color = if (earned) {
-                if (item.amount < 0) c.destructive else c.success
-            } else c.mutedForeground
+            fontWeight = FontWeight.SemiBold,
+            color = when {
+                !earned -> c.mutedForeground
+                item.amount < 0 -> c.destructive
+                else -> c.success
+            }
         )
     }
 }
