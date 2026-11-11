@@ -1,0 +1,362 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		574C2AD85D4BCAD5284A8BCA /* NSCommissionsApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E9352A462A22E46683A2035 /* NSCommissionsApp.swift */; };
+		4F984B852809E81190A44BCC /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0DFF00D06AAE7513662C7949 /* Theme.swift */; };
+		3A5E73E82B03EDB27CC6422F /* ApiClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 92A51E96750AC8C93B336DD4 /* ApiClient.swift */; };
+		DDDC8E62643750E4A965293D /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 806F52EDEE41A6EBBFABD0C2 /* Models.swift */; };
+		B0DBDB438FCD27687E7CC91B /* SessionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30112BCB14FA66C7D066832C /* SessionStore.swift */; };
+		D0446AA9C677839D6FFC33AD /* AccountView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE9C6A32E0F323E8E03E1229 /* AccountView.swift */; };
+		C9A572B9CC57EEC42D575947 /* AppViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E119B5ED209217962A4BC26 /* AppViewModel.swift */; };
+		C3378671A05ECAEE8E705C90 /* BottomNavBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = D53998235A3E2E9376D2AFC9 /* BottomNavBar.swift */; };
+		0786D69907BACAF8A07F21FC /* CommissionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E978847DCC9DD3BD485D1268 /* CommissionsView.swift */; };
+		921090CC11D89C6D37C7E27E /* Components.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9720325EDE479DE9632F4A7 /* Components.swift */; };
+		5D7E9778512653D1AC7E05DE /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 832592CFA8103B201E1FE3AF /* LoginView.swift */; };
+		3ECEC790C13A9214D46B079B /* MainShellView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A8C3F09916A4176321A89CB /* MainShellView.swift */; };
+		C0B1C926D017FE6CBE1B1463 /* MandatoryUpdateDialog.swift in Sources */ = {isa = PBXBuildFile; fileRef = A86B316090605F589B2A6030 /* MandatoryUpdateDialog.swift */; };
+		D940AEED503B29ED2D6D2C4C /* RepDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A021E16C6C1AD392962C9D46 /* RepDetailView.swift */; };
+		E4C24E73AC7F2B35299CBC7A /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 76F6F822E29583419EB50DAB /* Assets.xcassets */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		0751AD84EE1CDBBD635F45BE /* NSCommissions.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = NSCommissions.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		4E9352A462A22E46683A2035 /* NSCommissionsApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NSCommissionsApp.swift; sourceTree = "<group>"; };
+		0DFF00D06AAE7513662C7949 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
+		92A51E96750AC8C93B336DD4 /* ApiClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApiClient.swift; sourceTree = "<group>"; };
+		806F52EDEE41A6EBBFABD0C2 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
+		30112BCB14FA66C7D066832C /* SessionStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionStore.swift; sourceTree = "<group>"; };
+		EE9C6A32E0F323E8E03E1229 /* AccountView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountView.swift; sourceTree = "<group>"; };
+		1E119B5ED209217962A4BC26 /* AppViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppViewModel.swift; sourceTree = "<group>"; };
+		D53998235A3E2E9376D2AFC9 /* BottomNavBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BottomNavBar.swift; sourceTree = "<group>"; };
+		E978847DCC9DD3BD485D1268 /* CommissionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommissionsView.swift; sourceTree = "<group>"; };
+		E9720325EDE479DE9632F4A7 /* Components.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Components.swift; sourceTree = "<group>"; };
+		832592CFA8103B201E1FE3AF /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
+		8A8C3F09916A4176321A89CB /* MainShellView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainShellView.swift; sourceTree = "<group>"; };
+		A86B316090605F589B2A6030 /* MandatoryUpdateDialog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MandatoryUpdateDialog.swift; sourceTree = "<group>"; };
+		A021E16C6C1AD392962C9D46 /* RepDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RepDetailView.swift; sourceTree = "<group>"; };
+		76F6F822E29583419EB50DAB /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		39DB8B782D6C126C6F2E6E84 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		EC981767C62EA833B107403F /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		435D31D62693E3DA9EC6FC70 /* Theme */ = {
+			isa = PBXGroup;
+			children = (
+				0DFF00D06AAE7513662C7949 /* Theme.swift */,
+			);
+			path = Theme;
+			sourceTree = "<group>";
+		};
+		9DC625359DE95E8EEEC24AA4 /* Data */ = {
+			isa = PBXGroup;
+			children = (
+				92A51E96750AC8C93B336DD4 /* ApiClient.swift */,
+				806F52EDEE41A6EBBFABD0C2 /* Models.swift */,
+				30112BCB14FA66C7D066832C /* SessionStore.swift */,
+			);
+			path = Data;
+			sourceTree = "<group>";
+		};
+		C8E9BA487CA0C6752C1C48FB /* UI */ = {
+			isa = PBXGroup;
+			children = (
+				EE9C6A32E0F323E8E03E1229 /* AccountView.swift */,
+				1E119B5ED209217962A4BC26 /* AppViewModel.swift */,
+				D53998235A3E2E9376D2AFC9 /* BottomNavBar.swift */,
+				E978847DCC9DD3BD485D1268 /* CommissionsView.swift */,
+				E9720325EDE479DE9632F4A7 /* Components.swift */,
+				832592CFA8103B201E1FE3AF /* LoginView.swift */,
+				8A8C3F09916A4176321A89CB /* MainShellView.swift */,
+				A86B316090605F589B2A6030 /* MandatoryUpdateDialog.swift */,
+				A021E16C6C1AD392962C9D46 /* RepDetailView.swift */,
+			);
+			path = UI;
+			sourceTree = "<group>";
+		};
+		25C8087F995E96C42C21107B /* NSCommissions */ = {
+			isa = PBXGroup;
+			children = (
+				4E9352A462A22E46683A2035 /* NSCommissionsApp.swift */,
+				435D31D62693E3DA9EC6FC70 /* Theme */,
+				9DC625359DE95E8EEEC24AA4 /* Data */,
+				C8E9BA487CA0C6752C1C48FB /* UI */,
+				76F6F822E29583419EB50DAB /* Assets.xcassets */,
+				39DB8B782D6C126C6F2E6E84 /* Info.plist */,
+			);
+			path = NSCommissions;
+			sourceTree = "<group>";
+		};
+		5ADE8A4128725EB9150C196B /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				0751AD84EE1CDBBD635F45BE /* NSCommissions.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		3C9D7F1ECE6B1C2C05B9A223 = {
+			isa = PBXGroup;
+			children = (
+				25C8087F995E96C42C21107B /* NSCommissions */,
+				5ADE8A4128725EB9150C196B /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		354C2E8F69C8D86B5FB51F47 /* NSCommissions */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = FA3E3883E4B4A66E86595080 /* Build configuration list for PBXNativeTarget "NSCommissions" */;
+			buildPhases = (
+				CD691BBBE993DA89463DFB43 /* Sources */,
+				EC981767C62EA833B107403F /* Frameworks */,
+				984AA73C6A3518E356174B49 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = NSCommissions;
+			productName = NSCommissions;
+			productReference = 0751AD84EE1CDBBD635F45BE /* NSCommissions.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		5C4C1B9898489F9290B79213 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1500;
+				LastUpgradeCheck = 1500;
+				TargetAttributes = {
+					354C2E8F69C8D86B5FB51F47 = {
+						CreatedOnToolsVersion = 15.0;
+					};
+				};
+			};
+			buildConfigurationList = 4B2380CA9135CE36448D46F6 /* Build configuration list for PBXProject "NSCommissions" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = ar;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				ar,
+				en,
+				Base,
+			);
+			mainGroup = 3C9D7F1ECE6B1C2C05B9A223;
+			productRefGroup = 5ADE8A4128725EB9150C196B /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				354C2E8F69C8D86B5FB51F47 /* NSCommissions */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		984AA73C6A3518E356174B49 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E4C24E73AC7F2B35299CBC7A /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		CD691BBBE993DA89463DFB43 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				574C2AD85D4BCAD5284A8BCA /* NSCommissionsApp.swift in Sources */,
+				4F984B852809E81190A44BCC /* Theme.swift in Sources */,
+				3A5E73E82B03EDB27CC6422F /* ApiClient.swift in Sources */,
+				DDDC8E62643750E4A965293D /* Models.swift in Sources */,
+				B0DBDB438FCD27687E7CC91B /* SessionStore.swift in Sources */,
+				D0446AA9C677839D6FFC33AD /* AccountView.swift in Sources */,
+				C9A572B9CC57EEC42D575947 /* AppViewModel.swift in Sources */,
+				C3378671A05ECAEE8E705C90 /* BottomNavBar.swift in Sources */,
+				0786D69907BACAF8A07F21FC /* CommissionsView.swift in Sources */,
+				921090CC11D89C6D37C7E27E /* Components.swift in Sources */,
+				5D7E9778512653D1AC7E05DE /* LoginView.swift in Sources */,
+				3ECEC790C13A9214D46B079B /* MainShellView.swift in Sources */,
+				C0B1C926D017FE6CBE1B1463 /* MandatoryUpdateDialog.swift in Sources */,
+				D940AEED503B29ED2D6D2C4C /* RepDetailView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		AB39960930DCCEAD292C2CAC /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDEFINED_VARIABLES = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		CF6DE4C0E8398C66C3AA321E /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDEFINED_VARIABLES = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = "wholemodule";
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		FF41CAA2D9CB9B3F85559F12 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 27;
+				DEVELOPMENT_ASSET_PATHS = "";
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = NSCommissions/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "عمولات نجيب سليم";
+				INFOPLIST_KEY_LSApplicationQueriesSchemes = whatsapp;
+				INFOPLIST_KEY_NSFaceIDUsageDescription = "تسجيل الدخول السريع باستخدام البصمة أو التعرف على الوجه";
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 2.0.27;
+				PRODUCT_BUNDLE_IDENTIFIER = com.naguibselim.commissionsapp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		6FA176821E0534FB83AD0B62 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 27;
+				DEVELOPMENT_ASSET_PATHS = "";
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = NSCommissions/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "عمولات نجيب سليم";
+				INFOPLIST_KEY_LSApplicationQueriesSchemes = whatsapp;
+				INFOPLIST_KEY_NSFaceIDUsageDescription = "تسجيل الدخول السريع باستخدام البصمة أو التعرف على الوجه";
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 2.0.27;
+				PRODUCT_BUNDLE_IDENTIFIER = com.naguibselim.commissionsapp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		4B2380CA9135CE36448D46F6 /* Build configuration list for PBXProject "NSCommissions" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AB39960930DCCEAD292C2CAC /* Debug */,
+				CF6DE4C0E8398C66C3AA321E /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		FA3E3883E4B4A66E86595080 /* Build configuration list for PBXNativeTarget "NSCommissions" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				FF41CAA2D9CB9B3F85559F12 /* Debug */,
+				6FA176821E0534FB83AD0B62 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+	};
+	rootObject = 5C4C1B9898489F9290B79213 /* Project object */;
+}

@@ -78,3 +78,9 @@ written) and "Notify" is set to all sellers or chosen accounts, a notification i
 `ns-sales-rep-commissions/notifications.json` and an empty ping is broadcast on the Supabase Realtime channel
 `ns-commissions-notify`. Every open page listening on it fetches its own notifications at once (the bell in the header,
 plus a toast); pages also re-check every 30 seconds. Read markers are in `notifications-read.json`.
+
+## Mobile Applications
+
+- **Android Native** (`android-native/`): Native Android Kotlin / Jetpack Compose application.
+- **iOS Native** (`ios-native/`): 1:1 Native iOS Swift / SwiftUI application supporting iOS 16+, Face ID / Touch ID, RTL Arabic & LTR English, modern theme switcher, 4 commissions tabs, expandable search, and mandatory updates. Open `ios-native/NSCommissions.xcodeproj` in Xcode 15+.
+
