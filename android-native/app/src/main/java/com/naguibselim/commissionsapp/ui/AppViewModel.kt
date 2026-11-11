@@ -110,6 +110,10 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    fun dismissUpdateDialog() {
+        _state.update { it.copy(mandatoryUpdate = null) }
+    }
+
     fun setLanguage(lang: String) {
         val next = if (lang == "en") "en" else "ar"
         store.setLanguage(next)

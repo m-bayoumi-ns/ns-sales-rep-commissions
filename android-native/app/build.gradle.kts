@@ -4,7 +4,27 @@ plugins {
     id("org.jetbrains.kotlin.plugin.compose")
 }
 
-val ciBuild = (System.getenv("GITHUB_RUN_NUMBER") ?: "21").toIntOrNull() ?: 21
+fun resolveReleaseVersion(): Pair<Int, String> {
+    val envRunNumber = System.getenv("GITHUB_RUN_NUMBER")?.trim()?.toIntOrNull()
+    if (envRunNumber != null && envRunNumber > 0) {
+        return envRunNumber to "2.0.$envRunNumber"
+    }
+    val releaseJson = rootProject.file("../lib/android-release.json")
+    if (releaseJson.exists()) {
+        try {
+            val text = releaseJson.readText()
+            val match = Regex(""""version"\s*:\s*"([^"]+)"""").find(text)
+            if (match != null) {
+                val verName = match.groupValues[1].trim()
+                val buildNum = verName.split(".").lastOrNull()?.toIntOrNull() ?: 22
+                return buildNum to verName
+            }
+        } catch (_: Exception) {}
+    }
+    return 22 to "2.0.22"
+}
+
+val (appVersionCode, appVersionName) = resolveReleaseVersion()
 val apiBaseUrl = (System.getenv("API_BASE_URL")?.trim()?.removeSuffix("/"))
     ?.takeIf { it.isNotEmpty() }
     ?: "https://ns-sales-rep-commissions.vercel.app"
@@ -25,8 +45,8 @@ android {
         applicationId = "com.naguibselim.commissionsapp"
         minSdk = 24
         targetSdk = 35
-        versionCode = ciBuild
-        versionName = "2.0.$ciBuild"
+        versionCode = appVersionCode
+        versionName = appVersionName
 
         buildConfigField("String", "API_BASE_URL", "\"$apiBaseUrl\"")
         resourceConfigurations += listOf("en", "ar")

@@ -405,7 +405,7 @@ class ApiClient(private val store: SessionStore) {
             if (status !in 200..299) return@withContext null
             val json = JSONObject(raw)
             val remoteVersion = json.optString("version", "").trim()
-            val currentVersion = BuildConfig.VERSION_NAME.trim()
+            val currentVersion = store.appVersionName().trim()
             if (remoteVersion.isNotEmpty() && isNewerVersion(remoteVersion, currentVersion)) {
                 AppUpdateInfo(
                     version = remoteVersion,
@@ -421,14 +421,23 @@ class ApiClient(private val store: SessionStore) {
     }
 
     private fun isNewerVersion(remote: String, current: String): Boolean {
-        if (remote == current) return false
-        val rParts = remote.removePrefix("v").split(".", "-").map { it.toIntOrNull() ?: 0 }
-        val cParts = current.removePrefix("v").split(".", "-").map { it.toIntOrNull() ?: 0 }
+        if (remote.isBlank() || current.isBlank()) return false
+        val cleanRemote = remote.trim().removePrefix("v").removePrefix("V").trim()
+        val cleanCurrent = current.trim().removePrefix("v").removePrefix("V").trim()
+        if (cleanRemote.equals(cleanCurrent, ignoreCase = true)) return false
+
+        val rParts = cleanRemote.split(".", "-", "_").mapNotNull { it.toIntOrNull() }
+        val cParts = cleanCurrent.split(".", "-", "_").mapNotNull { it.toIntOrNull() }
+
+        if (rParts.isEmpty() || cParts.isEmpty()) return false
+
         val maxLen = maxOf(rParts.size, cParts.size)
         for (i in 0 until maxLen) {
             val rv = rParts.getOrElse(i) { 0 }
             val cv = cParts.getOrElse(i) { 0 }
-            if (rv != cv) return rv > cv
+            if (rv != cv) {
+                return rv > cv
+            }
         }
         return false
     }

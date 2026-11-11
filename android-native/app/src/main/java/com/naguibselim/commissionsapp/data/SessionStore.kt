@@ -114,4 +114,13 @@ class SessionStore(context: Context) {
     fun markBatteryPromptShown() {
         appPrefs.edit().putBoolean("battery_prompt_shown", true).apply()
     }
+
+    fun appVersionName(): String {
+        return try {
+            val pInfo = appContext.packageManager.getPackageInfo(appContext.packageName, 0)
+            pInfo.versionName?.takeIf { it.isNotBlank() } ?: com.naguibselim.commissionsapp.BuildConfig.VERSION_NAME
+        } catch (_: Throwable) {
+            com.naguibselim.commissionsapp.BuildConfig.VERSION_NAME
+        }
+    }
 }

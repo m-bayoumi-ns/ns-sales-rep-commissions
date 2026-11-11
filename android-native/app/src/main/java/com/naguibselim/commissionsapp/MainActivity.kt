@@ -52,6 +52,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -155,7 +156,7 @@ class MainActivity : ComponentActivity() {
                     )
                 }
 
-                // Mandatory Update Pop-up Box (Non-dismissible)
+                // Mandatory Update Pop-up Box
                 state.mandatoryUpdate?.let { updateInfo ->
                     MandatoryUpdateDialog(
                         update = updateInfo,
@@ -166,7 +167,9 @@ class MainActivity : ComponentActivity() {
                                 }
                                 context.startActivity(dlIntent)
                             }
-                        }
+                        },
+                        onDismiss = { viewModel.dismissUpdateDialog() },
+                        onRecheck = { viewModel.checkAppUpdate() }
                     )
                 }
             }
@@ -538,7 +541,9 @@ private fun BottomNavSideItem(
 @Composable
 private fun MandatoryUpdateDialog(
     update: AppUpdateInfo,
-    onDownload: () -> Unit
+    onDownload: () -> Unit,
+    onDismiss: () -> Unit,
+    onRecheck: () -> Unit
 ) {
     val c = LocalNsColors.current
     val sizeMbStr = if (update.bytes > 0) {
@@ -546,9 +551,9 @@ private fun MandatoryUpdateDialog(
     } else null
 
     Dialog(
-        onDismissRequest = { /* Mandatory update — cannot be dismissed */ },
+        onDismissRequest = onDismiss,
         properties = DialogProperties(
-            dismissOnBackPress = false,
+            dismissOnBackPress = true,
             dismissOnClickOutside = false,
             usePlatformDefaultWidth = false
         )
@@ -591,7 +596,7 @@ private fun MandatoryUpdateDialog(
                 }
 
                 Text(
-                    text = tr("تحديث إجباري جديد متاح", "Mandatory Update Available"),
+                    text = tr("تحديث جديد متاح للتطبيق", "App Update Available"),
                     fontSize = 20.sp,
                     fontWeight = FontWeight.ExtraBold,
                     color = c.foreground,
@@ -600,8 +605,8 @@ private fun MandatoryUpdateDialog(
 
                 Text(
                     text = tr(
-                        "يتوفر إصدار جديد من تطبيق عمولات المندوبين. يرجى تحميل وتثبيت التحديث الجديد للمتابعة.",
-                        "A new version of the Sales Rep Commissions app is available. Please download and install the new version to continue."
+                        "يتوفر إصدار جديد من تطبيق عمولات المندوبين. يرجى تحميل وتثبيت التحديث الجديد للاستفادة من أحدث الميزات والإصلاحات.",
+                        "A new version of the Sales Rep Commissions app is available. Please download and install the new version to get the latest features and fixes."
                     ),
                     fontSize = 13.5.sp,
                     color = c.mutedForeground,
@@ -659,6 +664,30 @@ private fun MandatoryUpdateDialog(
                         fontSize = 15.sp,
                         fontWeight = FontWeight.Bold
                     )
+                }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    TextButton(onClick = onRecheck) {
+                        Text(
+                            text = tr("إعادة الفحص", "Check Again"),
+                            fontSize = 13.sp,
+                            color = c.primary,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+
+                    TextButton(onClick = onDismiss) {
+                        Text(
+                            text = tr("المتابعة للتطبيق", "Continue to App"),
+                            fontSize = 13.sp,
+                            color = c.mutedForeground,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
                 }
             }
         }
