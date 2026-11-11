@@ -6,8 +6,9 @@ struct AccountView: View {
     @Environment(\.isArabic) private var isAr
 
     @State private var passwordExpanded: Bool = false
-    @State private var appearanceExpanded: Bool = true
+    @State private var appearanceExpanded: Bool = false
     @State private var languageExpanded: Bool = false
+    @State private var notificationsExpanded: Bool = false
 
     @State private var currentPass: String = ""
     @State private var nextPass: String = ""
@@ -25,7 +26,7 @@ struct AccountView: View {
                     .foregroundColor(c.foreground)
                     .padding(.horizontal, 4)
 
-                // 1. User Identity & Password Card
+                // 1. User Identity Profile Card
                 VStack(spacing: 0) {
                     HStack(spacing: 14) {
                         ZStack {
@@ -34,7 +35,7 @@ struct AccountView: View {
                                 .frame(width: 48, height: 48)
 
                             Image(systemName: "person.fill")
-                                .font(.system(size: 20))
+                                .font(.system(size: 22))
                                 .foregroundColor(c.primary)
                         }
 
@@ -73,253 +74,322 @@ struct AccountView: View {
                         Spacer()
                     }
                     .padding(18)
+                }
+                .background(RoundedRectangle(cornerRadius: 24).fill(c.card))
+                .overlay(RoundedRectangle(cornerRadius: 24).stroke(c.border, lineWidth: 1))
 
-                    Divider()
-                        .background(c.border)
+                // 2. Settings Card with the 4 uniform expandable sections in the requested order:
+                // 1. تغيير كلمة المرور
+                // 2. تغيير الوضع / المظهر
+                // 3. تغيير اللغة
+                // 4. إشعارات الهاتف
+                VStack(alignment: .leading, spacing: 14) {
+                    Text(tr("الإعدادات", "Settings", isAr: isAr))
+                        .font(.system(size: 15.5, weight: .semibold))
+                        .foregroundColor(c.foreground)
 
-                    // Change Password Disclosure Button
-                    Button(action: {
-                        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-                            passwordExpanded.toggle()
+                    // 1. تغيير كلمة المرور
+                    VStack(spacing: 0) {
+                        Button(action: {
+                            withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                                passwordExpanded.toggle()
+                            }
+                        }) {
+                            HStack(spacing: 8) {
+                                Image(systemName: "key")
+                                    .font(.system(size: 15, weight: .semibold))
+                                    .foregroundColor(c.primary)
+
+                                Text(tr("تغيير كلمة المرور", "Change password", isAr: isAr))
+                                    .font(.system(size: 14, weight: .medium))
+                                    .foregroundColor(c.foreground)
+
+                                Spacer()
+
+                                Image(systemName: passwordExpanded ? "chevron.up" : "chevron.down")
+                                    .font(.system(size: 12, weight: .bold))
+                                    .foregroundColor(c.mutedForeground)
+                            }
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 12)
                         }
-                    }) {
-                        HStack {
-                            Image(systemName: "key")
-                                .font(.system(size: 16, weight: .semibold))
-                                .foregroundColor(c.primary)
+                        .buttonStyle(.plain)
 
-                            Text(tr("تغيير كلمة المرور", "Change password", isAr: isAr))
-                                .font(.system(size: 14.5, weight: .semibold))
-                                .foregroundColor(c.foreground)
-
-                            Spacer()
-
-                            Image(systemName: passwordExpanded ? "chevron.up" : "chevron.down")
-                                .font(.system(size: 13, weight: .bold))
-                                .foregroundColor(c.mutedForeground)
-                        }
-                        .padding(18)
-                    }
-                    .buttonStyle(.plain)
-
-                    // Change Password Form
-                    if passwordExpanded {
-                        VStack(spacing: 12) {
-                            if let code = viewModel.passwordStatus {
-                                let (tone, msg): (String, String) = {
-                                    switch code {
-                                    case "saved":
-                                        return ("success", tr("تم تغيير كلمة المرور.", "Password changed.", isAr: isAr))
-                                    case "invalid":
-                                        return ("error", tr("أدخل كلمة المرور الحالية وكلمة جديدة من 8 أحرف على الأقل.", "Enter your current password and a new one of at least 8 characters.", isAr: isAr))
-                                    case "mismatch":
-                                        return ("error", tr("كلمتا المرور الجديدتان غير متطابقتين.", "The new passwords do not match.", isAr: isAr))
-                                    case "same":
-                                        return ("error", tr("اختر كلمة مرور مختلفة عن الحالية.", "Choose a password different from the current one.", isAr: isAr))
-                                    case "wrongCurrent":
-                                        return ("error", tr("كلمة المرور الحالية غير صحيحة.", "The current password is not correct.", isAr: isAr))
-                                    default:
-                                        return ("error", tr("تعذر تغيير كلمة المرور. حاول مرة أخرى.", "The password could not be changed. Try again.", isAr: isAr))
-                                    }
-                                }()
-                                StatusBanner(text = msg, tone = tone)
-                            }
-
-                            // Current Pass
-                            HStack {
-                                if showPass {
-                                    TextField(tr("كلمة المرور الحالية", "Current password", isAr: isAr), text: $currentPass)
-                                } else {
-                                    SecureField(tr("كلمة المرور الحالية", "Current password", isAr: isAr), text: $currentPass)
+                        if passwordExpanded {
+                            VStack(spacing: 12) {
+                                if let code = viewModel.passwordStatus {
+                                    let (tone, msg): (String, String) = {
+                                        switch code {
+                                        case "saved":
+                                            return ("success", tr("تم تغيير كلمة المرور.", "Password changed.", isAr: isAr))
+                                        case "invalid":
+                                            return ("error", tr("أدخل كلمة المرور الحالية وكلمة جديدة من 8 أحرف على الأقل.", "Enter your current password and a new one of at least 8 characters.", isAr: isAr))
+                                        case "mismatch":
+                                            return ("error", tr("كلمتا المرور الجديدتان غير متطابقتين.", "The new passwords do not match.", isAr: isAr))
+                                        case "same":
+                                            return ("error", tr("اختر كلمة مرور مختلفة عن الحالية.", "Choose a password different from the current one.", isAr: isAr))
+                                        case "wrongCurrent":
+                                            return ("error", tr("كلمة المرور الحالية غير صحيحة.", "The current password is not correct.", isAr: isAr))
+                                        default:
+                                            return ("error", tr("تعذر تغيير كلمة المرور. حاول مرة أخرى.", "The password could not be changed. Try again.", isAr: isAr))
+                                        }
+                                    }()
+                                    StatusBanner(text: msg, tone: tone)
                                 }
-                                Button(action: { showPass.toggle() }) {
-                                    Image(systemName: showPass ? "eye.slash" : "eye")
-                                        .foregroundColor(c.mutedForeground)
-                                }
-                            }
-                            .padding(.horizontal, 14)
-                            .frame(height: 46)
-                            .background(RoundedRectangle(cornerRadius: 12).fill(c.muted.opacity(0.55)))
-                            .overlay(RoundedRectangle(cornerRadius: 12).stroke(c.border, lineWidth: 1))
 
-                            // Next Pass
-                            HStack {
-                                if showPass {
-                                    TextField(tr("كلمة المرور الجديدة (8 أحرف على الأقل)", "New password (at least 8 chars)", isAr: isAr), text: $nextPass)
-                                } else {
-                                    SecureField(tr("كلمة المرور الجديدة (8 أحرف على الأقل)", "New password (at least 8 chars)", isAr: isAr), text: $nextPass)
-                                }
-                            }
-                            .padding(.horizontal, 14)
-                            .frame(height: 46)
-                            .background(RoundedRectangle(cornerRadius: 12).fill(c.muted.opacity(0.55)))
-                            .overlay(RoundedRectangle(cornerRadius: 12).stroke(c.border, lineWidth: 1))
-
-                            // Confirm Pass
-                            HStack {
-                                if showPass {
-                                    TextField(tr("تأكيد كلمة المرور الجديدة", "Confirm new password", isAr: isAr), text: $confirmPass)
-                                } else {
-                                    SecureField(tr("تأكيد كلمة المرور الجديدة", "Confirm new password", isAr: isAr), text: $confirmPass)
-                                }
-                            }
-                            .padding(.horizontal, 14)
-                            .frame(height: 46)
-                            .background(RoundedRectangle(cornerRadius: 12).fill(c.muted.opacity(0.55)))
-                            .overlay(RoundedRectangle(cornerRadius: 12).stroke(c.border, lineWidth: 1))
-
-                            Button(action: {
-                                Task {
-                                    await viewModel.changePassword(current: currentPass, next: nextPass, confirm: confirmPass)
-                                }
-                            }) {
                                 HStack {
-                                    if viewModel.passwordSaving {
-                                        ProgressView().scaleEffect(0.9)
+                                    if showPass {
+                                        TextField(tr("كلمة المرور الحالية", "Current password", isAr: isAr), text: $currentPass)
+                                    } else {
+                                        SecureField(tr("كلمة المرور الحالية", "Current password", isAr: isAr), text: $currentPass)
                                     }
-                                    Text(tr("حفظ كلمة المرور", "Save Password", isAr: isAr))
-                                        .font(.system(size: 14, weight: .bold))
+                                    Button(action: { showPass.toggle() }) {
+                                        Image(systemName: showPass ? "eye.slash" : "eye")
+                                            .foregroundColor(c.mutedForeground)
+                                    }
                                 }
-                                .foregroundColor(c.primaryForeground)
-                                .frame(maxWidth: .infinity)
-                                .frame(height: 46)
-                                .background(RoundedRectangle(cornerRadius: 12).fill(c.primary))
+                                .padding(.horizontal, 12)
+                                .frame(height: 44)
+                                .background(RoundedRectangle(cornerRadius: 12).fill(c.muted.opacity(0.45)))
+                                .overlay(RoundedRectangle(cornerRadius: 12).stroke(c.border, lineWidth: 1))
+
+                                HStack {
+                                    if showPass {
+                                        TextField(tr("كلمة المرور الجديدة (8 أحرف على الأقل)", "New password (at least 8 chars)", isAr: isAr), text: $nextPass)
+                                    } else {
+                                        SecureField(tr("كلمة المرور الجديدة (8 أحرف على الأقل)", "New password (at least 8 chars)", isAr: isAr), text: $nextPass)
+                                    }
+                                }
+                                .padding(.horizontal, 12)
+                                .frame(height: 44)
+                                .background(RoundedRectangle(cornerRadius: 12).fill(c.muted.opacity(0.45)))
+                                .overlay(RoundedRectangle(cornerRadius: 12).stroke(c.border, lineWidth: 1))
+
+                                HStack {
+                                    if showPass {
+                                        TextField(tr("تأكيد كلمة المرور الجديدة", "Confirm new password", isAr: isAr), text: $confirmPass)
+                                    } else {
+                                        SecureField(tr("تأكيد كلمة المرور الجديدة", "Confirm new password", isAr: isAr), text: $confirmPass)
+                                    }
+                                }
+                                .padding(.horizontal, 12)
+                                .frame(height: 44)
+                                .background(RoundedRectangle(cornerRadius: 12).fill(c.muted.opacity(0.45)))
+                                .overlay(RoundedRectangle(cornerRadius: 12).stroke(c.border, lineWidth: 1))
+
+                                Button(action: {
+                                    Task {
+                                        await viewModel.changePassword(current: currentPass, next: nextPass, confirm: confirmPass)
+                                    }
+                                }) {
+                                    HStack {
+                                        if viewModel.passwordSaving {
+                                            ProgressView().scaleEffect(0.9)
+                                        }
+                                        Text(tr("حفظ كلمة المرور", "Save Password", isAr: isAr))
+                                            .font(.system(size: 14, weight: .bold))
+                                    }
+                                    .foregroundColor(c.primaryForeground)
+                                    .frame(maxWidth: .infinity)
+                                    .frame(height: 44)
+                                    .background(RoundedRectangle(cornerRadius: 12).fill(c.primary))
+                                }
+                                .buttonStyle(.plain)
+                                .disabled(viewModel.passwordSaving)
                             }
-                            .buttonStyle(.plain)
-                            .disabled(viewModel.passwordSaving)
-                        }
-                        .padding(.horizontal, 18)
-                        .padding(.bottom, 18)
-                    }
-                }
-                .background(RoundedRectangle(cornerRadius: 24).fill(c.card))
-                .overlay(RoundedRectangle(cornerRadius: 24).stroke(c.border, lineWidth: 1))
-
-                // 2. Notifications Card
-                VStack(alignment: .leading, spacing: 14) {
-                    Text(tr("إشعارات الهاتف", "Phone notifications", isAr: isAr))
-                        .font(.system(size: 15.5, weight: .semibold))
-                        .foregroundColor(c.foreground)
-
-                    HStack(spacing: 8) {
-                        Image(systemName: "bell.badge.fill")
-                            .foregroundColor(c.success)
-                        Text(tr("إشعارات التطبيق مفعلة وجاهزة للاستقبال", "Notifications active on this device", isAr: isAr))
-                            .font(.system(size: 13, weight: .semibold))
-                            .foregroundColor(c.success)
-                    }
-
-                    Button(action: {
-                        Task { await viewModel.sendTestNotification() }
-                    }) {
-                        HStack(spacing: 8) {
-                            if viewModel.testNotifStatus == "sending" {
-                                ProgressView().scaleEffect(0.8)
-                            }
-                            Text(viewModel.testNotifStatus == "sent"
-                                 ? tr("تم إرسال إشعار تجريبي ✓", "Test notification sent ✓", isAr: isAr)
-                                 : tr("إرسال إشعار تجريبي", "Send test notification", isAr: isAr))
-                                .font(.system(size: 13.5, weight: .semibold))
-                                .foregroundColor(viewModel.testNotifStatus == "sent" ? c.success : c.foreground)
-                        }
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 42)
-                        .background(RoundedRectangle(cornerRadius: 12).fill(c.muted.opacity(0.55)))
-                        .overlay(RoundedRectangle(cornerRadius: 12).stroke(c.border, lineWidth: 1))
-                    }
-                    .buttonStyle(.plain)
-                }
-                .padding(18)
-                .background(RoundedRectangle(cornerRadius: 24).fill(c.card))
-                .overlay(RoundedRectangle(cornerRadius: 24).stroke(c.border, lineWidth: 1))
-
-                // 3. App Preferences Card (Appearance & Language)
-                VStack(alignment: .leading, spacing: 14) {
-                    Text(tr("إعدادات التطبيق", "App preferences", isAr: isAr))
-                        .font(.system(size: 15.5, weight: .semibold))
-                        .foregroundColor(c.foreground)
-
-                    // Appearance 3-choice box
-                    VStack(alignment: .leading, spacing: 12) {
-                        HStack {
-                            Image(systemName: "sun.max")
-                                .foregroundColor(c.primary)
-                            Text(tr("المظهر / الوضع", "Appearance", isAr: isAr))
-                                .font(.system(size: 14, weight: .medium))
-                                .foregroundColor(c.foreground)
-                        }
-
-                        HStack(spacing: 8) {
-                            ChoiceButton(
-                                label: tr("تلقائي", "Auto", isAr: isAr),
-                                icon: "circle.lefthalf.filled",
-                                selected: viewModel.themeMode == "system"
-                            ) {
-                                viewModel.setThemeMode("system")
-                            }
-
-                            ChoiceButton(
-                                label: tr("فاتح", "Light", isAr: isAr),
-                                icon: "sun.max.fill",
-                                selected: viewModel.themeMode == "light"
-                            ) {
-                                viewModel.setThemeMode("light")
-                            }
-
-                            ChoiceButton(
-                                label: tr("داكن", "Dark", isAr: isAr),
-                                icon: "moon.fill",
-                                selected: viewModel.themeMode == "dark"
-                            ) {
-                                viewModel.setThemeMode("dark")
-                            }
+                            .padding(.horizontal, 14)
+                            .padding(.bottom, 14)
                         }
                     }
-                    .padding(14)
-                    .background(RoundedRectangle(cornerRadius: 14).fill(c.muted.opacity(0.45)))
+                    .background(RoundedRectangle(cornerRadius: 14).fill(c.muted.opacity(0.2)))
                     .overlay(RoundedRectangle(cornerRadius: 14).stroke(c.border, lineWidth: 1))
 
-                    // Language 2-choice box
-                    VStack(alignment: .leading, spacing: 12) {
-                        HStack {
-                            Image(systemName: "globe")
-                                .foregroundColor(c.primary)
-                            Text(tr("لغة التطبيق", "App language", isAr: isAr))
-                                .font(.system(size: 14, weight: .medium))
-                                .foregroundColor(c.foreground)
+                    // 2. تغيير الوضع / المظهر
+                    VStack(spacing: 0) {
+                        Button(action: {
+                            withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                                appearanceExpanded.toggle()
+                            }
+                        }) {
+                            HStack(spacing: 8) {
+                                Image(systemName: "sun.max")
+                                    .font(.system(size: 15, weight: .semibold))
+                                    .foregroundColor(c.primary)
+
+                                Text(tr("تغيير الوضع / المظهر", "Change appearance", isAr: isAr))
+                                    .font(.system(size: 14, weight: .medium))
+                                    .foregroundColor(c.foreground)
+
+                                Spacer()
+
+                                Image(systemName: appearanceExpanded ? "chevron.up" : "chevron.down")
+                                    .font(.system(size: 12, weight: .bold))
+                                    .foregroundColor(c.mutedForeground)
+                            }
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 12)
                         }
+                        .buttonStyle(.plain)
 
-                        HStack(spacing: 8) {
-                            ChoiceButton(
-                                label: "العربية",
-                                icon: nil,
-                                selected: viewModel.language == "ar"
-                            ) {
-                                viewModel.setLanguage("ar")
-                            }
+                        if appearanceExpanded {
+                            HStack(spacing: 8) {
+                                ChoiceButton(
+                                    label: tr("تلقائي", "Auto", isAr: isAr),
+                                    icon: "circle.lefthalf.filled",
+                                    selected: viewModel.themeMode == "system"
+                                ) {
+                                    viewModel.setThemeMode("system")
+                                }
 
-                            ChoiceButton(
-                                label: "English",
-                                icon: nil,
-                                selected: viewModel.language == "en"
-                            ) {
-                                viewModel.setLanguage("en")
+                                ChoiceButton(
+                                    label: tr("فاتح", "Light", isAr: isAr),
+                                    icon: "sun.max.fill",
+                                    selected: viewModel.themeMode == "light"
+                                ) {
+                                    viewModel.setThemeMode("light")
+                                }
+
+                                ChoiceButton(
+                                    label: tr("داكن", "Dark", isAr: isAr),
+                                    icon: "moon.fill",
+                                    selected: viewModel.themeMode == "dark"
+                                ) {
+                                    viewModel.setThemeMode("dark")
+                                }
                             }
+                            .padding(.horizontal, 14)
+                            .padding(.bottom, 14)
                         }
                     }
-                    .padding(14)
-                    .background(RoundedRectangle(cornerRadius: 14).fill(c.muted.opacity(0.45)))
+                    .background(RoundedRectangle(cornerRadius: 14).fill(c.muted.opacity(0.2)))
                     .overlay(RoundedRectangle(cornerRadius: 14).stroke(c.border, lineWidth: 1))
+
+                    // 3. تغيير اللغة
+                    VStack(spacing: 0) {
+                        Button(action: {
+                            withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                                languageExpanded.toggle()
+                            }
+                        }) {
+                            HStack(spacing: 8) {
+                                Image(systemName: "globe")
+                                    .font(.system(size: 15, weight: .semibold))
+                                    .foregroundColor(c.primary)
+
+                                Text(tr("تغيير اللغة", "Change language", isAr: isAr))
+                                    .font(.system(size: 14, weight: .medium))
+                                    .foregroundColor(c.foreground)
+
+                                Spacer()
+
+                                Image(systemName: languageExpanded ? "chevron.up" : "chevron.down")
+                                    .font(.system(size: 12, weight: .bold))
+                                    .foregroundColor(c.mutedForeground)
+                            }
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 12)
+                        }
+                        .buttonStyle(.plain)
+
+                        if languageExpanded {
+                            HStack(spacing: 8) {
+                                ChoiceButton(
+                                    label: "العربية",
+                                    icon: nil,
+                                    selected: viewModel.language == "ar"
+                                ) {
+                                    viewModel.setLanguage("ar")
+                                }
+
+                                ChoiceButton(
+                                    label: "English",
+                                    icon: nil,
+                                    selected: viewModel.language == "en"
+                                ) {
+                                    viewModel.setLanguage("en")
+                                }
+                            }
+                            .padding(.horizontal, 14)
+                            .padding(.bottom, 14)
+                        }
+                    }
+                    .background(RoundedRectangle(cornerRadius: 14).fill(c.muted.opacity(0.2)))
+                    .overlay(RoundedRectangle(cornerRadius: 14).stroke(c.border, lineWidth: 1))
+
+                    // 4. إشعارات الهاتف
+                    VStack(spacing: 0) {
+                        Button(action: {
+                            withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                                notificationsExpanded.toggle()
+                            }
+                        }) {
+                            HStack(spacing: 8) {
+                                Image(systemName: "bell.badge")
+                                    .font(.system(size: 15, weight: .semibold))
+                                    .foregroundColor(c.primary)
+
+                                Text(tr("إشعارات الهاتف", "Phone notifications", isAr: isAr))
+                                    .font(.system(size: 14, weight: .medium))
+                                    .foregroundColor(c.foreground)
+
+                                Spacer()
+
+                                Image(systemName: notificationsExpanded ? "chevron.up" : "chevron.down")
+                                    .font(.system(size: 12, weight: .bold))
+                                    .foregroundColor(c.mutedForeground)
+                            }
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 12)
+                        }
+                        .buttonStyle(.plain)
+
+                        if notificationsExpanded {
+                            VStack(spacing: 12) {
+                                HStack(spacing: 8) {
+                                    Image(systemName: "checkmark.circle.fill")
+                                        .foregroundColor(c.success)
+                                    Text(tr("إشعارات التطبيق مفعلة وجاهزة للاستقبال", "Notifications active on this device", isAr: isAr))
+                                        .font(.system(size: 13, weight: .medium))
+                                        .foregroundColor(c.success)
+                                    Spacer()
+                                }
+
+                                Button(action: {
+                                    Task { await viewModel.sendTestNotification() }
+                                }) {
+                                    HStack(spacing: 8) {
+                                        if viewModel.testNotifStatus == "sending" {
+                                            ProgressView().scaleEffect(0.8)
+                                        }
+                                        Text(viewModel.testNotifStatus == "sent"
+                                             ? tr("تم إرسال إشعار تجريبي ✓", "Test notification sent ✓", isAr: isAr)
+                                             : tr("إرسال إشعار تجريبي", "Send test notification", isAr: isAr))
+                                            .font(.system(size: 13.5, weight: .semibold))
+                                            .foregroundColor(viewModel.testNotifStatus == "sent" ? c.success : c.foreground)
+                                    }
+                                    .frame(maxWidth: .infinity)
+                                    .frame(height: 42)
+                                    .background(RoundedRectangle(cornerRadius: 12).fill(c.muted.opacity(0.45)))
+                                    .overlay(RoundedRectangle(cornerRadius: 12).stroke(c.border, lineWidth: 1))
+                                }
+                                .buttonStyle(.plain)
+                            }
+                            .padding(.horizontal, 14)
+                            .padding(.bottom, 14)
+                        }
+                    }
+                    .background(RoundedRectangle(cornerRadius: 14).fill(c.muted.opacity(0.2)))
+                    .overlay(RoundedRectangle(cornerRadius: 14).stroke(c.border, lineWidth: 1))
+
+                    Spacer().frame(height: 4)
 
                     // Sign Out Button
-                    Button(action: {
-                        viewModel.signOut()
-                    }) {
+                    Button(action: { viewModel.signOut() }) {
                         HStack(spacing: 8) {
                             Image(systemName: "rectangle.portrait.and.arrow.right")
-                                .font(.system(size: 16, weight: .bold))
+                                .font(.system(size: 17, weight: .semibold))
                             Text(tr("تسجيل الخروج", "Sign out", isAr: isAr))
-                                .font(.system(size: 15, weight: .bold))
+                                .font(.system(size: 15, weight: .semibold))
                         }
                         .foregroundColor(c.destructive)
                         .frame(maxWidth: .infinity)
@@ -327,11 +397,12 @@ struct AccountView: View {
                         .background(RoundedRectangle(cornerRadius: 14).fill(c.destructiveSoft))
                     }
                     .buttonStyle(.plain)
-                    .padding(.top, 4)
                 }
-                .padding(18)
+                .padding(20)
                 .background(RoundedRectangle(cornerRadius: 24).fill(c.card))
                 .overlay(RoundedRectangle(cornerRadius: 24).stroke(c.border, lineWidth: 1))
+
+                Spacer().frame(height: 24)
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 14)
@@ -343,25 +414,29 @@ struct AccountView: View {
 private struct ChoiceButton: View {
     let label: String
     let icon: String?
-    let selected: Bool
-    let action: () -> Void
+    let selected: Boolean
+    let onClick: () -> Void
+
     @Environment(\.nsColors) private var c
 
     var body: some View {
-        Button(action: action) {
+        Button(action: onClick) {
             HStack(spacing: 6) {
                 if let icon = icon {
                     Image(systemName: icon)
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(.system(size: 14))
                 }
                 Text(label)
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.system(size: 13, weight: .medium))
             }
             .foregroundColor(selected ? c.primary : c.mutedForeground)
             .frame(maxWidth: .infinity)
-            .frame(height: 40)
-            .background(RoundedRectangle(cornerRadius: 10).fill(selected ? c.accent : c.card))
-            .overlay(RoundedRectangle(cornerRadius: 10).stroke(selected ? c.primary : c.border, lineWidth: 1))
+            .frame(height: 42)
+            .background(RoundedRectangle(cornerRadius: 12).fill(selected ? c.accent : c.card))
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(selected ? c.primary : c.border, lineWidth: 1)
+            )
         }
         .buttonStyle(.plain)
     }

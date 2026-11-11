@@ -39,7 +39,6 @@ import androidx.compose.material.icons.outlined.WarningAmber
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedButton
@@ -97,8 +96,9 @@ fun AccountScreen(
 
     val mustChange = user?.mustChangePassword == true
     var passwordExpanded by rememberSaveable(mustChange) { mutableStateOf(mustChange) }
-    var appearanceExpanded by rememberSaveable { mutableStateOf(true) }
+    var appearanceExpanded by rememberSaveable { mutableStateOf(false) }
     var languageExpanded by rememberSaveable { mutableStateOf(false) }
+    var notificationsExpanded by rememberSaveable { mutableStateOf(false) }
 
     var currentPass by rememberSaveable { mutableStateOf("") }
     var nextPass by rememberSaveable { mutableStateOf("") }
@@ -134,7 +134,7 @@ fun AccountScreen(
             )
         }
 
-        // 1. Identity + Change Password Card (`rounded-3xl border bg-card shadow-sm`)
+        // 1. Identity Profile Card
         Surface(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(24.dp),
@@ -142,218 +142,76 @@ fun AccountScreen(
             border = BorderStroke(1.dp, c.border),
             shadowElevation = 1.dp
         ) {
-            Column(modifier = Modifier.fillMaxWidth()) {
-                Row(
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp, vertical = 16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Box(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 20.dp, vertical = 16.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        .size(48.dp)
+                        .clip(CircleShape)
+                        .background(c.accent),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .size(44.dp)
-                            .clip(CircleShape)
-                            .background(c.accent),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = LucideIcons.UserRound,
-                            contentDescription = null,
-                            tint = c.primary,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-                    Column(
-                        modifier = Modifier.weight(1f),
-                        verticalArrangement = Arrangement.spacedBy(2.dp)
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Text(
-                                text = user?.displayName?.ifBlank { user.name } ?: "—",
-                                fontSize = 15.5.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                color = c.foreground,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                                modifier = Modifier.weight(1f, fill = false)
-                            )
-                            val roleLabel = when (user?.role) {
-                                "admin" -> tr("مسؤول", "Administrator")
-                                "manager" -> tr("مدير", "Manager")
-                                else -> tr("مندوب مبيعات", "Sales rep")
-                            }
-                            Box(
-                                modifier = Modifier
-                                    .clip(CircleShape)
-                                    .background(Color(0xFF5A3A1D))
-                                    .padding(horizontal = 8.dp, vertical = 2.dp)
-                            ) {
-                                Text(
-                                    text = roleLabel,
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = Color.White
-                                )
-                            }
-                        }
-                        if (!user?.email.isNullOrBlank()) {
-                            LtrText(
-                                text = user?.email ?: "",
-                                fontSize = 12.sp,
-                                color = c.mutedForeground
-                            )
-                        }
-                    }
+                    Icon(
+                        imageVector = LucideIcons.UserRound,
+                        contentDescription = null,
+                        tint = c.primary,
+                        modifier = Modifier.size(22.dp)
+                    )
                 }
-
-                HorizontalDivider(thickness = 1.dp, color = c.border)
-
-                // Expandable Change Password Disclosure (`account-password-disclosure`)
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable(enabled = !mustChange) { passwordExpanded = !passwordExpanded }
-                        .padding(horizontal = 20.dp, vertical = 16.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(2.dp)
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Icon(
-                            imageVector = Icons.Outlined.Key,
-                            contentDescription = null,
-                            tint = c.primary,
-                            modifier = Modifier.size(18.dp)
-                        )
                         Text(
-                            text = tr("تغيير كلمة المرور", "Change password"),
-                            fontSize = 15.sp,
+                            text = user?.displayName?.ifBlank { user.name } ?: "—",
+                            fontSize = 16.sp,
                             fontWeight = FontWeight.SemiBold,
-                            color = c.foreground
+                            color = c.foreground,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f, fill = false)
                         )
-                    }
-                    if (!mustChange) {
-                        Icon(
-                            imageVector = if (passwordExpanded) Icons.Outlined.ExpandLess else Icons.Outlined.ExpandMore,
-                            contentDescription = null,
-                            tint = c.mutedForeground,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-                }
-
-                if (passwordExpanded) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(start = 20.dp, end = 20.dp, bottom = 20.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        passwordStatus?.let { code ->
-                            val (tone, msg) = when (code) {
-                                "saved" -> "success" to tr("تم تغيير كلمة المرور.", "Password changed.")
-                                "invalid" -> "error" to tr("أدخل كلمة المرور الحالية وكلمة جديدة من 8 أحرف على الأقل.", "Enter your current password and a new one of at least 8 characters.")
-                                "mismatch" -> "error" to tr("كلمتا المرور الجديدتان غير متطابقتين.", "The new passwords do not match.")
-                                "same" -> "error" to tr("اختر كلمة مرور مختلفة عن الحالية.", "Choose a password different from the current one.")
-                                "wrongCurrent" -> "error" to tr("كلمة المرور الحالية غير صحيحة.", "The current password is not correct.")
-                                else -> "error" to tr("تعذر تغيير كلمة المرور. حاول مرة أخرى.", "The password could not be changed. Try again.")
-                            }
-                            StatusBanner(text = msg, tone = tone)
+                        val roleLabel = when (user?.role) {
+                            "admin" -> tr("مسؤول", "Administrator")
+                            "manager" -> tr("مدير", "Manager")
+                            else -> tr("مندوب مبيعات", "Sales rep")
                         }
-
-                        val visual = if (showPass) VisualTransformation.None else PasswordVisualTransformation()
-
-                        OutlinedTextField(
-                            value = currentPass,
-                            onValueChange = { currentPass = it },
-                            label = { Text(tr("كلمة المرور الحالية", "Current password")) },
-                            singleLine = true,
-                            visualTransformation = visual,
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                            trailingIcon = {
-                                IconButton(onClick = { showPass = !showPass }) {
-                                    Icon(
-                                        imageVector = if (showPass) Icons.Outlined.VisibilityOff else Icons.Outlined.Visibility,
-                                        contentDescription = null
-                                    )
-                                }
-                            },
-                            shape = RoundedCornerShape(12.dp),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = c.primary,
-                                unfocusedBorderColor = c.border
-                            ),
-                            modifier = Modifier.fillMaxWidth()
-                        )
-
-                        OutlinedTextField(
-                            value = nextPass,
-                            onValueChange = { nextPass = it },
-                            label = { Text(tr("كلمة المرور الجديدة (8 أحرف على الأقل)", "New password (at least 8 characters)")) },
-                            singleLine = true,
-                            visualTransformation = visual,
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                            shape = RoundedCornerShape(12.dp),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = c.primary,
-                                unfocusedBorderColor = c.border
-                            ),
-                            modifier = Modifier.fillMaxWidth()
-                        )
-
-                        OutlinedTextField(
-                            value = confirmPass,
-                            onValueChange = { confirmPass = it },
-                            label = { Text(tr("تأكيد كلمة المرور الجديدة", "Confirm new password")) },
-                            singleLine = true,
-                            visualTransformation = visual,
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                            shape = RoundedCornerShape(12.dp),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = c.primary,
-                                unfocusedBorderColor = c.border
-                            ),
-                            modifier = Modifier.fillMaxWidth()
-                        )
-
-                        Button(
-                            onClick = { onChangePassword(currentPass, nextPass, confirmPass) },
-                            enabled = !passwordSaving,
-                            shape = RoundedCornerShape(12.dp),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = c.primary,
-                                contentColor = c.primaryForeground
-                            ),
+                        Box(
                             modifier = Modifier
-                                .fillMaxWidth()
-                                .height(46.dp)
+                                .clip(CircleShape)
+                                .background(Color(0xFF5A3A1D))
+                                .padding(horizontal = 8.dp, vertical = 2.dp)
                         ) {
-                            if (passwordSaving) {
-                                CircularProgressIndicator(
-                                    color = c.primaryForeground,
-                                    strokeWidth = 2.dp,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                            } else {
-                                Text(
-                                    text = tr("تغيير كلمة المرور", "Change password"),
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
+                            Text(
+                                text = roleLabel,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = Color.White
+                            )
                         }
+                    }
+                    if (!user?.email.isNullOrBlank()) {
+                        LtrText(
+                            text = user?.email ?: "",
+                            fontSize = 12.5.sp,
+                            color = c.mutedForeground
+                        )
                     }
                 }
             }
         }
 
-        if (!mustChange) {
-            // 2. Phone Notifications Card (`phone-notifications-android rounded-3xl border bg-card p-4 shadow-sm`)
+        // Admin Quick Links (only for admins)
+        if (user?.role == "admin" && (onOpenAdminSettings != null || onOpenAdminAccounts != null)) {
             Surface(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(24.dp),
@@ -365,301 +223,480 @@ fun AccountScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(18.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     Text(
-                        text = tr("إشعارات الهاتف", "Phone notifications"),
+                        text = tr("الإدارة", "Administration"),
                         fontSize = 15.5.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = c.foreground
                     )
                     Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
-                        Icon(
-                            imageVector = Icons.Outlined.NotificationsActive,
-                            contentDescription = null,
-                            tint = if (notificationsEnabled) c.success else c.warning,
-                            modifier = Modifier.size(16.dp)
-                        )
-                        Text(
-                            text = if (notificationsEnabled) {
-                                tr("إشعارات الهاتف مفعلة وتعمل على هذا الجهاز", "Phone notifications are active on this device")
-                            } else {
-                                tr("يرجى تفعيل صلاحية الإشعارات لهذا التطبيق", "Please allow notifications for this app")
-                            },
-                            fontSize = 13.5.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = if (notificationsEnabled) c.success else c.warning
-                        )
-                    }
-
-                    OutlinedButton(
-                        onClick = onSendTestNotification,
-                        enabled = testNotifStatus != "sending",
-                        shape = RoundedCornerShape(12.dp),
-                        border = BorderStroke(1.dp, c.border),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        if (testNotifStatus == "sending") {
-                            CircularProgressIndicator(
-                                color = c.primary,
-                                strokeWidth = 2.dp,
-                                modifier = Modifier.size(16.dp)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                        }
-                        Text(
-                            text = when (testNotifStatus) {
-                                "sent" -> tr("تم إرسال إشعار تجريبي ✓", "Test notification sent ✓")
-                                else -> tr("إرسال إشعار تجريبي", "Send test notification")
-                            },
-                            color = if (testNotifStatus == "sent") c.success else c.foreground,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                    }
-                }
-            }
-
-            // Admin Quick Links (only for admins)
-            if (user?.role == "admin" && (onOpenAdminSettings != null || onOpenAdminAccounts != null)) {
-                Surface(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(24.dp),
-                    color = c.card,
-                    border = BorderStroke(1.dp, c.border),
-                    shadowElevation = 1.dp
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(18.dp),
-                        verticalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        Text(
-                            text = tr("الإدارة", "Administration"),
-                            fontSize = 15.5.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = c.foreground
-                        )
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(10.dp)
-                        ) {
-                            if (onOpenAdminSettings != null) {
-                                OutlinedButton(
-                                    onClick = onOpenAdminSettings,
-                                    shape = RoundedCornerShape(12.dp),
-                                    border = BorderStroke(1.dp, c.border),
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .height(44.dp)
-                                ) {
-                                    Icon(Icons.Outlined.Settings, contentDescription = null, tint = c.primary, modifier = Modifier.size(16.dp))
-                                    Spacer(modifier = Modifier.width(6.dp))
-                                    Text(tr("إعدادات العمولات", "Settings"), fontSize = 13.sp, color = c.foreground)
-                                }
+                        if (onOpenAdminSettings != null) {
+                            OutlinedButton(
+                                onClick = onOpenAdminSettings,
+                                shape = RoundedCornerShape(12.dp),
+                                border = BorderStroke(1.dp, c.border),
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(44.dp)
+                            ) {
+                                Icon(Icons.Outlined.Settings, contentDescription = null, tint = c.primary, modifier = Modifier.size(16.dp))
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(tr("إعدادات العمولات", "Settings"), fontSize = 13.sp, color = c.foreground)
                             }
-                            if (onOpenAdminAccounts != null) {
-                                OutlinedButton(
-                                    onClick = onOpenAdminAccounts,
-                                    shape = RoundedCornerShape(12.dp),
-                                    border = BorderStroke(1.dp, c.border),
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .height(44.dp)
-                                ) {
-                                    Icon(Icons.Outlined.Groups, contentDescription = null, tint = c.primary, modifier = Modifier.size(16.dp))
-                                    Spacer(modifier = Modifier.width(6.dp))
-                                    Text(tr("حسابات المندوبين", "Accounts"), fontSize = 13.sp, color = c.foreground)
-                                }
+                        }
+                        if (onOpenAdminAccounts != null) {
+                            OutlinedButton(
+                                onClick = onOpenAdminAccounts,
+                                shape = RoundedCornerShape(12.dp),
+                                border = BorderStroke(1.dp, c.border),
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(44.dp)
+                            ) {
+                                Icon(Icons.Outlined.Groups, contentDescription = null, tint = c.primary, modifier = Modifier.size(16.dp))
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(tr("حسابات المندوبين", "Accounts"), fontSize = 13.sp, color = c.foreground)
                             }
                         }
                     }
                 }
             }
+        }
 
-            // 3. App Preferences Card (`AccountControls` in `account-controls.tsx`)
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(24.dp),
-                color = c.card,
-                border = BorderStroke(1.dp, c.border),
-                shadowElevation = 1.dp
+        // 2. Settings Card with the 4 uniform expandable sections in the requested order:
+        // 1. تغيير كلمة المرور
+        // 2. تغيير الوضع / المظهر
+        // 3. تغيير اللغة
+        // 4. إشعارات الهاتف
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(24.dp),
+            color = c.card,
+            border = BorderStroke(1.dp, c.border),
+            shadowElevation = 1.dp
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(20.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
+                Text(
+                    text = tr("الإعدادات", "Settings"),
+                    fontSize = 15.5.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = c.foreground
+                )
+
+                // 1. تغيير كلمة المرور (Change password)
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(20.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .border(1.dp, c.border, RoundedCornerShape(12.dp))
+                        .padding(horizontal = 12.dp, vertical = 10.dp)
                 ) {
-                    Text(
-                        text = tr("إعدادات التطبيق", "App preferences"),
-                        fontSize = 15.5.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = c.foreground
-                    )
-
-                    // Change Appearance expandable box
-                    Column(
+                    Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clip(RoundedCornerShape(12.dp))
-                            .border(1.dp, c.border, RoundedCornerShape(12.dp))
-                            .padding(horizontal = 12.dp, vertical = 10.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable { appearanceExpanded = !appearanceExpanded },
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Outlined.LightMode,
-                                    contentDescription = null,
-                                    tint = c.primary,
-                                    modifier = Modifier.size(16.dp)
-                                )
-                                Text(
-                                    text = tr("تغيير الوضع / المظهر", "Change appearance"),
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.Medium,
-                                    color = c.foreground
-                                )
-                            }
-                            Icon(
-                                imageVector = if (appearanceExpanded) Icons.Outlined.ExpandLess else Icons.Outlined.ExpandMore,
-                                contentDescription = null,
-                                tint = c.mutedForeground,
-                                modifier = Modifier.size(18.dp)
-                            )
-                        }
-                        if (appearanceExpanded) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(top = 12.dp),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                PreferenceChoiceButton(
-                                    label = tr("تلقائي", "Auto"),
-                                    icon = Icons.Outlined.BrightnessAuto,
-                                    selected = themeMode == "system",
-                                    onClick = { onSetThemeMode("system") },
-                                    modifier = Modifier.weight(1f)
-                                )
-                                PreferenceChoiceButton(
-                                    label = tr("فاتح", "Light"),
-                                    icon = Icons.Outlined.LightMode,
-                                    selected = themeMode == "light",
-                                    onClick = { onSetThemeMode("light") },
-                                    modifier = Modifier.weight(1f)
-                                )
-                                PreferenceChoiceButton(
-                                    label = tr("داكن", "Dark"),
-                                    icon = Icons.Outlined.DarkMode,
-                                    selected = themeMode == "dark",
-                                    onClick = { onSetThemeMode("dark") },
-                                    modifier = Modifier.weight(1f)
-                                )
-                            }
-                        }
-                    }
-
-                    // Change Language expandable box
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(12.dp))
-                            .border(1.dp, c.border, RoundedCornerShape(12.dp))
-                            .clickable { languageExpanded = !languageExpanded }
-                            .padding(horizontal = 12.dp, vertical = 10.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Outlined.Language,
-                                    contentDescription = null,
-                                    tint = c.primary,
-                                    modifier = Modifier.size(16.dp)
-                                )
-                                Text(
-                                    text = tr("تغيير اللغة", "Change language"),
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.Medium,
-                                    color = c.foreground
-                                )
-                            }
-                            Icon(
-                                imageVector = if (languageExpanded) Icons.Outlined.ExpandLess else Icons.Outlined.ExpandMore,
-                                contentDescription = null,
-                                tint = c.mutedForeground,
-                                modifier = Modifier.size(18.dp)
-                            )
-                        }
-                        if (languageExpanded) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(top = 12.dp),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                PreferenceChoiceButton(
-                                    label = "العربية",
-                                    selected = language != "en",
-                                    onClick = { onSetLanguage("ar") },
-                                    modifier = Modifier.weight(1f)
-                                )
-                                PreferenceChoiceButton(
-                                    label = "English",
-                                    selected = language == "en",
-                                    onClick = { onSetLanguage("en") },
-                                    modifier = Modifier.weight(1f)
-                                )
-                            }
-                        }
-                    }
-
-                    // Sign Out Button (`h-14 w-full rounded-xl bg-destructive-soft text-base font-semibold text-destructive`)
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(56.dp)
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(c.destructiveSoft)
-                            .clickable(onClick = onSignOut),
-                        contentAlignment = Alignment.Center
+                            .clickable(enabled = !mustChange) { passwordExpanded = !passwordExpanded },
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             Icon(
-                                imageVector = Icons.AutoMirrored.Outlined.Logout,
+                                imageVector = Icons.Outlined.Key,
                                 contentDescription = null,
-                                tint = c.destructive,
-                                modifier = Modifier.size(20.dp)
+                                tint = c.primary,
+                                modifier = Modifier.size(16.dp)
                             )
                             Text(
-                                text = tr("تسجيل الخروج", "Sign out"),
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                color = c.destructive
+                                text = tr("تغيير كلمة المرور", "Change password"),
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = c.foreground
                             )
                         }
+                        if (!mustChange) {
+                            Icon(
+                                imageVector = if (passwordExpanded) Icons.Outlined.ExpandLess else Icons.Outlined.ExpandMore,
+                                contentDescription = null,
+                                tint = c.mutedForeground,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                    }
+
+                    if (passwordExpanded) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 12.dp),
+                            verticalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            passwordStatus?.let { code ->
+                                val (tone, msg) = when (code) {
+                                    "saved" -> "success" to tr("تم تغيير كلمة المرور.", "Password changed.")
+                                    "invalid" -> "error" to tr("أدخل كلمة المرور الحالية وكلمة جديدة من 8 أحرف على الأقل.", "Enter your current password and a new one of at least 8 characters.")
+                                    "mismatch" -> "error" to tr("كلمتا المرور الجديدتان غير متطابقتين.", "The new passwords do not match.")
+                                    "same" -> "error" to tr("اختر كلمة مرور مختلفة عن الحالية.", "Choose a password different from the current one.")
+                                    "wrongCurrent" -> "error" to tr("كلمة المرور الحالية غير صحيحة.", "The current password is not correct.")
+                                    else -> "error" to tr("تعذر تغيير كلمة المرور. حاول مرة أخرى.", "The password could not be changed. Try again.")
+                                }
+                                StatusBanner(text = msg, tone = tone)
+                            }
+
+                            val visual = if (showPass) VisualTransformation.None else PasswordVisualTransformation()
+
+                            OutlinedTextField(
+                                value = currentPass,
+                                onValueChange = { currentPass = it },
+                                label = { Text(tr("كلمة المرور الحالية", "Current password")) },
+                                singleLine = true,
+                                visualTransformation = visual,
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                                trailingIcon = {
+                                    IconButton(onClick = { showPass = !showPass }) {
+                                        Icon(
+                                            imageVector = if (showPass) Icons.Outlined.VisibilityOff else Icons.Outlined.Visibility,
+                                            contentDescription = null
+                                        )
+                                    }
+                                },
+                                shape = RoundedCornerShape(12.dp),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedBorderColor = c.primary,
+                                    unfocusedBorderColor = c.border
+                                ),
+                                modifier = Modifier.fillMaxWidth()
+                            )
+
+                            OutlinedTextField(
+                                value = nextPass,
+                                onValueChange = { nextPass = it },
+                                label = { Text(tr("كلمة المرور الجديدة (8 أحرف على الأقل)", "New password (at least 8 characters)")) },
+                                singleLine = true,
+                                visualTransformation = visual,
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                                shape = RoundedCornerShape(12.dp),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedBorderColor = c.primary,
+                                    unfocusedBorderColor = c.border
+                                ),
+                                modifier = Modifier.fillMaxWidth()
+                            )
+
+                            OutlinedTextField(
+                                value = confirmPass,
+                                onValueChange = { confirmPass = it },
+                                label = { Text(tr("تأكيد كلمة المرور الجديدة", "Confirm new password")) },
+                                singleLine = true,
+                                visualTransformation = visual,
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                                shape = RoundedCornerShape(12.dp),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedBorderColor = c.primary,
+                                    unfocusedBorderColor = c.border
+                                ),
+                                modifier = Modifier.fillMaxWidth()
+                            )
+
+                            Button(
+                                onClick = { onChangePassword(currentPass, nextPass, confirmPass) },
+                                enabled = !passwordSaving,
+                                shape = RoundedCornerShape(12.dp),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = c.primary,
+                                    contentColor = c.primaryForeground
+                                ),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(46.dp)
+                            ) {
+                                if (passwordSaving) {
+                                    CircularProgressIndicator(
+                                        color = c.primaryForeground,
+                                        strokeWidth = 2.dp,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                } else {
+                                    Text(
+                                        text = tr("حفظ كلمة المرور", "Save password"),
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // 2. تغيير الوضع / المظهر (Change appearance)
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(12.dp))
+                        .border(1.dp, c.border, RoundedCornerShape(12.dp))
+                        .padding(horizontal = 12.dp, vertical = 10.dp)
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { appearanceExpanded = !appearanceExpanded },
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.LightMode,
+                                contentDescription = null,
+                                tint = c.primary,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Text(
+                                text = tr("تغيير الوضع / المظهر", "Change appearance"),
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = c.foreground
+                            )
+                        }
+                        Icon(
+                            imageVector = if (appearanceExpanded) Icons.Outlined.ExpandLess else Icons.Outlined.ExpandMore,
+                            contentDescription = null,
+                            tint = c.mutedForeground,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                    if (appearanceExpanded) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 12.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            PreferenceChoiceButton(
+                                label = tr("تلقائي", "Auto"),
+                                icon = Icons.Outlined.BrightnessAuto,
+                                selected = themeMode == "system",
+                                onClick = { onSetThemeMode("system") },
+                                modifier = Modifier.weight(1f)
+                            )
+                            PreferenceChoiceButton(
+                                label = tr("فاتح", "Light"),
+                                icon = Icons.Outlined.LightMode,
+                                selected = themeMode == "light",
+                                onClick = { onSetThemeMode("light") },
+                                modifier = Modifier.weight(1f)
+                            )
+                            PreferenceChoiceButton(
+                                label = tr("داكن", "Dark"),
+                                icon = Icons.Outlined.DarkMode,
+                                selected = themeMode == "dark",
+                                onClick = { onSetThemeMode("dark") },
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+                    }
+                }
+
+                // 3. تغيير اللغة (Change language)
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(12.dp))
+                        .border(1.dp, c.border, RoundedCornerShape(12.dp))
+                        .padding(horizontal = 12.dp, vertical = 10.dp)
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { languageExpanded = !languageExpanded },
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.Language,
+                                contentDescription = null,
+                                tint = c.primary,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Text(
+                                text = tr("تغيير اللغة", "Change language"),
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = c.foreground
+                            )
+                        }
+                        Icon(
+                            imageVector = if (languageExpanded) Icons.Outlined.ExpandLess else Icons.Outlined.ExpandMore,
+                            contentDescription = null,
+                            tint = c.mutedForeground,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                    if (languageExpanded) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 12.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            PreferenceChoiceButton(
+                                label = "العربية",
+                                selected = language != "en",
+                                onClick = { onSetLanguage("ar") },
+                                modifier = Modifier.weight(1f)
+                            )
+                            PreferenceChoiceButton(
+                                label = "English",
+                                selected = language == "en",
+                                onClick = { onSetLanguage("en") },
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+                    }
+                }
+
+                // 4. إشعارات الهاتف (Phone notifications)
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(12.dp))
+                        .border(1.dp, c.border, RoundedCornerShape(12.dp))
+                        .padding(horizontal = 12.dp, vertical = 10.dp)
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { notificationsExpanded = !notificationsExpanded },
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.NotificationsActive,
+                                contentDescription = null,
+                                tint = c.primary,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Text(
+                                text = tr("إشعارات الهاتف", "Phone notifications"),
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = c.foreground
+                            )
+                        }
+                        Icon(
+                            imageVector = if (notificationsExpanded) Icons.Outlined.ExpandLess else Icons.Outlined.ExpandMore,
+                            contentDescription = null,
+                            tint = c.mutedForeground,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+
+                    if (notificationsExpanded) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 12.dp),
+                            verticalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Icon(
+                                    imageVector = if (notificationsEnabled) Icons.Outlined.CheckCircle else Icons.Outlined.WarningAmber,
+                                    contentDescription = null,
+                                    tint = if (notificationsEnabled) c.success else c.warning,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Text(
+                                    text = if (notificationsEnabled) {
+                                        tr("إشعارات الهاتف مفعلة وتعمل على هذا الجهاز", "Phone notifications are active on this device")
+                                    } else {
+                                        tr("يرجى تفعيل صلاحية الإشعارات لهذا التطبيق", "Please allow notifications for this app")
+                                    },
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    color = if (notificationsEnabled) c.success else c.warning
+                                )
+                            }
+
+                            OutlinedButton(
+                                onClick = onSendTestNotification,
+                                enabled = testNotifStatus != "sending",
+                                shape = RoundedCornerShape(12.dp),
+                                border = BorderStroke(1.dp, c.border),
+                                modifier = Modifier.fillMaxWidth().height(42.dp)
+                            ) {
+                                if (testNotifStatus == "sending") {
+                                    CircularProgressIndicator(
+                                        color = c.primary,
+                                        strokeWidth = 2.dp,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                }
+                                Text(
+                                    text = when (testNotifStatus) {
+                                        "sent" -> tr("تم إرسال إشعار تجريبي ✓", "Test notification sent ✓")
+                                        else -> tr("إرسال إشعار تجريبي", "Send test notification")
+                                    },
+                                    color = if (testNotifStatus == "sent") c.success else c.foreground,
+                                    fontWeight = FontWeight.SemiBold,
+                                    fontSize = 13.sp
+                                )
+                            }
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                // Sign Out Button
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(52.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(c.destructiveSoft)
+                        .clickable(onClick = onSignOut),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Outlined.Logout,
+                            contentDescription = null,
+                            tint = c.destructive,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Text(
+                            text = tr("تسجيل الخروج", "Sign out"),
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = c.destructive
+                        )
                     }
                 }
             }
@@ -680,12 +717,12 @@ private fun PreferenceChoiceButton(
     val c = LocalNsColors.current
     Box(
         modifier = modifier
-            .height(44.dp)
+            .height(42.dp)
             .clip(RoundedCornerShape(12.dp))
             .background(if (selected) c.accent else c.card)
             .border(1.dp, if (selected) c.primary else c.border, RoundedCornerShape(12.dp))
             .clickable(onClick = onClick)
-            .padding(horizontal = 12.dp),
+            .padding(horizontal = 8.dp),
         contentAlignment = Alignment.Center
     ) {
         Row(
@@ -697,12 +734,12 @@ private fun PreferenceChoiceButton(
                     imageVector = icon,
                     contentDescription = null,
                     tint = if (selected) c.primary else c.mutedForeground,
-                    modifier = Modifier.size(16.dp)
+                    modifier = Modifier.size(15.dp)
                 )
             }
             Text(
                 text = label,
-                fontSize = 13.5.sp,
+                fontSize = 13.sp,
                 fontWeight = FontWeight.Medium,
                 color = if (selected) c.primary else c.mutedForeground
             )

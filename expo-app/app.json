@@ -1,0 +1,29 @@
+{
+  "expo": {
+    "name": "عمولات نجيب سليم",
+    "slug": "ns-commissions",
+    "version": "2.0.27",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#744C27"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.naguibselim.commissionsapp",
+      "infoPlist": {
+        "NSFaceIDUsageDescription": "تسجيل الدخول السريع باستخدام البصمة أو التعرف على الوجه"
+      }
+    },
+    "android": {
+      "package": "com.naguibselim.commissionsapp",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/icon.png",
+        "backgroundColor": "#744C27"
+      }
+    }
+  }
+}
