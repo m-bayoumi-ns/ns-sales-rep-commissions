@@ -14,6 +14,7 @@ import { PasswordForm } from "./password-form";
 import { AccountControls } from "./account-controls";
 import { loadAppSettings } from "@/lib/accounts/app-settings";
 import { normalizeName } from "@/lib/commissions/names";
+import { devicesFor } from "@/lib/app/devices";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("account");
@@ -40,6 +41,11 @@ async function Account({ searchParams }: { searchParams: PageProps<"/[locale]/ac
   const sellerDisplayName = sellerRep ? appSettings?.sellerDisplayNames?.[normalizeName(sellerRep)] ?? sellerRep : null;
   const month = Array.isArray(params.month) ? params.month[0] : params.month;
   const rep = Array.isArray(params.rep) ? params.rep[0] : params.rep;
+
+  const devices = await devicesFor(user.id).catch(() => []);
+  const STALE_MS = 45 * 60 * 1000;
+  const notificationsWorking = devices.some((d) => d.lastSeenAt != null && Date.now() - Date.parse(d.lastSeenAt) < STALE_MS);
+
   return (
     <div className="mx-auto flex w-full max-w-xl flex-col gap-4">
       <h1 className="px-1 text-2xl font-bold">{t("title")}</h1>
@@ -50,7 +56,7 @@ async function Account({ searchParams }: { searchParams: PageProps<"/[locale]/ac
         </p>
       ) : null}
       <section className="overflow-hidden rounded-3xl border bg-card shadow-sm">
-        <div className="flex items-center gap-3 border-b px-5 py-4">
+        <div className="flex items-center gap-3 px-5 py-4">
           <span className="flex size-11 items-center justify-center rounded-full bg-accent text-primary">
             <UserRoundIcon aria-hidden className="size-5" />
           </span>
@@ -65,34 +71,34 @@ async function Account({ searchParams }: { searchParams: PageProps<"/[locale]/ac
           <span className="web-only ms-auto rounded-full bg-muted px-2.5 py-1 text-[11px] font-semibold text-muted-foreground">{role}</span>
         </div>
         {isSeller(user) && user.salesReps.length ? (
-          <p className="account-linked-rep border-b px-5 py-3 text-sm text-muted-foreground">
+          <p className="account-linked-rep border-t px-5 py-3 text-sm text-muted-foreground">
             {t("linkedRep")} <bdi className="font-medium text-foreground">{user.salesReps[0]}</bdi>
           </p>
         ) : null}
-        <div className="web-only flex flex-col gap-4 px-5 py-5">
+        <div className="web-only flex flex-col gap-4 border-t px-5 py-5">
           <h2 className="flex items-center gap-2 font-semibold">
             <KeyRoundIcon aria-hidden className="size-4 text-primary" />
             {t("changePassword")}
           </h2>
           <PasswordForm />
         </div>
-        <details className="account-password-disclosure app-only border-t px-5 py-4" open={user.mustChangePassword}>
-          <summary className="flex cursor-pointer list-none items-center gap-2 font-semibold">
-            <KeyRoundIcon aria-hidden className="size-4 text-primary" />
-            {t("changePassword")}
-          </summary>
-          <div className="mt-4 flex flex-col gap-4">
-            <PasswordForm />
-          </div>
-        </details>
       </section>
+
       {user.mustChangePassword ? null : <div className="web-only"><AndroidAppCard release={ANDROID_APP.release} /></div>}
       {user.mustChangePassword ? null : (
-        <Suspense fallback={<div className="h-48 animate-pulse rounded-3xl border bg-card" />}>
-          <PhoneNotifications user={user} />
-        </Suspense>
+        <div className="web-only">
+          <Suspense fallback={<div className="h-48 animate-pulse rounded-3xl border bg-card" />}>
+            <PhoneNotifications user={user} />
+          </Suspense>
+        </div>
       )}
-      {user.mustChangePassword ? null : <AccountControls />}
+      {user.mustChangePassword ? null : (
+        <AccountControls
+          mustChangePassword={user.mustChangePassword}
+          hasDevices={devices.length > 0}
+          notificationsWorking={notificationsWorking}
+        />
+      )}
       {user.mustChangePassword ? null : <AndroidBottomNav active="account" month={month} rep={rep} />}
     </div>
   );

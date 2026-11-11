@@ -28,8 +28,7 @@ export async function PhoneNotifications({ user }: { user: AppUser }) {
   const time = new Intl.DateTimeFormat(locale === "ar" ? "ar-EG" : "en-GB", { dateStyle: "medium", timeStyle: "short", timeZone: "Africa/Cairo" });
 
   return (
-    <>
-      <section className="phone-notifications-web overflow-hidden rounded-3xl border bg-card shadow-sm">
+    <section className="phone-notifications-web overflow-hidden rounded-3xl border bg-card shadow-sm">
       <div className="flex items-center gap-3 border-b px-5 py-4">
         <span className="flex size-11 items-center justify-center rounded-full bg-accent text-primary">
           <BellRingIcon aria-hidden className="size-5" />
@@ -93,16 +92,7 @@ export async function PhoneNotifications({ user }: { user: AppUser }) {
           <p className="text-sm text-muted-foreground">{t("noSignIns")}</p>
         )}
       </div>
-      </section>
-      <section className="phone-notifications-android rounded-3xl border bg-card p-4 shadow-sm">
-        <h2 className="mb-3 font-semibold">{t("title")}</h2>
-        <p className={cn("mb-3 flex items-center gap-2 text-sm font-semibold", devices.some((device) => isFresh(device.lastSeenAt)) ? "text-success" : "text-warning")}>
-          <BellRingIcon aria-hidden className="size-4" />
-          {devices.some((device) => isFresh(device.lastSeenAt)) ? t("deliveryWorking") : t("deliveryNotWorking")}
-        </p>
-        <TestNotificationButton disabled={!devices.length} />
-      </section>
-    </>
+    </section>
   );
 }
 
