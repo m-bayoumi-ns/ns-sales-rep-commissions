@@ -1,17 +1,20 @@
 package com.naguibselim.commissionsapp
 
 import android.Manifest
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
+import androidx.biometric.BiometricManager
+import androidx.biometric.BiometricPrompt
+import androidx.fragment.app.FragmentActivity
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -99,7 +102,7 @@ import com.naguibselim.commissionsapp.ui.NsTheme
 import com.naguibselim.commissionsapp.ui.SellerSection
 import com.naguibselim.commissionsapp.ui.tr
 
-class MainActivity : ComponentActivity() {
+class MainActivity : FragmentActivity() {
     private val viewModel: AppViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -134,10 +137,20 @@ class MainActivity : ComponentActivity() {
                 language = state.language
             ) {
                 if (!state.signedIn) {
+                    val savedPass = viewModel.store.savedPassword()
+                    val savedUser = viewModel.store.savedUsername()
+                    val bioAvailable = canAuthenticateBiometric(context)
+                    val bioTitle = tr("تسجيل الدخول بالبصمة", "Sign in with Biometrics")
+                    val bioSubtitle = tr("استخدم بصمة الإصبع للوصول إلى لوحة العمولات", "Use your fingerprint to access commission dashboard")
+                    val bioCancel = tr("إلغاء", "Cancel")
                     LoginScreen(
                         signingIn = state.signingIn,
                         errorCode = state.signInError,
                         themeMode = state.themeMode,
+                        initialIdentifier = savedUser,
+                        initialRememberMe = viewModel.store.isRememberMe(),
+                        hasSavedCredentials = savedPass.isNotBlank() && savedUser.isNotBlank(),
+                        biometricAvailable = bioAvailable,
                         onToggleLanguage = { viewModel.toggleLanguage() },
                         onToggleTheme = {
                             val next = when (state.themeMode) {
@@ -147,7 +160,21 @@ class MainActivity : ComponentActivity() {
                             }
                             viewModel.setThemeMode(next)
                         },
-                        onSignIn = { id, pass -> viewModel.signIn(id, pass) }
+                        onSignIn = { id, pass, remember -> viewModel.signIn(id, pass, remember) },
+                        onBiometricSignIn = if (bioAvailable && savedPass.isNotBlank() && savedUser.isNotBlank()) {
+                            {
+                                launchBiometricPrompt(
+                                    activity = this@MainActivity,
+                                    title = bioTitle,
+                                    subtitle = bioSubtitle,
+                                    negativeButtonText = bioCancel,
+                                    onSuccess = {
+                                        viewModel.signIn(savedUser, savedPass, rememberMe = true)
+                                    },
+                                    onError = { /* ignored / user cancelled */ }
+                                )
+                            }
+                        } else null
                     )
                 } else {
                     MainAuthenticatedShell(
@@ -191,6 +218,47 @@ class MainActivity : ComponentActivity() {
         if (intent == null) return
         val extraPath = intent.getStringExtra("ns_path")
         viewModel.handleDeepLink(intent.data, extraPath)
+    }
+
+    private fun canAuthenticateBiometric(context: Context): Boolean {
+        return try {
+            val biometricManager = BiometricManager.from(context)
+            val authenticators = BiometricManager.Authenticators.BIOMETRIC_STRONG or BiometricManager.Authenticators.BIOMETRIC_WEAK
+            biometricManager.canAuthenticate(authenticators) == BiometricManager.BIOMETRIC_SUCCESS
+        } catch (_: Throwable) {
+            false
+        }
+    }
+
+    private fun launchBiometricPrompt(
+        activity: FragmentActivity,
+        title: String,
+        subtitle: String,
+        negativeButtonText: String,
+        onSuccess: () -> Unit,
+        onError: (String) -> Unit
+    ) {
+        val executor = ContextCompat.getMainExecutor(activity)
+        val callback = object : BiometricPrompt.AuthenticationCallback() {
+            override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
+                super.onAuthenticationSucceeded(result)
+                onSuccess()
+            }
+            override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
+                super.onAuthenticationError(errorCode, errString)
+                if (errorCode != BiometricPrompt.ERROR_USER_CANCELED &&
+                    errorCode != BiometricPrompt.ERROR_NEGATIVE_BUTTON) {
+                    onError(errString.toString())
+                }
+            }
+        }
+        val promptInfo = BiometricPrompt.PromptInfo.Builder()
+            .setTitle(title)
+            .setSubtitle(subtitle)
+            .setNegativeButtonText(negativeButtonText)
+            .build()
+        val prompt = BiometricPrompt(activity, executor, callback)
+        prompt.authenticate(promptInfo)
     }
 }
 
@@ -456,10 +524,10 @@ private fun NsAndroidBottomNav(
                             )
                         }
 
-                        // 4. Collections (Second from left)
+                        // 4. Collections / Customer Accounts (Second from left)
                         BottomNavSideItem(
                             label = collectionsLabel,
-                            icon = LucideIcons.HandCoins,
+                            icon = LucideIcons.Scale,
                             selected = isCollections,
                             onClick = { onSelectSellerSection(SellerSection.COLLECTIONS) },
                             modifier = Modifier.weight(1f)

@@ -124,7 +124,12 @@ fun AdminAccountsScreen(
         }
 
         if (loading || payload == null) {
-            Box(modifier = Modifier.padding(16.dp)) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp),
+                contentAlignment = Alignment.Center
+            ) {
                 NsLoadingCard()
             }
             return@Column

@@ -1,5 +1,6 @@
 package com.naguibselim.commissionsapp.ui
 
+import android.app.Activity
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
@@ -11,14 +12,17 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.sp
+import androidx.core.view.WindowCompat
 
 @Immutable
 data class NsColors(
@@ -177,6 +181,16 @@ fun NsTheme(
     val targetColors = if (useDark) DarkNsColors else LightNsColors
     val colors = animateNsColors(targetColors)
     val direction = if (isAr) LayoutDirection.Rtl else LayoutDirection.Ltr
+
+    val view = LocalView.current
+    if (!view.isInEditMode) {
+        SideEffect {
+            val window = (view.context as? Activity)?.window ?: return@SideEffect
+            val insetsController = WindowCompat.getInsetsController(window, view)
+            insetsController.isAppearanceLightStatusBars = !useDark
+            insetsController.isAppearanceLightNavigationBars = !useDark
+        }
+    }
 
     val colorScheme = if (useDark) {
         darkColorScheme(

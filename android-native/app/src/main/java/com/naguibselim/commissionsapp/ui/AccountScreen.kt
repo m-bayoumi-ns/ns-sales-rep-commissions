@@ -22,6 +22,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Logout
+import androidx.compose.material.icons.outlined.BrightnessAuto
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.DarkMode
 import androidx.compose.material.icons.outlined.ExpandLess
@@ -96,7 +97,7 @@ fun AccountScreen(
 
     val mustChange = user?.mustChangePassword == true
     var passwordExpanded by rememberSaveable(mustChange) { mutableStateOf(mustChange) }
-    var appearanceExpanded by rememberSaveable { mutableStateOf(false) }
+    var appearanceExpanded by rememberSaveable { mutableStateOf(true) }
     var languageExpanded by rememberSaveable { mutableStateOf(false) }
 
     var currentPass by rememberSaveable { mutableStateOf("") }
@@ -506,11 +507,12 @@ fun AccountScreen(
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(12.dp))
                             .border(1.dp, c.border, RoundedCornerShape(12.dp))
-                            .clickable { appearanceExpanded = !appearanceExpanded }
                             .padding(horizontal = 12.dp, vertical = 10.dp)
                     ) {
                         Row(
-                            modifier = Modifier.fillMaxWidth(),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { appearanceExpanded = !appearanceExpanded },
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
@@ -525,7 +527,7 @@ fun AccountScreen(
                                     modifier = Modifier.size(16.dp)
                                 )
                                 Text(
-                                    text = tr("تغيير الوضع", "Change appearance"),
+                                    text = tr("تغيير الوضع / المظهر", "Change appearance"),
                                     fontSize = 14.sp,
                                     fontWeight = FontWeight.Medium,
                                     color = c.foreground
@@ -546,16 +548,23 @@ fun AccountScreen(
                                 horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
                                 PreferenceChoiceButton(
+                                    label = tr("تلقائي", "Auto"),
+                                    icon = Icons.Outlined.BrightnessAuto,
+                                    selected = themeMode == "system",
+                                    onClick = { onSetThemeMode("system") },
+                                    modifier = Modifier.weight(1f)
+                                )
+                                PreferenceChoiceButton(
                                     label = tr("فاتح", "Light"),
                                     icon = Icons.Outlined.LightMode,
-                                    selected = !c.isDark,
+                                    selected = themeMode == "light",
                                     onClick = { onSetThemeMode("light") },
                                     modifier = Modifier.weight(1f)
                                 )
                                 PreferenceChoiceButton(
                                     label = tr("داكن", "Dark"),
                                     icon = Icons.Outlined.DarkMode,
-                                    selected = c.isDark,
+                                    selected = themeMode == "dark",
                                     onClick = { onSetThemeMode("dark") },
                                     modifier = Modifier.weight(1f)
                                 )

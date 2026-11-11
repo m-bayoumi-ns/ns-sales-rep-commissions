@@ -1,12 +1,15 @@
 package com.naguibselim.commissionsapp.ui
 
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
@@ -33,6 +36,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -51,6 +55,7 @@ import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.painterResource
@@ -418,10 +423,10 @@ fun NsStateCard(
 
 /**
  * Matches Screenshot 5 (`loading-status-app`):
- * Clean centered 44dp circular ring with rotating primary arc and the NS monogram inside.
+ * Strictly centered circular ring with rotating primary arc and the NS monogram inside.
  */
 @Composable
-fun NsLoadingCard() {
+fun NsLoadingCard(modifier: Modifier = Modifier.fillMaxSize()) {
     val c = LocalNsColors.current
     val infiniteTransition = rememberInfiniteTransition(label = "nsLoader")
     val angle by infiniteTransition.animateFloat(
@@ -435,19 +440,17 @@ fun NsLoadingCard() {
     )
 
     Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .heightIn(min = 520.dp),
+        modifier = modifier,
         contentAlignment = Alignment.Center
     ) {
         Box(
-            modifier = Modifier.size(44.dp),
+            modifier = Modifier.size(52.dp),
             contentAlignment = Alignment.Center
         ) {
             val ringTrack = c.primary.copy(alpha = 0.16f)
             val ringActive = c.primary
             Canvas(modifier = Modifier.fillMaxSize()) {
-                val stroke = Stroke(width = 2.dp.toPx(), cap = StrokeCap.Round)
+                val stroke = Stroke(width = 2.4.dp.toPx(), cap = StrokeCap.Round)
                 drawCircle(
                     color = ringTrack,
                     style = stroke
@@ -456,7 +459,7 @@ fun NsLoadingCard() {
                     drawArc(
                         color = ringActive,
                         startAngle = -90f,
-                        sweepAngle = 90f,
+                        sweepAngle = 100f,
                         useCenter = false,
                         style = stroke
                     )
@@ -466,7 +469,72 @@ fun NsLoadingCard() {
                 painter = painterResource(id = R.drawable.ns_mark),
                 contentDescription = null,
                 colorFilter = ColorFilter.tint(c.primary),
-                modifier = Modifier.size(24.dp)
+                modifier = Modifier.size(28.dp)
+            )
+        }
+    }
+}
+
+/**
+ * Modern circular Lightbulb Day/Night toggle button with smooth spring animations.
+ */
+@Composable
+fun LightbulbThemeToggle(
+    onToggleTheme: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val c = LocalNsColors.current
+    val bulbRotation by animateFloatAsState(
+        targetValue = if (c.isDark) 180f else 0f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessLow
+        ),
+        label = "bulbRotation"
+    )
+    val bulbScale by animateFloatAsState(
+        targetValue = if (c.isDark) 1.08f else 1f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessMediumLow
+        ),
+        label = "bulbScale"
+    )
+    val bulbTint by animateColorAsState(
+        targetValue = if (c.isDark) Color(0xFFFBBF24) else c.primary,
+        animationSpec = tween(durationMillis = 380, easing = FastOutSlowInEasing),
+        label = "bulbTint"
+    )
+    val bulbBg by animateColorAsState(
+        targetValue = if (c.isDark) Color(0xFF282119) else c.card,
+        animationSpec = tween(durationMillis = 380, easing = FastOutSlowInEasing),
+        label = "bulbBg"
+    )
+    val bulbBorder by animateColorAsState(
+        targetValue = if (c.isDark) Color(0xFFFBBF24).copy(alpha = 0.35f) else c.border,
+        animationSpec = tween(durationMillis = 380, easing = FastOutSlowInEasing),
+        label = "bulbBorder"
+    )
+
+    Surface(
+        shape = CircleShape,
+        color = bulbBg,
+        border = BorderStroke(1.dp, bulbBorder),
+        shadowElevation = 1.dp,
+        modifier = modifier.size(38.dp)
+    ) {
+        IconButton(onClick = onToggleTheme) {
+            Icon(
+                imageVector = LucideIcons.Lightbulb,
+                contentDescription = tr("تبديل الوضع الليلي والنهاري", "Toggle day and night mode"),
+                tint = bulbTint,
+                modifier = Modifier
+                    .size(19.dp)
+                    .graphicsLayer {
+                        rotationZ = bulbRotation
+                        scaleX = bulbScale
+                        scaleY = bulbScale
+                    }
             )
         }
     }

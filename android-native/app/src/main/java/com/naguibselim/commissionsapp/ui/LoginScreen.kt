@@ -1,5 +1,7 @@
 package com.naguibselim.commissionsapp.ui
 
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
@@ -8,6 +10,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -24,13 +27,17 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ErrorOutline
+import androidx.compose.material.icons.outlined.Language
 import androidx.compose.material.icons.outlined.Visibility
 import androidx.compose.material.icons.outlined.VisibilityOff
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
@@ -42,10 +49,12 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -60,11 +69,15 @@ import com.naguibselim.commissionsapp.R
 /**
  * Matches `app/[locale]/login/page.tsx` + `html[data-app] .login-shell / .login-card` in `app/globals.css`:
  * - Clean warm gradient background (`#F8F6F2 -> #EFE9E1` in light mode)
+ * - Top action bar with circular Lightbulb Day/Night switcher and Language toggle
  * - Centered white `rounded-[28dp]` card containing:
  *   - Top brand header (`ns_mark` + `ns_wordmark` tinted in `c.primary`, `عمولات المندوبين`)
  *   - `تسجيل الدخول` title + subtitle
  *   - Email/Username & Password inputs (`rounded-xl`)
+ *   - "Remember Me" (`تذكرني`) option
  *   - Primary sign-in button
+ *   - Biometric (fingerprint) login button
+ *   - Dedicated WhatsApp contact support for admin (+20 1277909022)
  *   - Expandable `هل نسيت كلمة المرور؟` help box
  */
 @Composable
@@ -72,13 +85,20 @@ fun LoginScreen(
     signingIn: Boolean,
     errorCode: String?,
     themeMode: String,
+    initialIdentifier: String = "",
+    initialRememberMe: Boolean = true,
+    hasSavedCredentials: Boolean = false,
+    biometricAvailable: Boolean = false,
     onToggleLanguage: () -> Unit,
     onToggleTheme: () -> Unit,
-    onSignIn: (String, String) -> Unit
+    onSignIn: (String, String, Boolean) -> Unit,
+    onBiometricSignIn: (() -> Unit)? = null
 ) {
     val c = LocalNsColors.current
-    var identifier by rememberSaveable { mutableStateOf("") }
+    val context = LocalContext.current
+    var identifier by rememberSaveable { mutableStateOf(initialIdentifier) }
     var password by rememberSaveable { mutableStateOf("") }
+    var rememberMe by rememberSaveable { mutableStateOf(initialRememberMe) }
     var showPassword by rememberSaveable { mutableStateOf(false) }
     var showForgotHelp by rememberSaveable { mutableStateOf(false) }
 
@@ -104,17 +124,58 @@ fun LoginScreen(
             .fillMaxSize()
             .background(shellBrush)
             .statusBarsPadding()
-            .imePadding(),
-        contentAlignment = Alignment.Center
+            .imePadding()
     ) {
         Column(
             modifier = Modifier
-                .fillMaxWidth()
+                .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp, vertical = 24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            // Top Header: Language switcher & Circular Lightbulb theme toggle
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 12.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = c.card,
+                    border = BorderStroke(1.dp, c.border),
+                    shadowElevation = 0.5.dp,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(12.dp))
+                        .clickable(onClick = onToggleLanguage)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.Language,
+                            contentDescription = null,
+                            tint = c.primary,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Text(
+                            text = tr("English", "العربية"),
+                            fontSize = 12.5.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = c.foreground
+                        )
+                    }
+                }
+
+                // Circular Lightbulb Theme Toggle button with animated transition
+                LightbulbThemeToggle(onToggleTheme = onToggleTheme)
+            }
+
+            Spacer(modifier = Modifier.height(6.dp))
+
             Surface(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(28.dp),
@@ -125,16 +186,16 @@ fun LoginScreen(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 24.dp, vertical = 28.dp),
+                        .padding(horizontal = 24.dp, vertical = 26.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    // Brand Logos (`ns-mark.png` + `ns-wordmark.png` tinted in `c.primary`)
+                    // Brand Logos (`ns_mark` + `ns_wordmark` tinted in `c.primary`)
                     Image(
                         painter = painterResource(id = R.drawable.ns_mark),
                         contentDescription = null,
                         contentScale = ContentScale.Fit,
                         colorFilter = ColorFilter.tint(c.primary),
-                        modifier = Modifier.size(64.dp)
+                        modifier = Modifier.size(62.dp)
                     )
                     Spacer(modifier = Modifier.height(6.dp))
                     Image(
@@ -154,7 +215,7 @@ fun LoginScreen(
                         color = c.mutedForeground
                     )
 
-                    Spacer(modifier = Modifier.height(22.dp))
+                    Spacer(modifier = Modifier.height(20.dp))
 
                     // Title & Subtitle
                     Column(
@@ -163,7 +224,7 @@ fun LoginScreen(
                     ) {
                         Text(
                             text = tr("تسجيل الدخول", "Sign in to your account"),
-                            fontSize = 22.sp,
+                            fontSize = 21.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = c.foreground
                         )
@@ -172,13 +233,13 @@ fun LoginScreen(
                                 "أدخل البريد الإلكتروني أو اسم المستخدم وكلمة المرور للوصول إلى لوحة العمولات.",
                                 "Enter your email or username and password to access your commission dashboard."
                             ),
-                            fontSize = 13.5.sp,
+                            fontSize = 13.sp,
                             color = c.mutedForeground,
-                            lineHeight = 19.sp
+                            lineHeight = 18.5.sp
                         )
                     }
 
-                    Spacer(modifier = Modifier.height(18.dp))
+                    Spacer(modifier = Modifier.height(16.dp))
 
                     if (errorMessage != null) {
                         StatusBanner(
@@ -261,7 +322,7 @@ fun LoginScreen(
                             ),
                             keyboardActions = KeyboardActions(
                                 onDone = {
-                                    if (!signingIn) onSignIn(identifier, password)
+                                    if (!signingIn) onSignIn(identifier, password, rememberMe)
                                 }
                             ),
                             colors = OutlinedTextFieldDefaults.colors(
@@ -273,10 +334,39 @@ fun LoginScreen(
                         )
                     }
 
-                    Spacer(modifier = Modifier.height(18.dp))
+                    Spacer(modifier = Modifier.height(10.dp))
 
+                    // "Remember Me" Option
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { rememberMe = !rememberMe }
+                            .padding(vertical = 2.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Checkbox(
+                            checked = rememberMe,
+                            onCheckedChange = { rememberMe = it },
+                            colors = CheckboxDefaults.colors(
+                                checkedColor = c.primary,
+                                checkmarkColor = c.primaryForeground,
+                                uncheckedColor = c.mutedForeground
+                            )
+                        )
+                        Text(
+                            text = tr("تذكرني على هذا الجهاز", "Remember me on this device"),
+                            fontSize = 13.sp,
+                            color = c.foreground,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(14.dp))
+
+                    // Primary Sign-in Button
                     Button(
-                        onClick = { onSignIn(identifier, password) },
+                        onClick = { onSignIn(identifier, password, rememberMe) },
                         enabled = !signingIn,
                         modifier = Modifier
                             .fillMaxWidth()
@@ -305,6 +395,106 @@ fun LoginScreen(
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.SemiBold
                             )
+                        }
+                    }
+
+                    // Biometric (Fingerprint) Login Button
+                    if (biometricAvailable && hasSavedCredentials && onBiometricSignIn != null) {
+                        Spacer(modifier = Modifier.height(10.dp))
+                        OutlinedButton(
+                            onClick = onBiometricSignIn,
+                            enabled = !signingIn,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(46.dp),
+                            shape = RoundedCornerShape(12.dp),
+                            border = BorderStroke(1.2.dp, c.primary.copy(alpha = 0.6f)),
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                contentColor = c.primary
+                            )
+                        ) {
+                            Icon(
+                                imageVector = LucideIcons.Fingerprint,
+                                contentDescription = null,
+                                tint = c.primary,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = tr("تسجيل الدخول بالبصمة", "Sign in with Fingerprint"),
+                                fontSize = 13.5.sp,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // WhatsApp Admin Support Card
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp),
+                        color = c.muted.copy(alpha = 0.55f),
+                        border = BorderStroke(1.dp, c.border)
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 14.dp, vertical = 12.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text(
+                                text = tr(
+                                    "إذا واجهتك أي مشكلة في تسجيل الدخول أو حسابك، يرجى التواصل مع المسؤول مباشرة.",
+                                    "If you experience issues logging in or with your account, please contact the administrator."
+                                ),
+                                fontSize = 11.8.sp,
+                                color = c.mutedForeground,
+                                textAlign = TextAlign.Center,
+                                lineHeight = 16.5.sp
+                            )
+
+                            Button(
+                                onClick = {
+                                    val url = "https://wa.me/201277909022?text=" + Uri.encode(
+                                        "السلام عليكم، أحتاج مساعدة في تسجيل الدخول لتطبيق عمولات نجيب سليم."
+                                    )
+                                    try {
+                                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+                                        context.startActivity(intent)
+                                    } catch (_: Exception) {
+                                        try {
+                                            val webIntent = Intent(
+                                                Intent.ACTION_VIEW,
+                                                Uri.parse("https://api.whatsapp.com/send?phone=201277909022")
+                                            )
+                                            context.startActivity(webIntent)
+                                        } catch (_: Exception) {}
+                                    }
+                                },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(42.dp),
+                                shape = RoundedCornerShape(12.dp),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = Color(0xFF25D366),
+                                    contentColor = Color.White
+                                )
+                            ) {
+                                Icon(
+                                    imageVector = LucideIcons.WhatsApp,
+                                    contentDescription = null,
+                                    tint = Color.White,
+                                    modifier = Modifier.size(19.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = tr("تواصل عبر واتساب (+20 1277909022)", "WhatsApp Admin (+20 1277909022)"),
+                                    fontSize = 12.5.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
                         }
                     }
 
@@ -344,6 +534,7 @@ fun LoginScreen(
                     }
                 }
             }
+            Spacer(modifier = Modifier.height(16.dp))
         }
     }
 }

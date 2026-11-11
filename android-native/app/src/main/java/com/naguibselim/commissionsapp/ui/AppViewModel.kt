@@ -192,7 +192,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun signIn(identifier: String, password: String) {
+    fun signIn(identifier: String, password: String, rememberMe: Boolean = true) {
         if (identifier.isBlank() || password.isBlank()) {
             _state.update { it.copy(signInError = "invalid_input") }
             return
@@ -201,6 +201,14 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             when (val res = api.signIn(identifier, password)) {
                 is ApiResult.Success -> {
+                    store.setRememberMe(rememberMe)
+                    if (rememberMe) {
+                        store.saveCredentials(identifier.trim(), password)
+                        store.setBiometricEnabled(true)
+                    } else {
+                        store.clearSavedCredentials()
+                        store.setBiometricEnabled(false)
+                    }
                     _state.update {
                         it.copy(
                             signedIn = true,
@@ -223,7 +231,11 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
 
     fun signOut() {
         val currentUpdate = _state.value.mandatoryUpdate
+        val remember = store.isRememberMe()
         store.clearSession()
+        if (!remember) {
+            store.clearSavedCredentials()
+        }
         _state.update {
             AppUiState(
                 signedIn = false,

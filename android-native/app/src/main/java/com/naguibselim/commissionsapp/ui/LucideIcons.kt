@@ -47,6 +47,105 @@ object LucideIcons {
     }
 
     /**
+     * Scale / Customer Accounts & Balances Icon (`Scale` — Balance scale)
+     * Specifically requested to represent "أرصدة العملاء / حسابات العملاء / التحصيل"
+     */
+    val Scale: ImageVector by lazy {
+        strokeVector("LucideScale") {
+            // Center mast
+            strokePath(2f) {
+                moveTo(12f, 3f)
+                lineTo(12f, 21f)
+            }
+            // Base stand
+            strokePath(2f) {
+                moveTo(7f, 21f)
+                lineTo(17f, 21f)
+            }
+            // Top beam
+            strokePath(2f) {
+                moveTo(4f, 7f)
+                lineTo(20f, 7f)
+            }
+            // Left pan lines & bowl
+            strokePath(1.8f) {
+                moveTo(4f, 7f)
+                lineTo(1.5f, 13f)
+                moveTo(4f, 7f)
+                lineTo(6.5f, 13f)
+                // Left pan bowl
+                moveTo(1.5f, 13f)
+                curveTo(1.5f, 16f, 6.5f, 16f, 6.5f, 13f)
+            }
+            // Right pan lines & bowl
+            strokePath(1.8f) {
+                moveTo(20f, 7f)
+                lineTo(17.5f, 13f)
+                moveTo(20f, 7f)
+                lineTo(22.5f, 13f)
+                // Right pan bowl
+                moveTo(17.5f, 13f)
+                curveTo(17.5f, 16f, 22.5f, 16f, 22.5f, 13f)
+            }
+        }
+    }
+
+    /**
+     * WhatsApp Brand Vector Icon
+     */
+    val WhatsApp: ImageVector by lazy {
+        strokeVector("LucideWhatsApp") {
+            // Speech bubble with pointer
+            strokePath(1.9f) {
+                moveTo(21f, 11.5f)
+                arcTo(8.5f, 8.5f, 0f, isMoreThanHalf = false, isPositiveArc = false, 12f, 3f)
+                arcTo(8.5f, 8.5f, 0f, isMoreThanHalf = false, isPositiveArc = false, 4.5f, 16.5f)
+                lineTo(3f, 21f)
+                lineTo(7.8f, 19.6f)
+                arcTo(8.5f, 8.5f, 0f, isMoreThanHalf = false, isPositiveArc = false, 12f, 20f)
+                arcTo(8.5f, 8.5f, 0f, isMoreThanHalf = false, isPositiveArc = false, 21f, 11.5f)
+                close()
+            }
+            // Phone handset outline inside
+            strokePath(1.7f) {
+                moveTo(9.2f, 8.8f)
+                curveTo(9.0f, 9.6f, 9.5f, 10.7f, 10.4f, 11.8f)
+                curveTo(11.3f, 12.9f, 12.4f, 13.4f, 13.2f, 13.2f)
+                lineTo(14.5f, 14.5f)
+            }
+        }
+    }
+
+    /**
+     * Biometric / Fingerprint Vector Icon
+     */
+    val Fingerprint: ImageVector by lazy {
+        strokeVector("LucideFingerprint") {
+            strokePath(1.8f) {
+                moveTo(12f, 10f)
+                arcTo(2f, 2f, 0f, isMoreThanHalf = false, isPositiveArc = false, 10f, 12f)
+                curveTo(10f, 14.5f, 11f, 16.5f, 11f, 19f)
+            }
+            strokePath(1.8f) {
+                moveTo(7.5f, 8.5f)
+                arcTo(4.5f, 4.5f, 0f, isMoreThanHalf = false, isPositiveArc = true, 16.5f, 8.5f)
+                curveTo(16.5f, 10f, 16f, 11.5f, 15.5f, 13f)
+                curveTo(15f, 14.5f, 14.5f, 16f, 14.5f, 19f)
+            }
+            strokePath(1.8f) {
+                moveTo(5f, 12f)
+                arcTo(7f, 7f, 0f, isMoreThanHalf = false, isPositiveArc = true, 19f, 12f)
+                curveTo(19f, 14f, 18.5f, 16f, 18f, 18f)
+            }
+            strokePath(1.8f) {
+                moveTo(2.5f, 14f)
+                curveTo(2.5f, 9f, 6.7f, 4.5f, 12f, 4.5f)
+                curveTo(17.3f, 4.5f, 21.5f, 9f, 21.5f, 14f)
+            }
+        }
+    }
+
+    /**
      * Updated Modern Collections Icon (`Coins` / Stacked Financial Coins) —
      * used in bottom nav "التحصيل", Collections hero card, and Summary collections row.
      */

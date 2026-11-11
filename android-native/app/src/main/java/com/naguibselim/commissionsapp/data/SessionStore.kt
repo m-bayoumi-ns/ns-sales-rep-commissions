@@ -87,6 +87,38 @@ class SessionStore(context: Context) {
         appPrefs.edit().putString("theme_mode", mode).apply()
     }
 
+    /** "Remember Me" credentials persistence */
+    fun isRememberMe(): Boolean = appPrefs.getBoolean("remember_me", true)
+
+    fun setRememberMe(enabled: Boolean) {
+        appPrefs.edit().putBoolean("remember_me", enabled).apply()
+    }
+
+    fun savedUsername(): String = appPrefs.getString("saved_username", "") ?: ""
+
+    fun savedPassword(): String = encryptedPrefs.getString("saved_password", "") ?: ""
+
+    fun saveCredentials(username: String, password: String?) {
+        appPrefs.edit().putString("saved_username", username).apply()
+        if (password != null) {
+            encryptedPrefs.edit().putString("saved_password", password).apply()
+        } else {
+            encryptedPrefs.edit().remove("saved_password").apply()
+        }
+    }
+
+    fun clearSavedCredentials() {
+        appPrefs.edit().remove("saved_username").apply()
+        encryptedPrefs.edit().remove("saved_password").apply()
+    }
+
+    /** Biometric / Fingerprint login preference */
+    fun isBiometricEnabled(): Boolean = appPrefs.getBoolean("biometric_enabled", false)
+
+    fun setBiometricEnabled(enabled: Boolean) {
+        appPrefs.edit().putBoolean("biometric_enabled", enabled).apply()
+    }
+
     fun cacheCommissionsJson(key: String, rawJson: String) {
         appPrefs.edit()
             .putString("cache_cm_$key", rawJson)

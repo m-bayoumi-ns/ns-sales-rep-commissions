@@ -117,6 +117,18 @@ fun CommissionsScreen(
     var showMonthSheet by rememberSaveable { mutableStateOf(false) }
     var showRepSheet by rememberSaveable { mutableStateOf(false) }
 
+    if (loading && payload == null) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(c.background),
+            contentAlignment = Alignment.Center
+        ) {
+            NsLoadingCard()
+        }
+        return
+    }
+
     PullToRefreshBox(
         isRefreshing = refreshing,
         onRefresh = onRefresh,
@@ -380,60 +392,7 @@ private fun FilterActionRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     // Circular Light Bulb Day/Night Mode Switcher with modern animated transition
-                    val bulbRotation by animateFloatAsState(
-                        targetValue = if (c.isDark) -18f else 0f,
-                        animationSpec = spring(
-                            dampingRatio = Spring.DampingRatioMediumBouncy,
-                            stiffness = Spring.StiffnessLow
-                        ),
-                        label = "bulbRotation"
-                    )
-                    val bulbScale by animateFloatAsState(
-                        targetValue = if (c.isDark) 0.92f else 1.06f,
-                        animationSpec = spring(
-                            dampingRatio = Spring.DampingRatioMediumBouncy,
-                            stiffness = Spring.StiffnessMediumLow
-                        ),
-                        label = "bulbScale"
-                    )
-                    val bulbTint by animateColorAsState(
-                        targetValue = if (c.isDark) Color(0xFFFBBF24) else c.primary,
-                        animationSpec = tween(durationMillis = 380, easing = FastOutSlowInEasing),
-                        label = "bulbTint"
-                    )
-                    val bulbBg by animateColorAsState(
-                        targetValue = if (c.isDark) Color(0xFF282119) else c.card,
-                        animationSpec = tween(durationMillis = 380, easing = FastOutSlowInEasing),
-                        label = "bulbBg"
-                    )
-                    val bulbBorder by animateColorAsState(
-                        targetValue = if (c.isDark) Color(0xFFFBBF24).copy(alpha = 0.35f) else c.border,
-                        animationSpec = tween(durationMillis = 380, easing = FastOutSlowInEasing),
-                        label = "bulbBorder"
-                    )
-
-                    Surface(
-                        shape = CircleShape,
-                        color = bulbBg,
-                        border = BorderStroke(1.dp, bulbBorder),
-                        shadowElevation = 0.5.dp,
-                        modifier = Modifier.size(38.dp)
-                    ) {
-                        IconButton(onClick = onToggleTheme) {
-                            Icon(
-                                imageVector = LucideIcons.Lightbulb,
-                                contentDescription = tr("تبديل الوضع الليلي والنهاري", "Toggle day and night mode"),
-                                tint = bulbTint,
-                                modifier = Modifier
-                                    .size(18.dp)
-                                    .graphicsLayer {
-                                        rotationZ = bulbRotation
-                                        scaleX = bulbScale
-                                        scaleY = bulbScale
-                                    }
-                            )
-                        }
-                    }
+                    LightbulbThemeToggle(onToggleTheme = onToggleTheme)
 
                     // Circular Notification Bell on the left (in RTL), matching Screenshot 2
                     Surface(

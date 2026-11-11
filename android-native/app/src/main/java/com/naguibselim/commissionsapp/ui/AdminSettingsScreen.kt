@@ -131,7 +131,14 @@ fun AdminSettingsScreen(
             )
 
             if (loading && payload == null) {
-                NsLoadingCard()
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 400.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    NsLoadingCard()
+                }
             } else if (payload != null && draft != null) {
                 val currentDraft = draft!!
                 val monthName = Format.monthLabel(payload.month, isAr)
