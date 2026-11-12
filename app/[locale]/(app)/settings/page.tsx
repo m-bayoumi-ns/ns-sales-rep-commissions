@@ -12,6 +12,7 @@ import { isOdooConfigured } from "@/lib/env";
 import { addMonths, currentMonth } from "@/lib/finance/core";
 import { listSellerAccounts } from "@/lib/accounts/server";
 import { loadAppSettings } from "@/lib/accounts/app-settings";
+import { allNotifications } from "@/lib/commissions/notifications";
 import { SettingsForm } from "./settings-form";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -39,7 +40,7 @@ async function SettingsContent({ searchParams }: { searchParams: PageProps<"/[lo
   const next = addMonths(currentMonth(), 1);
   const wanted = Array.isArray(raw) ? raw[0] : raw;
   const month = wanted === next ? next : resolveMonth(wanted);
-  const [setup, accounts, appSettings, months] = await Promise.all([
+  const [setup, accounts, appSettings, months, notifications] = await Promise.all([
     loadMonthSetup(month),
     listSellerAccounts().catch((error) => {
       console.error("[settings] seller accounts unavailable:", error);
@@ -47,6 +48,7 @@ async function SettingsContent({ searchParams }: { searchParams: PageProps<"/[lo
     }),
     loadAppSettings(),
     availableSettingsMonths(),
+    allNotifications(),
   ]);
 
   return (
@@ -56,6 +58,7 @@ async function SettingsContent({ searchParams }: { searchParams: PageProps<"/[lo
       <SettingsForm
         key={`${month}:${setup.stored.settings.updatedAt ?? setup.stored.source}`}
         month={month}
+        notifications={notifications}
         excelExportAccess={appSettings.excelExportAccess ?? "admins_only"}
         monthVisibilityFrom={appSettings.commissionMonthsFrom ?? FIRST_MONTH}
         monthVisibilityTo={appSettings.commissionMonthsTo ?? ""}

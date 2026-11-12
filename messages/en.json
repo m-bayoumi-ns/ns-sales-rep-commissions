@@ -843,9 +843,25 @@
         "collectionBonus": "Collections bonus (EGP)",
         "lowAchievementPct": "Low-achievement level %",
         "lowRate": "Low-achievement rate %",
+        "oldSystemMode": "Old-system mode",
+        "oldRate": "Old-system rate %",
         "oldSystemUntilPct": "Old system up to %",
         "oldSystemTiers": "Old-system commission tiers",
         "minimumSales": "Monthly minimum (EGP)"
+      }
+    },
+    "management": {
+      "title": "Sent commission notifications",
+      "description": "Review the notifications in users' in-app lists. Deleting one removes it from those lists; phone notifications already delivered cannot be recalled.",
+      "toAll": "Sent to all sellers",
+      "delete": "Delete notification",
+      "deleteButton": "Delete notification for {month}",
+      "confirmDelete": "Delete the commission notification for {month} for everyone?",
+      "status": {
+        "invalid": "This notification ID is invalid.",
+        "forbidden": "Only administrators can delete notifications.",
+        "not_found": "This notification was already deleted.",
+        "storage": "Could not delete the notification."
       }
     }
   },

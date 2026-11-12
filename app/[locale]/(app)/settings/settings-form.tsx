@@ -9,15 +9,18 @@ import type { Locale } from "@/i18n/routing";
 import { rateChanges } from "@/lib/commissions/changes";
 import { matchRep, normalizeName } from "@/lib/commissions/names";
 import type { ProductSearchResult } from "@/lib/commissions/odoo";
+import type { CommissionNotification } from "@/lib/commissions/notifications";
 import { type CommissionSettings, type ProductRule, type RepSetting, type Rules } from "@/lib/commissions/schema";
 import type { SheetProductCommission } from "@/lib/commissions/storage";
 import type { RepEntry } from "@/lib/commissions/view";
 import { formatDateTime, formatMonth, formatNumber } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import { findProducts, saveCommissionMonthVisibility, saveCommissionSettings, saveExcelExportAccess } from "./actions";
+import { ChangeText } from "@/components/layout/notification-bell";
+import { findProducts, deleteCommissionNotification, saveCommissionMonthVisibility, saveCommissionSettings, saveExcelExportAccess } from "./actions";
 
 type Props = {
   month: string;
+  notifications: CommissionNotification[];
   excelExportAccess: "admins_only" | "report_access";
   monthVisibilityFrom: string;
   monthVisibilityTo: string;
@@ -105,7 +108,7 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
   );
 }
 
-export function SettingsForm({ month, excelExportAccess, monthVisibilityFrom, monthVisibilityTo, initial, source, inheritedFrom, sheet, reps: monthReps, candidates, accounts }: Props) {
+export function SettingsForm({ month, notifications, excelExportAccess, monthVisibilityFrom, monthVisibilityTo, initial, source, inheritedFrom, sheet, reps: monthReps, candidates, accounts }: Props) {
   const t = useTranslations("settings");
   const locale = useLocale() as Locale;
   const router = useRouter();
@@ -188,6 +191,7 @@ export function SettingsForm({ month, excelExportAccess, monthVisibilityFrom, mo
       <MonthVisibilityCard initialFrom={monthVisibilityFrom} initialTo={monthVisibilityTo} />
       <ExcelExportAccessCard initial={excelExportAccess} />
       <NotifyCard notify={notify} setNotify={setNotify} accounts={accounts} changes={changes.length} />
+      <CommissionNotificationsCard initial={notifications} />
 
       <div className="fixed inset-x-0 bottom-0 z-30 border-t bg-card/95 backdrop-blur supports-backdrop-filter:bg-card/80">
         <div className="mx-auto flex max-w-[1440px] flex-wrap items-center gap-3 px-4 py-3 md:px-6 lg:px-8">
@@ -212,6 +216,84 @@ export function SettingsForm({ month, excelExportAccess, monthVisibilityFrom, mo
 }
 
 type NotifyState = { mode: "none" | "all" | "users"; userIds: string[]; note: string };
+
+function CommissionNotificationsCard({ initial }: { initial: CommissionNotification[] }) {
+  const t = useTranslations("notify");
+  const locale = useLocale() as Locale;
+  const [deletedIds, setDeletedIds] = useState<Set<string>>(() => new Set());
+  const [deleting, startDeleting] = useTransition();
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const items = initial.filter((item) => !deletedIds.has(item.id));
+
+  const remove = (item: CommissionNotification) => {
+    if (!window.confirm(t("management.confirmDelete", { month: formatMonth(item.month, locale) }))) return;
+    setDeletingId(item.id);
+    setError(null);
+    startDeleting(async () => {
+      try {
+        const result = await deleteCommissionNotification(item.id);
+        if (!result.ok) {
+          setError(t(`management.status.${result.reason}`));
+          return;
+        }
+        setDeletedIds((current) => new Set(current).add(item.id));
+      } catch (caught) {
+        console.error("[settings] commission notification delete failed:", caught);
+        setError(t("management.status.storage"));
+      } finally {
+        setDeletingId(null);
+      }
+    });
+  };
+
+  return (
+    <Card title={t("management.title")} description={t("management.description")}>
+      {error ? <p role="alert" className="text-sm text-destructive">{error}</p> : null}
+      {items.length ? (
+        <ul className="divide-y rounded-lg border">
+          {items.map((item) => (
+            <li key={item.id} className="flex items-start gap-3 p-3 sm:p-4">
+              <div className="min-w-0 flex-1 space-y-1.5">
+                <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+                  <p className="text-sm font-semibold">{t("itemTitle", { month: formatMonth(item.month, locale) })}</p>
+                  <time className="text-xs text-muted-foreground">{formatDateTime(new Date(item.at), locale)}</time>
+                </div>
+                {item.note ? <p className="text-sm">{item.note}</p> : null}
+                {item.changes.length ? (
+                  <ul className="flex flex-col gap-1">
+                    {item.changes.slice(0, 8).map((change, index) => (
+                      <li key={index} className="text-xs text-muted-foreground"><ChangeText change={change} /></li>
+                    ))}
+                    {item.changes.length > 8 ? <li className="text-xs text-muted-foreground">{t("more", { count: item.changes.length - 8 })}</li> : null}
+                  </ul>
+                ) : null}
+                <p className="text-xs text-muted-foreground">
+                  {t("by", { name: item.by })}
+                  {" · "}
+                  {item.recipients.mode === "all" ? t("management.toAll") : t("toSome", { count: item.recipients.userIds.length })}
+                </p>
+              </div>
+              <Button
+                type="button"
+                variant="destructive"
+                size="icon-sm"
+                aria-label={t("management.deleteButton", { month: formatMonth(item.month, locale) })}
+                title={t("management.delete")}
+                disabled={deleting}
+                onClick={() => remove(item)}
+              >
+                {deleting && deletingId === item.id ? <Loader2Icon aria-hidden className="animate-spin" /> : <Trash2Icon aria-hidden />}
+              </Button>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="rounded-lg border border-dashed px-3 py-6 text-center text-sm text-muted-foreground">{t("empty")}</p>
+      )}
+    </Card>
+  );
+}
 
 function MonthVisibilityCard({ initialFrom, initialTo }: { initialFrom: string; initialTo: string }) {
   const t = useTranslations("settings.monthVisibility");

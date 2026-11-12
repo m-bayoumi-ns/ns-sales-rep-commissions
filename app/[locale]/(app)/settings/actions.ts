@@ -9,7 +9,7 @@ import { searchProducts, type ProductSearchResult } from "@/lib/commissions/odoo
 import { settingsSchema } from "@/lib/commissions/schema";
 import { loadSettings, saveSettings } from "@/lib/commissions/storage";
 import { rateChanges } from "@/lib/commissions/changes";
-import { addNotification } from "@/lib/commissions/notifications";
+import { addNotification, deleteNotification } from "@/lib/commissions/notifications";
 import { after } from "next/server";
 import { logActivity } from "@/lib/activity";
 import { pushFeedFor, pushFeedForAll } from "@/lib/app/push";
@@ -17,12 +17,14 @@ import { pushFeedFor, pushFeedForAll } from "@/lib/app/push";
 export type SaveResult = { ok: true; savedAt: string; notified: number } | { ok: false; reason: "invalid" | "forbidden" | "storage"; detail?: string };
 export type ExportAccessSaveResult = { ok: true } | { ok: false; reason: "invalid" | "forbidden" | "storage" };
 export type MonthVisibilitySaveResult = { ok: true } | { ok: false; reason: "invalid" | "forbidden" | "storage" };
+export type DeleteNotificationResult = { ok: true } | { ok: false; reason: "invalid" | "forbidden" | "not_found" | "storage" };
 
 const monthKeySchema = z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/);
 const monthVisibilitySchema = z.object({
   from: monthKeySchema,
   to: z.union([monthKeySchema, z.literal("")]),
 }).refine(({ from, to }) => !to || from <= to, { path: ["to"] });
+const notificationIdSchema = z.string().uuid();
 
 const notifySchema = z.object({
   mode: z.enum(["none", "all", "users"]),
@@ -68,6 +70,23 @@ export async function saveCommissionMonthVisibility(raw: unknown): Promise<Month
   }
   revalidatePath("/[locale]/(app)/settings", "page");
   revalidatePath("/[locale]/(app)/commissions", "page");
+  return { ok: true };
+}
+
+/** Deletes one shared commission-rate notification (administrators only). */
+export async function deleteCommissionNotification(rawId: unknown): Promise<DeleteNotificationResult> {
+  const user = await requireUser();
+  if (!isAdmin(user)) return { ok: false, reason: "forbidden" };
+  const parsed = notificationIdSchema.safeParse(rawId);
+  if (!parsed.success) return { ok: false, reason: "invalid" };
+  try {
+    const deleted = await deleteNotification(parsed.data);
+    if (!deleted) return { ok: false, reason: "not_found" };
+  } catch (error) {
+    console.error("[settings] commission notification delete failed:", error);
+    return { ok: false, reason: "storage" };
+  }
+  revalidatePath("/[locale]/(app)/settings", "page");
   return { ok: true };
 }
 

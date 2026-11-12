@@ -57,6 +57,21 @@ export async function notificationsFor(userId: string, { everything = false } = 
   return { items: items.slice(0, 30), unread: items.filter((item) => item.at > lastRead).length, lastRead };
 }
 
+/** All retained rate-change notifications for the administrator settings page. */
+export async function allNotifications(): Promise<CommissionNotification[]> {
+  return (await load()).items;
+}
+
+/** Removes a rate-change notification from every user's in-app notification list. */
+export async function deleteNotification(id: string): Promise<boolean> {
+  const store = await load();
+  const items = store.items.filter((item) => item.id !== id);
+  if (items.length === store.items.length) return false;
+  await writeJson(FILE, { items });
+  await ping();
+  return true;
+}
+
 export async function markRead(userId: string) {
   const reads = await loadReads();
   reads[userId] = new Date().toISOString();

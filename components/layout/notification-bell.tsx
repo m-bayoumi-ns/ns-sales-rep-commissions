@@ -137,7 +137,7 @@ export function NotificationBell({ appHome = false }: { appHome?: boolean }) {
   );
 }
 
-function ChangeText({ change }: { change: RateChange }) {
+export function ChangeText({ change }: { change: RateChange }) {
   const t = useTranslations("notify.change");
   const arrow = (from: string | number, to: string | number) => (
     <span dir="ltr" className="font-medium text-foreground tabular-nums">
