@@ -5,6 +5,7 @@ import { calculate, isNsProductRule, lineCommissionBasis, productRuleFor, projec
 import { cleanRepName, matchRep, normalizeName } from "./names";
 import { autoMatchProducts, getCollections, getRepCandidates, getReceivables, getSalesLines, getUserNames, type OdooRep, type RepSaleLine } from "./odoo";
 import type { Category, CommissionSettings } from "./schema";
+import { filterVisibleMonths } from "./month-visibility";
 import { listTargetMonths, loadSettings, readTargetSheet, type StoredSettings, type TargetSheet } from "./storage";
 import { loadAppSettings } from "@/lib/accounts/app-settings";
 
@@ -12,7 +13,7 @@ export const FIRST_MONTH = "2026-01";
 
 export function resolveMonth(raw: string | undefined): string {
   const now = currentMonth();
-  if (!raw || !/^\d{4}-\d{2}$/.test(raw) || raw > now || raw < FIRST_MONTH) return now;
+  if (!raw || !/^\d{4}-(0[1-9]|1[0-2])$/.test(raw) || raw < FIRST_MONTH) return now;
   return raw;
 }
 
@@ -22,16 +23,41 @@ export function hasConfiguredTargets(reps: TargetSheet["reps"]): boolean {
   );
 }
 
-export function availableMonths(): Promise<string[]> {
-  return cached("commission-months-with-targets:v1", MINUTE, async () => {
+function allAvailableMonths(): Promise<string[]> {
+  return cached("commission-months-with-targets:v2", MINUTE, async () => {
     const now = currentMonth();
-    const previousMonths = (await listTargetMonths()).filter((month) => month >= FIRST_MONTH && month < now);
-    const checked = await Promise.all(previousMonths.map(async (month) => ({
+    const targetMonths = (await listTargetMonths()).filter((month) => month >= FIRST_MONTH && month !== now);
+    const checked = await Promise.all(targetMonths.map(async (month) => ({
       month,
       hasTargets: hasConfiguredTargets((await readTargetSheet(month)).reps),
     })));
-    return [now, ...checked.filter((item) => item.hasTargets).map((item) => item.month).sort((a, b) => b.localeCompare(a))];
+    const targetMonthsWithTargets = checked.filter((item) => item.hasTargets).map((item) => item.month);
+    return [
+      now,
+      ...targetMonthsWithTargets.filter((month) => month > now).sort((a, b) => a.localeCompare(b)),
+      ...targetMonthsWithTargets.filter((month) => month < now).sort((a, b) => b.localeCompare(a)),
+    ];
   });
+}
+
+/** Months with targets that are inside the administrator-configured report window. */
+export async function availableMonths(): Promise<string[]> {
+  const [months, appSettings] = await Promise.all([allAvailableMonths(), loadAppSettings()]);
+  const from = appSettings.commissionMonthsFrom ?? FIRST_MONTH;
+  const to = appSettings.commissionMonthsTo;
+  return filterVisibleMonths(months, from, to);
+}
+
+/** Unfiltered months for administrators preparing rates; future target months are included. */
+export function availableSettingsMonths(): Promise<string[]> {
+  return allAvailableMonths();
+}
+
+/** Returns the requested report month if visible, otherwise the latest visible month. */
+export async function resolveCommissionMonth(raw: string | undefined): Promise<string | null> {
+  const months = await availableMonths();
+  if (!months.length) return null;
+  return raw && months.includes(raw) ? raw : months[0];
 }
 
 export type MonthClock = { month: string; closed: boolean; elapsedDays: number; monthDays: number; remainingDays: number; asOf: string };

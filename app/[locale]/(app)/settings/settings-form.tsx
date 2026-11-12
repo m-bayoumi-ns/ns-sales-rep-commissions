@@ -14,11 +14,13 @@ import type { SheetProductCommission } from "@/lib/commissions/storage";
 import type { RepEntry } from "@/lib/commissions/view";
 import { formatDateTime, formatMonth, formatNumber } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import { findProducts, saveCommissionSettings, saveExcelExportAccess } from "./actions";
+import { findProducts, saveCommissionMonthVisibility, saveCommissionSettings, saveExcelExportAccess } from "./actions";
 
 type Props = {
   month: string;
   excelExportAccess: "admins_only" | "report_access";
+  monthVisibilityFrom: string;
+  monthVisibilityTo: string;
   initial: CommissionSettings;
   source: "saved" | "inherited" | "default";
   inheritedFrom: string | null;
@@ -103,7 +105,7 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
   );
 }
 
-export function SettingsForm({ month, excelExportAccess, initial, source, inheritedFrom, sheet, reps: monthReps, candidates, accounts }: Props) {
+export function SettingsForm({ month, excelExportAccess, monthVisibilityFrom, monthVisibilityTo, initial, source, inheritedFrom, sheet, reps: monthReps, candidates, accounts }: Props) {
   const t = useTranslations("settings");
   const locale = useLocale() as Locale;
   const router = useRouter();
@@ -183,6 +185,7 @@ export function SettingsForm({ month, excelExportAccess, initial, source, inheri
       <ProductsCard settings={settings} update={update} productCommission={sheet.productCommission} />
       <RulesCard rules={settings.rules} setRule={setRule} />
       <RepsCard settings={settings} update={update} sheet={sheet} monthName={monthName} candidates={candidates} monthReps={monthReps} />
+      <MonthVisibilityCard initialFrom={monthVisibilityFrom} initialTo={monthVisibilityTo} />
       <ExcelExportAccessCard initial={excelExportAccess} />
       <NotifyCard notify={notify} setNotify={setNotify} accounts={accounts} changes={changes.length} />
 
@@ -209,6 +212,78 @@ export function SettingsForm({ month, excelExportAccess, initial, source, inheri
 }
 
 type NotifyState = { mode: "none" | "all" | "users"; userIds: string[]; note: string };
+
+function MonthVisibilityCard({ initialFrom, initialTo }: { initialFrom: string; initialTo: string }) {
+  const t = useTranslations("settings.monthVisibility");
+  const router = useRouter();
+  const [from, setFrom] = useState(initialFrom);
+  const [to, setTo] = useState(initialTo);
+  const [saved, setSaved] = useState({ from: initialFrom, to: initialTo });
+  const [status, setStatus] = useState<"saved" | "invalid" | "forbidden" | "storage" | null>(null);
+  const [saving, startSaving] = useTransition();
+  const dirty = from !== saved.from || to !== saved.to;
+
+  const save = () => startSaving(async () => {
+    try {
+      const result = await saveCommissionMonthVisibility({ from, to });
+      if (!result.ok) {
+        setStatus(result.reason);
+        return;
+      }
+      setSaved({ from, to });
+      setStatus("saved");
+      router.refresh();
+    } catch (error) {
+      console.error("[settings] commission month visibility save failed:", error);
+      setStatus("storage");
+    }
+  });
+
+  return (
+    <Card title={t("title")} description={t("description")}>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <Field label={t("from")}>
+          <input
+            type="month"
+            aria-label={t("from")}
+            value={from}
+            max={to || undefined}
+            onChange={(event) => {
+              setFrom(event.target.value);
+              setStatus(null);
+            }}
+            className={inputClass}
+          />
+        </Field>
+        <Field label={t("to")}>
+          <input
+            type="month"
+            aria-label={t("to")}
+            value={to}
+            min={from}
+            onChange={(event) => {
+              setTo(event.target.value);
+              setStatus(null);
+            }}
+            className={inputClass}
+          />
+        </Field>
+      </div>
+      <p className="text-xs text-muted-foreground">{t("hint")}</p>
+      <div className="flex flex-wrap items-center gap-3">
+        <Button type="button" size="sm" onClick={save} disabled={saving || !dirty || !from}>
+          {saving ? <Loader2Icon aria-hidden className="animate-spin" /> : <SaveIcon aria-hidden />}
+          {saving ? t("saving") : t("save")}
+        </Button>
+        {status ? (
+          <p role={status === "saved" ? "status" : "alert"} className={cn("text-sm", status === "saved" ? "text-success" : "text-destructive")}>
+            {t(`status.${status}`)}
+          </p>
+        ) : null}
+      </div>
+    </Card>
+  );
+}
 
 function ExcelExportAccessCard({ initial }: { initial: Props["excelExportAccess"] }) {
   const t = useTranslations("settings.exportAccess");

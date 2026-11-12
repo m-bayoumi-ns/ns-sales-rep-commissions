@@ -79,6 +79,8 @@
       "day": "Day {day} of {days}",
       "finished": "Month finished",
       "finalFigures": "Final figures",
+      "noAvailableTitle": "No commission months are available",
+      "noAvailableBody": "Change the month visibility range in Settings or add a target sheet for a month in that range.",
       "remaining": "{days, plural, one {# day left} other {# days left}}"
     },
     "kpi": {
@@ -563,6 +565,21 @@
       "saving": "Saving…",
       "saved": "Export access saved.",
       "error": "Could not save export access."
+    },
+    "monthVisibility": {
+      "title": "Commission month visibility",
+      "description": "Choose the first month available in commission reports and, optionally, the last month.",
+      "from": "First visible month",
+      "to": "Last visible month (optional)",
+      "hint": "Leave the last month empty to include every upcoming month as it becomes available.",
+      "save": "Save month range",
+      "saving": "Saving…",
+      "status": {
+        "saved": "Month visibility saved.",
+        "invalid": "Choose a valid range; the last month cannot be before the first.",
+        "forbidden": "Only administrators can change month visibility.",
+        "storage": "Could not save month visibility."
+      }
     }
   },
   "app2": {

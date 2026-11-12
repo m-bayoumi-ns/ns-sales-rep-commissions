@@ -22,6 +22,7 @@ import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontVariation
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.sp
@@ -115,12 +116,18 @@ val CairoFontFamily = FontFamily(
     Font(R.font.cairo, FontWeight.ExtraBold)
 )
 
+private fun interFont(weight: FontWeight) = Font(
+    R.font.inter,
+    weight,
+    variationSettings = FontVariation.Settings(FontVariation.weight(weight.weight.toFloat()))
+)
+
 val InterFontFamily = FontFamily(
-    Font(R.font.inter, FontWeight.Normal),
-    Font(R.font.inter, FontWeight.Medium),
-    Font(R.font.inter, FontWeight.SemiBold),
-    Font(R.font.inter, FontWeight.Bold),
-    Font(R.font.inter, FontWeight.ExtraBold)
+    interFont(FontWeight.Normal),
+    interFont(FontWeight.Medium),
+    interFont(FontWeight.SemiBold),
+    interFont(FontWeight.Bold),
+    interFont(FontWeight.ExtraBold)
 )
 
 val LocalAppFontFamily = staticCompositionLocalOf { CairoFontFamily }

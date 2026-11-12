@@ -16,6 +16,13 @@ import { pushFeedFor, pushFeedForAll } from "@/lib/app/push";
 
 export type SaveResult = { ok: true; savedAt: string; notified: number } | { ok: false; reason: "invalid" | "forbidden" | "storage"; detail?: string };
 export type ExportAccessSaveResult = { ok: true } | { ok: false; reason: "invalid" | "forbidden" | "storage" };
+export type MonthVisibilitySaveResult = { ok: true } | { ok: false; reason: "invalid" | "forbidden" | "storage" };
+
+const monthKeySchema = z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/);
+const monthVisibilitySchema = z.object({
+  from: monthKeySchema,
+  to: z.union([monthKeySchema, z.literal("")]),
+}).refine(({ from, to }) => !to || from <= to, { path: ["to"] });
 
 const notifySchema = z.object({
   mode: z.enum(["none", "all", "users"]),
@@ -35,6 +42,28 @@ export async function saveExcelExportAccess(raw: unknown): Promise<ExportAccessS
     await saveAppSettings({ ...settings, excelExportAccess: parsed.data });
   } catch (error) {
     console.error("[settings] Excel export access save failed:", error);
+    return { ok: false, reason: "storage" };
+  }
+  revalidatePath("/[locale]/(app)/settings", "page");
+  revalidatePath("/[locale]/(app)/commissions", "page");
+  return { ok: true };
+}
+
+/** Updates which commission months are available in reports. */
+export async function saveCommissionMonthVisibility(raw: unknown): Promise<MonthVisibilitySaveResult> {
+  const user = await requireUser();
+  if (!isAdmin(user)) return { ok: false, reason: "forbidden" };
+  const parsed = monthVisibilitySchema.safeParse(raw);
+  if (!parsed.success) return { ok: false, reason: "invalid" };
+  try {
+    const settings = await loadAppSettings();
+    await saveAppSettings({
+      ...settings,
+      commissionMonthsFrom: parsed.data.from,
+      commissionMonthsTo: parsed.data.to || undefined,
+    });
+  } catch (error) {
+    console.error("[settings] commission month visibility save failed:", error);
     return { ok: false, reason: "storage" };
   }
   revalidatePath("/[locale]/(app)/settings", "page");

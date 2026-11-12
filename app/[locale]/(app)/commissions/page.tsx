@@ -20,7 +20,7 @@ import { logActivity } from "@/lib/activity";
 import { requireReadyUser } from "@/lib/auth/dal";
 import { canAccessPage, isAdmin } from "@/lib/auth/permissions";
 import { hasRates } from "@/lib/commissions/schema";
-import { ALL_REPS, getCommissionsView, repOptions, resolveMonth } from "@/lib/commissions/view";
+import { ALL_REPS, getCommissionsView, repOptions, resolveCommissionMonth } from "@/lib/commissions/view";
 import { loadAppSettings } from "@/lib/accounts/app-settings";
 import { isOdooConfigured } from "@/lib/env";
 import { formatMonth } from "@/lib/format";
@@ -68,7 +68,8 @@ async function Commissions({ searchParams }: { searchParams: PageProps<"/[locale
   const raw = await searchParams;
   // Live figures: never prerendered (the month, "today" and the data are read per request).
   await connection();
-  const month = resolveMonth(first(raw.month));
+  const month = await resolveCommissionMonth(first(raw.month));
+  if (!month) return <StateCard title={t("month.noAvailableTitle")} body={t("month.noAvailableBody")} />;
   const repKey = first(raw.rep);
   const requestedSection = first(raw.section);
   const initialTab: AppSection = requestedSection === "sales" || requestedSection === "collections" || requestedSection === "statement" ? requestedSection : "summary";

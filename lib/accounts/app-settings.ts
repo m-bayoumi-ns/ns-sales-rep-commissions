@@ -14,7 +14,14 @@ export type AppSettings = {
   androidDownload?: AndroidVariant;
   /** Who can see and use the commission Excel export buttons. */
   excelExportAccess?: "admins_only" | "report_access";
+  /** First month shown in commission reports; absent means the first project month. */
+  commissionMonthsFrom?: string;
+  /** Last month shown in commission reports; absent means no upper limit. */
+  commissionMonthsTo?: string;
 };
+
+const isMonthKey = (value: unknown): value is string =>
+  typeof value === "string" && /^\d{4}-(0[1-9]|1[0-2])$/.test(value);
 
 export async function loadAppSettings(): Promise<AppSettings> {
   const data = await readJson<Partial<AppSettings>>(APP_SETTINGS);
@@ -30,6 +37,8 @@ export async function loadAppSettings(): Promise<AppSettings> {
     sellerDisplayNames,
     androidDownload: ANDROID_VARIANTS.includes(data?.androidDownload as AndroidVariant) ? data!.androidDownload : DEFAULT_ANDROID_VARIANT,
     excelExportAccess: data?.excelExportAccess === "report_access" ? "report_access" : "admins_only",
+    commissionMonthsFrom: isMonthKey(data?.commissionMonthsFrom) ? data.commissionMonthsFrom : undefined,
+    commissionMonthsTo: isMonthKey(data?.commissionMonthsTo) ? data.commissionMonthsTo : undefined,
   };
 }
 

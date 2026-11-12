@@ -7,7 +7,7 @@ import { MonthBar } from "@/components/commissions/month-bar";
 import { PageHeading, StateCard } from "@/components/finance/report-ui";
 import { requireReadyUser } from "@/lib/auth/dal";
 import { isAdmin } from "@/lib/auth/permissions";
-import { availableMonths, loadMonthSetup, resolveMonth } from "@/lib/commissions/view";
+import { availableSettingsMonths, FIRST_MONTH, loadMonthSetup, resolveMonth } from "@/lib/commissions/view";
 import { isOdooConfigured } from "@/lib/env";
 import { addMonths, currentMonth } from "@/lib/finance/core";
 import { listSellerAccounts } from "@/lib/accounts/server";
@@ -46,17 +46,19 @@ async function SettingsContent({ searchParams }: { searchParams: PageProps<"/[lo
       return [];
     }),
     loadAppSettings(),
-    availableMonths(),
+    availableSettingsMonths(),
   ]);
 
   return (
     <div className="flex flex-col gap-5">
       <PageHeading title={t("title")} eyebrow={t("eyebrow")} subtitle={t("description")} />
-      <MonthBar months={[next, ...months]} month={month} live={false} showStatus={false} />
+      <MonthBar months={[...new Set([next, ...months])]} month={month} live={false} showStatus={false} />
       <SettingsForm
         key={`${month}:${setup.stored.settings.updatedAt ?? setup.stored.source}`}
         month={month}
         excelExportAccess={appSettings.excelExportAccess ?? "admins_only"}
+        monthVisibilityFrom={appSettings.commissionMonthsFrom ?? FIRST_MONTH}
+        monthVisibilityTo={appSettings.commissionMonthsTo ?? ""}
         initial={setup.stored.settings}
         source={setup.stored.source}
         inheritedFrom={setup.stored.inheritedFrom}

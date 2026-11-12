@@ -2220,14 +2220,14 @@ private fun BucketProductsTable(rows: List<ProductSoldRow>) {
             ) {
                 Text(
                     text = tr("المنتج", "Product"),
-                    modifier = Modifier.weight(1.6f),
+                    modifier = Modifier.weight(1.5f),
                     fontSize = 11.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = c.mutedForeground
                 )
                 Text(
                     text = tr("السعر بعد الخصم", "Price net"),
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier.weight(0.95f),
                     fontSize = 11.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = c.mutedForeground,
@@ -2243,11 +2243,13 @@ private fun BucketProductsTable(rows: List<ProductSoldRow>) {
                 )
                 Text(
                     text = tr("العمولة", "Commission"),
-                    modifier = Modifier.weight(1f),
-                    fontSize = 11.sp,
+                    modifier = Modifier.weight(1.3f),
+                    fontSize = 10.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = c.mutedForeground,
-                    textAlign = TextAlign.End
+                    textAlign = TextAlign.End,
+                    maxLines = 1,
+                    softWrap = false
                 )
             }
 
@@ -2261,13 +2263,13 @@ private fun BucketProductsTable(rows: List<ProductSoldRow>) {
                 ) {
                     Text(
                         text = Format.plainProductName(row.productName) + (row.color?.let { " · $it" } ?: ""),
-                        modifier = Modifier.weight(1.6f),
+                        modifier = Modifier.weight(1.5f),
                         fontSize = 11.5.sp,
                         color = c.foreground
                     )
                     LtrText(
                         text = if (row.avgPrice == null) "—" else Format.number(row.avgPrice),
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier.weight(0.95f),
                         fontSize = 11.5.sp,
                         color = c.foreground,
                         textAlign = TextAlign.End
@@ -2281,7 +2283,7 @@ private fun BucketProductsTable(rows: List<ProductSoldRow>) {
                     )
                     LtrText(
                         text = Format.number(row.commission),
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier.weight(1.3f),
                         fontSize = 11.5.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = if (row.commission < 0) c.destructive else c.success,
@@ -2300,7 +2302,7 @@ private fun BucketProductsTable(rows: List<ProductSoldRow>) {
             ) {
                 Text(
                     text = tr("الإجمالي", "Total"),
-                    modifier = Modifier.weight(2.6f),
+                    modifier = Modifier.weight(2.45f),
                     fontSize = 11.5.sp,
                     fontWeight = FontWeight.Bold,
                     color = c.foreground

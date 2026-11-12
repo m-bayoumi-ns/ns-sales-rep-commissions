@@ -5,7 +5,7 @@ import { loadAppSettings } from "@/lib/accounts/app-settings";
 import { readBearerUser } from "@/lib/auth/bearer";
 import { canAccessPage, isAdmin, isSeller } from "@/lib/auth/permissions";
 import { hasRates } from "@/lib/commissions/schema";
-import { ALL_REPS, getCommissionsView, repOptions, resolveMonth } from "@/lib/commissions/view";
+import { ALL_REPS, getCommissionsView, repOptions, resolveCommissionMonth } from "@/lib/commissions/view";
 import { isOdooConfigured } from "@/lib/env";
 
 const json = (body: unknown, status = 200) =>
@@ -35,7 +35,8 @@ export async function GET(request: NextRequest) {
   if (!canAccessPage(user, "sales-commissions")) return json({ error: "no_access", email: user.email }, 403);
   if (!isOdooConfigured()) return json({ error: "not_connected" }, 503);
 
-  const month = resolveMonth(request.nextUrl.searchParams.get("month") ?? undefined);
+  const month = await resolveCommissionMonth(request.nextUrl.searchParams.get("month") ?? undefined);
+  if (!month) return json({ error: "no_months" }, 404);
   const repKey = request.nextUrl.searchParams.get("rep") ?? undefined;
   let view;
   try {

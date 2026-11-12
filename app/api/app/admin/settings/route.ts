@@ -12,7 +12,7 @@ import { addNotification } from "@/lib/commissions/notifications";
 import { searchProducts } from "@/lib/commissions/odoo";
 import { type CommissionSettings, settingsSchema } from "@/lib/commissions/schema";
 import { loadSettings, saveSettings } from "@/lib/commissions/storage";
-import { availableMonths, loadMonthSetup, resolveMonth } from "@/lib/commissions/view";
+import { availableSettingsMonths, loadMonthSetup, resolveMonth } from "@/lib/commissions/view";
 import { isOdooConfigured } from "@/lib/env";
 import { addMonths, currentMonth } from "@/lib/finance/core";
 
@@ -62,7 +62,7 @@ export async function GET(request: NextRequest) {
         console.error("[app admin settings] seller accounts unavailable:", error);
         return [];
       }),
-      availableMonths(),
+      availableSettingsMonths(),
     ]);
 
     const settings: CommissionSettings = {
@@ -80,7 +80,7 @@ export async function GET(request: NextRequest) {
 
     return json({
       month,
-      months: [next, ...months],
+      months: [...new Set([next, ...months])],
       settings,
       source: setup.stored.source,
       inheritedFrom: setup.stored.inheritedFrom,

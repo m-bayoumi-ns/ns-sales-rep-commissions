@@ -6,7 +6,7 @@ import type { AppUser } from "@/lib/auth/types";
 import type { Adjustment, RepResult } from "@/lib/commissions/engine";
 import { notificationsFor } from "@/lib/commissions/notifications";
 import { readJson, writeJson } from "@/lib/commissions/storage";
-import { getCommissionsView, resolveMonth } from "@/lib/commissions/view";
+import { getCommissionsView, resolveCommissionMonth } from "@/lib/commissions/view";
 import { deviceFile, lastTestRequest } from "./devices";
 import { loginsFor } from "./logins";
 
@@ -117,19 +117,21 @@ export async function buildFeed(user: AppUser, client: FeedClient, locale: Local
   // 3. The seller's own commission: total, system and every bonus / deduction.
   let snapshot: Snapshot | null = stored?.snapshot ?? null;
   if (isSeller(user)) {
-    const month = resolveMonth(undefined);
-    try {
-      const view = await getCommissionsView(user, month, undefined);
-      const rep = view.detail?.rep ?? view.reps[0];
-      if (rep?.odooUserId != null) {
-        const next = snapshotOf(month, rep.result);
-        const before = stored?.snapshot;
-        if (stored && before && before.month === month) items.push(...commissionChanges(before, next, t, locale));
-        snapshot = next;
+    const month = await resolveCommissionMonth(undefined);
+    if (month) {
+      try {
+        const view = await getCommissionsView(user, month, undefined);
+        const rep = view.detail?.rep ?? view.reps[0];
+        if (rep?.odooUserId != null) {
+          const next = snapshotOf(month, rep.result);
+          const before = stored?.snapshot;
+          if (stored && before && before.month === month) items.push(...commissionChanges(before, next, t, locale));
+          snapshot = next;
+        }
+      } catch (error) {
+        // Odoo or storage hiccup: keep the old snapshot and try again on the next call.
+        console.error("[app feed] commission check failed:", error);
       }
-    } catch (error) {
-      // Odoo or storage hiccup: keep the old snapshot and try again on the next call.
-      console.error("[app feed] commission check failed:", error);
     }
   }
 
