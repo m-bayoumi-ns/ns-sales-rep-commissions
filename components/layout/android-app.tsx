@@ -118,16 +118,15 @@ export function AppModeMarker() {
         </h2>
         <p className="text-xs leading-relaxed text-muted-foreground">
           {isAr
-            ? "يتوفر إصدار جديد من تطبيق عمولات المندوبين. يرجى تحميل وتثبيت النسخة الجديدة للمتابعة."
-            : "A new version of the Sales Rep Commissions app is available. Please download and install the new version to continue."}
+            ? "يتوفر إصدار جديد من تطبيق عمولات المندوبين. يرجى الانتقال إلى صفحة التطبيق لتحميل النسخة الجديدة."
+            : "A new version of the Sales Rep Commissions app is available. Please visit the app page to download the new version."}
         </p>
         <span dir="ltr" className="rounded-full border border-primary/20 bg-accent px-3.5 py-1 text-xs font-bold text-primary tabular-nums">
           v{mandatoryUpdate.current} → v{mandatoryUpdate.version}
           {mandatoryUpdate.bytes > 0 ? ` · ${sizeMb(mandatoryUpdate.bytes)} MB` : ""}
         </span>
         <a
-          href="/api/app/download"
-          download="NS-Commissions.apk"
+          href={isAr ? "/ar/get-app" : "/en/get-app"}
           className="mt-1 inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-primary px-5 text-sm font-bold text-primary-foreground shadow-sm transition hover:bg-primary/90"
         >
           <DownloadIcon aria-hidden className="size-4" />

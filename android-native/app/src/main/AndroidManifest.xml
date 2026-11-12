@@ -7,6 +7,15 @@
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
 
+    <queries>
+        <!-- Package visibility to query external web browsers for opening the download website page -->
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <category android:name="android.intent.category.BROWSABLE" />
+            <data android:scheme="https" />
+        </intent>
+    </queries>
+
     <application
         android:allowBackup="false"
         android:icon="@mipmap/ic_launcher"
@@ -35,8 +44,24 @@
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="https" android:host="ns-scw.bayoumi.dev" />
-                <data android:scheme="https" android:host="ns-sales-rep-commissions.vercel.app" />
+                <data android:scheme="https" android:host="ns-scw.bayoumi.dev" android:pathPrefix="/commissions" />
+                <data android:scheme="https" android:host="ns-scw.bayoumi.dev" android:pathPrefix="/ar/commissions" />
+                <data android:scheme="https" android:host="ns-scw.bayoumi.dev" android:pathPrefix="/en/commissions" />
+                <data android:scheme="https" android:host="ns-scw.bayoumi.dev" android:pathPrefix="/account" />
+                <data android:scheme="https" android:host="ns-scw.bayoumi.dev" android:pathPrefix="/ar/account" />
+                <data android:scheme="https" android:host="ns-scw.bayoumi.dev" android:pathPrefix="/en/account" />
+                <data android:scheme="https" android:host="ns-scw.bayoumi.dev" android:pathPrefix="/settings" />
+                <data android:scheme="https" android:host="ns-scw.bayoumi.dev" android:pathPrefix="/ar/settings" />
+                <data android:scheme="https" android:host="ns-scw.bayoumi.dev" android:pathPrefix="/en/settings" />
+                <data android:scheme="https" android:host="ns-scw.bayoumi.dev" android:pathPrefix="/accounts" />
+                <data android:scheme="https" android:host="ns-scw.bayoumi.dev" android:pathPrefix="/ar/accounts" />
+                <data android:scheme="https" android:host="ns-scw.bayoumi.dev" android:pathPrefix="/en/accounts" />
+                <data android:scheme="https" android:host="ns-sales-rep-commissions.vercel.app" android:pathPrefix="/commissions" />
+                <data android:scheme="https" android:host="ns-sales-rep-commissions.vercel.app" android:pathPrefix="/ar/commissions" />
+                <data android:scheme="https" android:host="ns-sales-rep-commissions.vercel.app" android:pathPrefix="/en/commissions" />
+                <data android:scheme="https" android:host="ns-sales-rep-commissions.vercel.app" android:pathPrefix="/account" />
+                <data android:scheme="https" android:host="ns-sales-rep-commissions.vercel.app" android:pathPrefix="/ar/account" />
+                <data android:scheme="https" android:host="ns-sales-rep-commissions.vercel.app" android:pathPrefix="/en/account" />
             </intent-filter>
         </activity>
     </application>

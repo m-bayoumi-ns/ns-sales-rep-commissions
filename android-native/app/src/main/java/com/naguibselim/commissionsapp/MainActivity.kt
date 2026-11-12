@@ -200,13 +200,12 @@ class MainActivity : FragmentActivity() {
                     MandatoryUpdateDialog(
                         update = updateInfo,
                         onDownload = {
-                            runCatching {
-                                val targetUrl = "https://ns-scw.bayoumi.dev/ar/get-app"
-                                val dlIntent = Intent(Intent.ACTION_VIEW, Uri.parse(targetUrl)).apply {
-                                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                                }
-                                context.startActivity(dlIntent)
+                            val targetUrl = if (state.language == "en") {
+                                "https://ns-scw.bayoumi.dev/en/get-app"
+                            } else {
+                                "https://ns-scw.bayoumi.dev/ar/get-app"
                             }
+                            openWebsiteInBrowser(context, targetUrl)
                         }
                     )
                 }
@@ -682,8 +681,8 @@ private fun MandatoryUpdateDialog(
 
                 Text(
                     text = tr(
-                        "يتوفر إصدار جديد من تطبيق عمولات المندوبين. اضغط على الزر أدناه لبدء تحميل وتثبيت التحديث مباشرة.",
-                        "A new version of the Sales Rep Commissions app is available. Tap below to download and install the update now."
+                        "يتوفر إصدار جديد من تطبيق عمولات المندوبين. اضغط على الزر أدناه للانتقال إلى صفحة التحميل على الموقع.",
+                        "A new version of the Sales Rep Commissions app is available. Tap below to visit the official download page on the website."
                     ),
                     fontSize = 13.5.sp,
                     color = c.mutedForeground,
@@ -743,6 +742,43 @@ private fun MandatoryUpdateDialog(
                     )
                 }
             }
+        }
+    }
+}
+
+/**
+ * Opens the target website URL in an external web browser (Chrome, Samsung Internet, Firefox, etc.)
+ * rather than reopening or routing back into the app itself.
+ */
+private fun openWebsiteInBrowser(context: Context, url: String) {
+    val uri = Uri.parse(url)
+    val browserIntent = Intent(Intent.ACTION_VIEW, uri).apply {
+        addCategory(Intent.CATEGORY_BROWSABLE)
+        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+    }
+    runCatching {
+        val pm = context.packageManager
+        val testIntent = Intent(Intent.ACTION_VIEW, Uri.parse("https://google.com")).apply {
+            addCategory(Intent.CATEGORY_BROWSABLE)
+        }
+        val resolveInfos = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            pm.queryIntentActivities(testIntent, PackageManager.ResolveInfoFlags.of(PackageManager.MATCH_DEFAULT_ONLY.toLong()))
+        } else {
+            @Suppress("DEPRECATION")
+            pm.queryIntentActivities(testIntent, PackageManager.MATCH_DEFAULT_ONLY)
+        }
+        val externalBrowser = resolveInfos.firstOrNull { it.activityInfo.packageName != context.packageName }
+        if (externalBrowser != null) {
+            browserIntent.setPackage(externalBrowser.activityInfo.packageName)
+        }
+        context.startActivity(browserIntent)
+    }.onFailure {
+        runCatching {
+            val fallback = Intent(Intent.ACTION_VIEW, uri).apply {
+                addCategory(Intent.CATEGORY_BROWSABLE)
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            context.startActivity(fallback)
         }
     }
 }

@@ -163,6 +163,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
 
     fun handleDeepLink(uri: Uri?, extraPath: String?) {
         val path = uri?.path ?: extraPath ?: return
+        if (path.contains("get-app")) return
         val monthParam = uri?.getQueryParameter("month")
         val repParam = uri?.getQueryParameter("rep")
         val sectionParam = uri?.getQueryParameter("section")
