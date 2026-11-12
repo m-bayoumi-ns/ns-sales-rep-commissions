@@ -142,7 +142,7 @@ export function AppModeMarker() {
 
 // Android WebView app package.
 const APP_PACKAGE = "com.naguibselim.commissions";
-const APP_HOST = "ns-sales-rep-commissions.vercel.app";
+const APP_HOST = "ns-scw.bayoumi.dev";
 
 /**
  * Android browser: is the NS Commissions app installed? Chrome's related-apps check first, then the account's

@@ -201,11 +201,7 @@ class MainActivity : FragmentActivity() {
                         update = updateInfo,
                         onDownload = {
                             runCatching {
-                                val targetUrl = updateInfo.downloadUrl.ifBlank {
-                                    updateInfo.downloadPageUrl.ifBlank {
-                                        "https://ns-scw.bayoumi.dev/ar/get-app"
-                                    }
-                                }
+                                val targetUrl = "https://ns-scw.bayoumi.dev/ar/get-app"
                                 val dlIntent = Intent(Intent.ACTION_VIEW, Uri.parse(targetUrl)).apply {
                                     addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                                 }

@@ -9,7 +9,7 @@ enum ApiResult<T> {
 final class ApiClient {
     static let shared = ApiClient(store: .shared)
     private let store: SessionStore
-    private let baseUrl = "https://ns-sales-rep-commissions.vercel.app"
+    private let baseUrl = "https://ns-scw.bayoumi.dev"
 
     init(store: SessionStore) {
         self.store = store

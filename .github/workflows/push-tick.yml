@@ -23,6 +23,6 @@ jobs:
           if [ -z "$KEY" ]; then echo "::warning::PUSH_CRON_KEY secret is missing"; exit 0; fi
           status=$(curl -sS -o response.json -w "%{http_code}" -m 90 -X POST \
             -H "x-cron-key: $(printf '%s' "$KEY" | tr -d ' \r\n')" \
-            https://ns-sales-rep-commissions.vercel.app/api/app/push-tick)
+            https://ns-scw.bayoumi.dev/api/app/push-tick)
           echo "HTTP $status"; cat response.json; echo
           [ "$status" = "200" ]

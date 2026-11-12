@@ -27,7 +27,7 @@ fun resolveReleaseVersion(): Pair<Int, String> {
 val (appVersionCode, appVersionName) = resolveReleaseVersion()
 val apiBaseUrl = (System.getenv("API_BASE_URL")?.trim()?.removeSuffix("/"))
     ?.takeIf { it.isNotEmpty() }
-    ?: "https://ns-sales-rep-commissions.vercel.app"
+    ?: "https://ns-scw.bayoumi.dev"
 
 val ksPath = System.getenv("ANDROID_KEYSTORE_PATH")
 val localKsFile = rootProject.file("../android-signing-key/ns-commissions-release.jks")

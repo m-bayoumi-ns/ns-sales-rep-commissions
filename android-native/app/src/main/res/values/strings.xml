@@ -5,5 +5,5 @@
     <string name="channel_commission_desc">Commission going up or down, bonuses earned or lost, and rate changes.</string>
     <string name="channel_security">Security alerts</string>
     <string name="channel_security_desc">Sign-ins to your account from other devices.</string>
-    <string name="asset_statements" translatable="false">[{\"include\": \"https://ns-sales-rep-commissions.vercel.app/.well-known/assetlinks.json\"}]</string>
+    <string name="asset_statements" translatable="false">[{\"include\": \"https://ns-scw.bayoumi.dev/.well-known/assetlinks.json\"}, {\"include\": \"https://ns-sales-rep-commissions.vercel.app/.well-known/assetlinks.json\"}]</string>
 </resources>

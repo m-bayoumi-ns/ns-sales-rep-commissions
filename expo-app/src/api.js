@@ -1,6 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-export const API_BASE = "https://ns-sales-rep-commissions.vercel.app";
+export const API_BASE = "https://ns-scw.bayoumi.dev";
 export const APP_DOWNLOAD_PAGE = "https://ns-scw.bayoumi.dev/ar/get-app";
 export const WHATSAPP_NUMBER = "+201277909022";
 export const WHATSAPP_URL = "https://wa.me/201277909022";

@@ -412,7 +412,7 @@ class ApiClient(private val store: SessionStore) {
                     currentVersion = currentVersion,
                     bytes = json.optLong("bytes", 0L),
                     publishedAt = json.optString("publishedAt", ""),
-                    downloadUrl = "https://ns-scw.bayoumi.dev/api/app/download?variant=native",
+                    downloadUrl = "https://ns-scw.bayoumi.dev/ar/get-app",
                     downloadPageUrl = "https://ns-scw.bayoumi.dev/ar/get-app"
                 )
             } else {
