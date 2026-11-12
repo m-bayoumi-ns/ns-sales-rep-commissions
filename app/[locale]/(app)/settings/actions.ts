@@ -18,6 +18,7 @@ export type SaveResult = { ok: true; savedAt: string; notified: number } | { ok:
 export type ExportAccessSaveResult = { ok: true } | { ok: false; reason: "invalid" | "forbidden" | "storage" };
 export type MonthVisibilitySaveResult = { ok: true } | { ok: false; reason: "invalid" | "forbidden" | "storage" };
 export type DeleteNotificationResult = { ok: true } | { ok: false; reason: "invalid" | "forbidden" | "not_found" | "storage" };
+export type SendCommissionMessageResult = { ok: true; notified: number } | { ok: false; reason: "invalid" | "forbidden" | "no_recipients" | "storage" };
 
 const monthKeySchema = z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/);
 const monthVisibilitySchema = z.object({
@@ -25,6 +26,12 @@ const monthVisibilitySchema = z.object({
   to: z.union([monthKeySchema, z.literal("")]),
 }).refine(({ from, to }) => !to || from <= to, { path: ["to"] });
 const notificationIdSchema = z.string().uuid();
+const commissionMessageSchema = z.object({
+  month: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/),
+  mode: z.enum(["all", "users"]),
+  userIds: z.array(z.string().min(1).max(64)).max(500).default([]),
+  note: z.string().trim().min(1).max(500),
+});
 
 const notifySchema = z.object({
   mode: z.enum(["none", "all", "users"]),
@@ -88,6 +95,45 @@ export async function deleteCommissionNotification(rawId: unknown): Promise<Dele
   }
   revalidatePath("/[locale]/(app)/settings", "page");
   return { ok: true };
+}
+
+/** Sends a standalone message to selected sellers without saving monthly commission settings. */
+export async function sendCommissionMessage(raw: unknown): Promise<SendCommissionMessageResult> {
+  const user = await requireUser();
+  if (!isAdmin(user)) return { ok: false, reason: "forbidden" };
+  const parsed = commissionMessageSchema.safeParse(raw);
+  if (!parsed.success) return { ok: false, reason: "invalid" };
+  if (parsed.data.mode === "users" && !parsed.data.userIds.length) return { ok: false, reason: "no_recipients" };
+
+  const recipients = parsed.data.mode === "all"
+    ? { mode: "all" as const }
+    : { mode: "users" as const, userIds: [...new Set(parsed.data.userIds)] };
+  try {
+    await addNotification({
+      month: parsed.data.month,
+      by: user.name,
+      recipients,
+      changes: [],
+      note: parsed.data.note,
+    });
+  } catch (error) {
+    console.error("[settings] commission message send failed:", error);
+    return { ok: false, reason: "storage" };
+  }
+
+  const notified = recipients.mode === "all" ? -1 : recipients.userIds.length;
+  after(async () => {
+    if (recipients.mode === "all") await pushFeedForAll();
+    else for (const id of recipients.userIds) await pushFeedFor(id);
+  });
+  after(() => logActivity({
+    action: "notify",
+    userId: user.id,
+    email: user.email,
+    details: { month: parsed.data.month, changes: 0, recipients, type: "message" },
+  }));
+  revalidatePath("/[locale]/(app)/settings", "page");
+  return { ok: true, notified };
 }
 
 /** Saves one month's commission settings as JSON in Supabase Storage (administrators only). */

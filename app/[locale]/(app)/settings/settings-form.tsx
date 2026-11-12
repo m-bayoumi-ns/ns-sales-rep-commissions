@@ -16,7 +16,7 @@ import type { RepEntry } from "@/lib/commissions/view";
 import { formatDateTime, formatMonth, formatNumber } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { ChangeText } from "@/components/layout/notification-bell";
-import { findProducts, deleteCommissionNotification, saveCommissionMonthVisibility, saveCommissionSettings, saveExcelExportAccess } from "./actions";
+import { findProducts, deleteCommissionNotification, saveCommissionMonthVisibility, saveCommissionSettings, saveExcelExportAccess, sendCommissionMessage } from "./actions";
 
 type Props = {
   month: string;
@@ -190,7 +190,7 @@ export function SettingsForm({ month, notifications, excelExportAccess, monthVis
       <RepsCard settings={settings} update={update} sheet={sheet} monthName={monthName} candidates={candidates} monthReps={monthReps} />
       <MonthVisibilityCard initialFrom={monthVisibilityFrom} initialTo={monthVisibilityTo} />
       <ExcelExportAccessCard initial={excelExportAccess} />
-      <NotifyCard notify={notify} setNotify={setNotify} accounts={accounts} changes={changes.length} />
+      <NotifyCard month={month} notify={notify} setNotify={setNotify} accounts={accounts} changes={changes.length} />
       <CommissionNotificationsCard initial={notifications} />
 
       <div className="fixed inset-x-0 bottom-0 z-30 border-t bg-card/95 backdrop-blur supports-backdrop-filter:bg-card/80">
@@ -415,9 +415,28 @@ function ExcelExportAccessCard({ initial }: { initial: Props["excelExportAccess"
 }
 
 // ---------------------------------------------------------------- 5. notify sellers
-function NotifyCard({ notify, setNotify, accounts, changes }: { notify: NotifyState; setNotify: (change: (current: NotifyState) => NotifyState) => void; accounts: Props["accounts"]; changes: number }) {
+function NotifyCard({ month, notify, setNotify, accounts, changes }: { month: string; notify: NotifyState; setNotify: (change: (current: NotifyState) => NotifyState) => void; accounts: Props["accounts"]; changes: number }) {
   const t = useTranslations("settings.notify");
+  const [sending, startSending] = useTransition();
+  const [sendStatus, setSendStatus] = useState<{ kind: "sent" | "error"; text: string } | null>(null);
   const toggle = (id: string) => setNotify((current) => ({ ...current, userIds: current.userIds.includes(id) ? current.userIds.filter((item) => item !== id) : [...current.userIds, id] }));
+  const sendMessage = () => {
+    if (!notify.note.trim() || notify.mode === "none" || (notify.mode === "users" && !notify.userIds.length)) return;
+    startSending(async () => {
+      try {
+        const result = await sendCommissionMessage({ month, mode: notify.mode, userIds: notify.userIds, note: notify.note });
+        if (!result.ok) {
+          setSendStatus({ kind: "error", text: t(`sendStatus.${result.reason}`) });
+          return;
+        }
+        setNotify((current) => ({ ...current, note: "" }));
+        setSendStatus({ kind: "sent", text: t("sendStatus.sent", { recipients: result.notified < 0 ? t("sentAll") : t("sentSome", { count: result.notified }) }) });
+      } catch (error) {
+        console.error("[settings] commission message send failed:", error);
+        setSendStatus({ kind: "error", text: t("sendStatus.storage") });
+      }
+    });
+  };
   return (
     <Card title={t("title")} description={t("description")}>
       <p className={cn("flex items-center gap-2 text-sm", changes ? "text-foreground" : "text-muted-foreground")}>
@@ -456,11 +475,32 @@ function NotifyCard({ notify, setNotify, accounts, changes }: { notify: NotifySt
             value={notify.note}
             maxLength={500}
             rows={2}
-            onChange={(event) => setNotify((current) => ({ ...current, note: event.target.value }))}
+            onChange={(event) => {
+              setNotify((current) => ({ ...current, note: event.target.value }));
+              setSendStatus(null);
+            }}
             placeholder={t("notePlaceholder")}
             className="w-full rounded-lg border border-input bg-card px-2.5 py-2 text-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30"
           />
         </label>
+      ) : null}
+      {notify.mode !== "none" ? (
+        <div className="flex flex-wrap items-center gap-3">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={sendMessage}
+            disabled={sending || !notify.note.trim() || (notify.mode === "users" && !notify.userIds.length)}
+          >
+            {sending ? <Loader2Icon aria-hidden className="animate-spin" /> : <BellRingIcon aria-hidden />}
+            {sending ? t("sending") : t("sendMessage")}
+          </Button>
+          {sendStatus ? (
+            <p role={sendStatus.kind === "sent" ? "status" : "alert"} className={cn("text-sm", sendStatus.kind === "sent" ? "text-success" : "text-destructive")}>
+              {sendStatus.text}
+            </p>
+          ) : null}
+        </div>
       ) : null}
       <p className="text-xs text-muted-foreground">{t("hint")}</p>
     </Card>

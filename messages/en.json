@@ -541,7 +541,7 @@
       "title": "5 · Notify sellers about rate changes",
       "description": "When you save, the sellers you choose get a live notification listing what changed.",
       "changes": "{count, plural, one {# change} other {# changes}} to rates or rules since the last save",
-      "noChanges": "No rate changes yet — a notification is sent only when something changes (or you write a message).",
+      "noChanges": "No rate changes yet. You can still send a standalone message.",
       "mode": {
         "all": "All sellers ({count})",
         "users": "Selected sellers",
@@ -550,6 +550,15 @@
       "noAccounts": "No active seller accounts yet.",
       "note": "Message (optional)",
       "notePlaceholder": "e.g. Range B rate raised from the 10th",
+      "sendMessage": "Send message now",
+      "sending": "Sending…",
+      "sendStatus": {
+        "sent": "Message sent to {recipients}.",
+        "invalid": "Enter a valid message and month.",
+        "forbidden": "Only administrators can send messages.",
+        "no_recipients": "Select at least one recipient.",
+        "storage": "Could not send the message."
+      },
       "hint": "Sellers see it at once in the bell at the top of the page, even if the page is already open.",
       "sentAll": "all sellers notified",
       "sentSome": "{count, plural, one {# seller notified} other {# sellers notified}}"
