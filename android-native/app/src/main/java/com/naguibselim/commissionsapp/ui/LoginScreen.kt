@@ -266,7 +266,7 @@ fun LoginScreen(
                             modifier = Modifier.fillMaxWidth(),
                             placeholder = {
                                 Text(
-                                    text = tr("name@naguibselim.com أو nsr305", "name@naguibselim.com or nsr305"),
+                                    text = tr("name@naguibselim.com أو nsr3601", "name@naguibselim.com or nsr3601"),
                                     fontSize = 13.5.sp,
                                     color = c.mutedForeground.copy(alpha = 0.7f)
                                 )

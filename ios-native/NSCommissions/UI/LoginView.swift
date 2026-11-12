@@ -128,7 +128,7 @@ struct LoginView: View {
                                     .foregroundColor(c.foreground)
 
                                 HStack {
-                                    TextField("nsr305 or name@naguibselim.com", text: $identifier)
+                                    TextField("nsr3601 or name@naguibselim.com", text: $identifier)
                                         .font(.system(size: 14))
                                         .foregroundColor(c.foreground)
                                         .textInputAutocapitalization(.never)

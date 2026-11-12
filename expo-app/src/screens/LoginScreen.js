@@ -126,7 +126,7 @@ export function LoginScreen({ isDark, onToggleTheme, onLoginSuccess }) {
               <TextInput
                 value={identifier}
                 onChangeText={setIdentifier}
-                placeholder="name@naguibselim.com أو nsr305"
+                placeholder="name@naguibselim.com أو nsr3601"
                 placeholderTextColor={theme.textMuted}
                 autoCapitalize="none"
                 style={[styles.input, { color: theme.text, textAlign: "right" }]}
