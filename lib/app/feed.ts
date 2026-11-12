@@ -107,7 +107,7 @@ export async function buildFeed(user: AppUser, client: FeedClient, locale: Local
       items.push({
         id: `rates-${item.id}`,
         channel: "commission",
-        title: t("rates.title"),
+        title: item.kind === "message" ? t("rates.messageTitle") : t("rates.title"),
         body: item.note?.trim() || t("rates.body", { count: item.changes.length }),
         path: "/commissions",
       });

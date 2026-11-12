@@ -110,6 +110,7 @@ export async function sendCommissionMessage(raw: unknown): Promise<SendCommissio
     : { mode: "users" as const, userIds: [...new Set(parsed.data.userIds)] };
   try {
     await addNotification({
+      kind: "message",
       month: parsed.data.month,
       by: user.name,
       recipients,

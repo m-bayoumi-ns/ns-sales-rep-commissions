@@ -825,6 +825,7 @@
     "subtitle": "Commission rate changes",
     "empty": "No notifications.",
     "itemTitle": "Commission rates updated · {month}",
+    "messageTitle": "Message from NS Commissions",
     "toastTitle": "Commission rates updated · {month}",
     "toastBody": "{count, plural, one {# change} other {# changes}} — open the bell for details.",
     "more": "+{count} more",
@@ -862,6 +863,7 @@
     "management": {
       "title": "Sent commission notifications",
       "description": "Review the notifications in users' in-app lists. Deleting one removes it from those lists; phone notifications already delivered cannot be recalled.",
+      "messageTitle": "Message from NS Commissions",
       "toAll": "Sent to all sellers",
       "delete": "Delete notification",
       "deleteButton": "Delete notification for {month}",
@@ -967,6 +969,7 @@
     },
     "rates": {
       "title": "Commission rates updated",
+      "messageTitle": "Message from NS Commissions",
       "body": "{count, plural, one {# change} other {# changes}} to your commission rules. Tap to review."
     },
     "total": {

@@ -256,7 +256,9 @@ function CommissionNotificationsCard({ initial }: { initial: CommissionNotificat
             <li key={item.id} className="flex items-start gap-3 p-3 sm:p-4">
               <div className="min-w-0 flex-1 space-y-1.5">
                 <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-                  <p className="text-sm font-semibold">{t("itemTitle", { month: formatMonth(item.month, locale) })}</p>
+                  <p className="text-sm font-semibold">
+                    {item.kind === "message" ? t("messageTitle") : t("itemTitle", { month: formatMonth(item.month, locale) })}
+                  </p>
                   <time className="text-xs text-muted-foreground">{formatDateTime(new Date(item.at), locale)}</time>
                 </div>
                 {item.note ? <p className="text-sm">{item.note}</p> : null}

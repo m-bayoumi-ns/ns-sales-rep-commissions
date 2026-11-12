@@ -108,7 +108,9 @@ export function NotificationBell({ appHome = false }: { appHome?: boolean }) {
             {items.map((item) => (
               <li key={item.id} className={cn("flex flex-col gap-1.5 px-4 py-3", item.at > lastRead && "bg-accent/50")}>
                 <div className="flex items-center justify-between gap-2">
-                  <span className="text-sm font-semibold">{t("itemTitle", { month: formatMonth(item.month, locale) })}</span>
+                  <span className="text-sm font-semibold">
+                    {item.kind === "message" ? t("messageTitle") : t("itemTitle", { month: formatMonth(item.month, locale) })}
+                  </span>
                   <span className="shrink-0 text-[11px] text-muted-foreground">{formatDateTime(new Date(item.at), locale)}</span>
                 </div>
                 {item.note ? <p className="text-sm">{item.note}</p> : null}

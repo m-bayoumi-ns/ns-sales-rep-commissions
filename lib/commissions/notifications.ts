@@ -21,6 +21,8 @@ export type Recipients = { mode: "all" } | { mode: "users"; userIds: string[] };
 export type CommissionNotification = {
   id: string;
   at: string;
+  /** Missing on older stored notifications, which are rate-change alerts. */
+  kind?: "message";
   month: string;
   by: string;
   recipients: Recipients;
