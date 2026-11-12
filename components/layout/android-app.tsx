@@ -6,7 +6,7 @@ import { useCallback, useEffect, useLayoutEffect, useState, useSyncExternalStore
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { Link, usePathname } from "@/i18n/navigation";
 import { hasAppInstalled } from "@/lib/app/actions";
-import { ANDROID_APK_URL, sizeMb, type AndroidRelease } from "@/lib/android-app";
+import { ANDROID_APK_URL, sizeMb, type AndroidRelease, type AndroidVariant } from "@/lib/android-app";
 import { cn } from "@/lib/utils";
 
 export type Device = "app" | "android" | "ios" | "desktop" | "unknown";
@@ -126,7 +126,7 @@ export function AppModeMarker() {
           {mandatoryUpdate.bytes > 0 ? ` · ${sizeMb(mandatoryUpdate.bytes)} MB` : ""}
         </span>
         <a
-          href={isAr ? "/ar/get-app" : "/en/get-app"}
+          href={isAr ? "/ar/get-app?update=1&variant=web" : "/en/get-app?update=1&variant=web"}
           className="mt-1 inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-primary px-5 text-sm font-bold text-primary-foreground shadow-sm transition hover:bg-primary/90"
         >
           <DownloadIcon aria-hidden className="size-4" />
@@ -279,11 +279,29 @@ export function GetAppBanner() {
 // ---------------------------------------------------------------- download buttons
 
 /** Primary Android button: download in a browser, "Installed" inside the app. */
-export function AndroidDownloadButton({ className }: { className?: string }) {
+export function AndroidDownloadButton({ className, release, variant, updateRequested }: { className?: string; release: AndroidRelease; variant: AndroidVariant; updateRequested: boolean }) {
   const t = useTranslations("androidApp");
   const locale = useLocale();
   const device = useDevice();
   const installed = useAppInstalled(device);
+  if (updateRequested) {
+    return (
+      <a
+        href={`${ANDROID_APK_URL}?variant=${variant}`}
+        download="NS-Commissions.apk"
+        className={cn(
+          "inline-flex h-12 items-center justify-center gap-3 rounded-xl bg-primary px-5 text-primary-foreground shadow-sm transition hover:bg-primary/90",
+          className,
+        )}
+      >
+        <DownloadIcon aria-hidden className="size-5" />
+        <span className="flex flex-col items-start leading-tight">
+          <span className="text-[11px] opacity-80">{t("page.updateAvailable", { version: release.version })}</span>
+          <span className="text-sm font-semibold">{t("page.update")}</span>
+        </span>
+      </a>
+    );
+  }
   if (installed) {
     return (
       <a
@@ -325,12 +343,12 @@ export function AndroidDownloadButton({ className }: { className?: string }) {
 }
 
 /** Android browsers where installation can't be detected: "Already have the app? Open it". */
-export function OpenInstalledAppLink() {
+export function OpenInstalledAppLink({ updateRequested = false }: { updateRequested?: boolean }) {
   const t = useTranslations("androidApp.page");
   const locale = useLocale();
   const device = useDevice();
   const installed = useAppInstalled(device);
-  if (device !== "android" || installed) return null;
+  if (device !== "android" || installed || updateRequested) return null;
   return (
     <a href={openInAppHref(`/${locale}/commissions`, `/${locale}/get-app`)} className="text-sm font-semibold text-primary hover:underline">
       {t("alreadyInstalled")}
@@ -357,11 +375,19 @@ export function IosSoonButton({ className }: { className?: string }) {
 }
 
 /** One line under the buttons that speaks to the visitor's own device. */
-export function DeviceNote() {
+export function DeviceNote({ updateRequested = false }: { updateRequested?: boolean }) {
   const t = useTranslations("androidApp.page");
   const device = useDevice();
   if (device === "unknown") return <p className="h-5" />;
-  const text = device === "app" ? t("noteApp") : device === "android" ? t("noteAndroid") : device === "ios" ? t("noteIos") : t("noteDesktop");
+  const text = updateRequested && (device === "android" || device === "app")
+    ? t("noteUpdate")
+    : device === "app"
+      ? t("noteApp")
+      : device === "android"
+        ? t("noteAndroid")
+        : device === "ios"
+          ? t("noteIos")
+          : t("noteDesktop");
   return <p className="min-h-5 text-sm text-muted-foreground">{text}</p>;
 }
 

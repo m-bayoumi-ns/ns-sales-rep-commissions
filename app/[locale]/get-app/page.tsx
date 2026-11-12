@@ -1,6 +1,5 @@
 import { BellRingIcon, ChartLineIcon, ShareIcon, ShieldCheckIcon, SquarePlusIcon, WalletIcon } from "lucide-react";
 import type { Metadata } from "next";
-import { connection } from "next/server";
 import { useTranslations } from "next-intl";
 import { getTranslations } from "next-intl/server";
 import { Suspense } from "react";
@@ -9,7 +8,8 @@ import { BrandLogo } from "@/components/layout/brand-logo";
 import { LanguageSwitcher } from "@/components/layout/language-switcher";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
 import { Link } from "@/i18n/navigation";
-import { ANDROID_APP, sizeMb } from "@/lib/android-app";
+import { ANDROID_APPS, ANDROID_VARIANTS, sizeMb, type AndroidVariant } from "@/lib/android-app";
+import { chosenAndroidVariant } from "@/lib/app/download";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("androidApp.page");
@@ -24,7 +24,11 @@ const FEATURES = [
 ] as const;
 
 /** Public page presenting the mobile app: Android download, install steps, iPhone coming soon. */
-export default function GetAppPage() {
+export default function GetAppPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ update?: string | string[]; variant?: string | string[] }>;
+}) {
   const t = useTranslations();
   const p = (key: string, values?: Record<string, string>) => t(`androidApp.page.${key}`, values);
 
@@ -61,15 +65,9 @@ export default function GetAppPage() {
               </div>
             </div>
             <p className="max-w-lg text-base leading-relaxed text-muted-foreground md:text-lg">{p("lead")}</p>
-            <div className="flex w-full max-w-[420px] flex-nowrap gap-2">
-              <AndroidDownloadButton className="min-w-0 flex-1 justify-center gap-2 px-2" />
-              <IosSoonButton className="min-w-0 flex-1 justify-center gap-2 px-2" />
-            </div>
-            <Suspense fallback={<p className="h-4 text-xs text-muted-foreground" />}>
-              <AndroidVersion />
+            <Suspense fallback={<div className="h-12 w-full max-w-[420px] animate-pulse rounded-xl bg-muted" />}>
+              <AndroidDownloadControls searchParams={searchParams} />
             </Suspense>
-            <DeviceNote />
-            <OpenInstalledAppLink />
           </div>
 
           {/* Phone preview */}
@@ -192,8 +190,28 @@ export default function GetAppPage() {
   );
 }
 
-async function AndroidVersion() {
-  await connection();
-  const [t, release] = await Promise.all([getTranslations("androidApp.page"), ANDROID_APP.release]);
-  return <p className="text-xs text-muted-foreground">{t("version", { version: release.version, size: sizeMb(release.bytes) })}</p>;
+async function AndroidDownloadControls({
+  searchParams,
+}: {
+  searchParams: Promise<{ update?: string | string[]; variant?: string | string[] }>;
+}) {
+  const query = await searchParams;
+  const requestedVariant = typeof query.variant === "string" && ANDROID_VARIANTS.includes(query.variant as AndroidVariant)
+    ? query.variant as AndroidVariant
+    : null;
+  const variant = requestedVariant ?? await chosenAndroidVariant();
+  const release = ANDROID_APPS[variant].release;
+  const updateRequested = query.update === "1";
+  const t = await getTranslations("androidApp.page");
+  return (
+    <>
+      <div className="flex w-full max-w-[420px] flex-nowrap gap-2">
+        <AndroidDownloadButton release={release} variant={variant} updateRequested={updateRequested} className="min-w-0 flex-1 justify-center gap-2 px-2" />
+        <IosSoonButton className="min-w-0 flex-1 justify-center gap-2 px-2" />
+      </div>
+      <p className="text-xs text-muted-foreground">{t("version", { version: release.version, size: sizeMb(release.bytes) })}</p>
+      <DeviceNote updateRequested={updateRequested} />
+      <OpenInstalledAppLink updateRequested={updateRequested} />
+    </>
+  );
 }

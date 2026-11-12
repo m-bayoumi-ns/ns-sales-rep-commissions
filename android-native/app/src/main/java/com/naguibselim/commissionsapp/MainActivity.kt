@@ -201,9 +201,9 @@ class MainActivity : FragmentActivity() {
                         update = updateInfo,
                         onDownload = {
                             val targetUrl = if (state.language == "en") {
-                                "https://ns-scw.bayoumi.dev/en/get-app"
+                                "https://ns-scw.bayoumi.dev/en/get-app?update=1&variant=native"
                             } else {
-                                "https://ns-scw.bayoumi.dev/ar/get-app"
+                                "https://ns-scw.bayoumi.dev/ar/get-app?update=1&variant=native"
                             }
                             openWebsiteInBrowser(context, targetUrl)
                         }
