@@ -21,8 +21,8 @@
     "android": {
       "package": "com.naguibselim.commissionsapp",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/icon.png",
-        "backgroundColor": "#744C27"
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundColor": "#FFFFFF"
       }
     }
   }
