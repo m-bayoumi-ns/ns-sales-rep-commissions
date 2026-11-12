@@ -84,9 +84,7 @@ struct RulesModel: Equatable {
     var lowAchievementPct: Double
     var lowRate: Double
     var oldSystemUntilPct: Double
-    var oldSystemMode: String
     var oldSystemTiers: [TierRule]
-    var oldRate: Double
     var minimumSales: Double
     var salesBonuses: [BonusStepModel]
     var statementDetails: [String: Bool]
@@ -429,12 +427,10 @@ enum JsonParsers {
             collectionPct: dbl(rulesObj, "collectionPct", default: 120),
             collectionBonus: dbl(rulesObj, "collectionBonus", default: 2000),
             collectionMinAchievementPct: dblOpt(rulesObj, "collectionMinAchievementPct"),
-            lowAchievementPct: dbl(rulesObj, "lowAchievementPct", default: 70),
-            lowRate: dbl(rulesObj, "lowRate", default: 0.25),
-            oldSystemUntilPct: dbl(rulesObj, "oldSystemUntilPct", default: 90),
-            oldSystemMode: str(rulesObj, "oldSystemMode", default: "tiers"),
-            oldSystemTiers: oldTiersArr.map(parseTierRule),
-            oldRate: dbl(rulesObj, "oldRate", default: 0.25),
+            lowAchievementPct: dbl(rulesObj, "lowAchievementPct", default: 50),
+            lowRate: dbl(rulesObj, "lowRate", default: 0.1),
+            oldSystemUntilPct: dbl(rulesObj, "oldSystemUntilPct", default: 70),
+            oldSystemTiers: oldTiersArr.isEmpty ? tiersArr.map(parseTierRule) : oldTiersArr.map(parseTierRule),
             minimumSales: dbl(rulesObj, "minimumSales", default: 0),
             salesBonuses: bonusesArr.map {
                 BonusStepModel(from: dbl($0, "from"), to: dblOpt($0, "to"), amount: dbl($0, "amount"))

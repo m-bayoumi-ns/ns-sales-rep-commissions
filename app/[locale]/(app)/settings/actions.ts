@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { requireUser } from "@/lib/auth/dal";
 import { isAdmin } from "@/lib/auth/permissions";
+import { loadAppSettings, saveAppSettings } from "@/lib/accounts/app-settings";
 import { searchProducts, type ProductSearchResult } from "@/lib/commissions/odoo";
 import { settingsSchema } from "@/lib/commissions/schema";
 import { loadSettings, saveSettings } from "@/lib/commissions/storage";
@@ -14,6 +15,7 @@ import { logActivity } from "@/lib/activity";
 import { pushFeedFor, pushFeedForAll } from "@/lib/app/push";
 
 export type SaveResult = { ok: true; savedAt: string; notified: number } | { ok: false; reason: "invalid" | "forbidden" | "storage"; detail?: string };
+export type ExportAccessSaveResult = { ok: true } | { ok: false; reason: "invalid" | "forbidden" | "storage" };
 
 const notifySchema = z.object({
   mode: z.enum(["none", "all", "users"]),
@@ -21,6 +23,24 @@ const notifySchema = z.object({
   note: z.string().trim().max(500).optional(),
 });
 export type NotifyChoice = z.infer<typeof notifySchema>;
+
+/** Updates the global visibility setting for commission Excel exports. */
+export async function saveExcelExportAccess(raw: unknown): Promise<ExportAccessSaveResult> {
+  const user = await requireUser();
+  if (!isAdmin(user)) return { ok: false, reason: "forbidden" };
+  const parsed = z.enum(["admins_only", "report_access"]).safeParse(raw);
+  if (!parsed.success) return { ok: false, reason: "invalid" };
+  try {
+    const settings = await loadAppSettings();
+    await saveAppSettings({ ...settings, excelExportAccess: parsed.data });
+  } catch (error) {
+    console.error("[settings] Excel export access save failed:", error);
+    return { ok: false, reason: "storage" };
+  }
+  revalidatePath("/[locale]/(app)/settings", "page");
+  revalidatePath("/[locale]/(app)/commissions", "page");
+  return { ok: true };
+}
 
 /** Saves one month's commission settings as JSON in Supabase Storage (administrators only). */
 export async function saveCommissionSettings(raw: unknown, notifyRaw?: unknown): Promise<SaveResult> {

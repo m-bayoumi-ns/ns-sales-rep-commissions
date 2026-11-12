@@ -1,11 +1,11 @@
 import "server-only";
 import type { AppUser } from "@/lib/auth/types";
-import { addMonths, currentMonth, daysBetween, monthBounds, today } from "@/lib/finance/core";
-import { calculate, productCommissionRateFor, productRuleFor, project, type RepResult, tierIndex } from "./engine";
+import { cached, currentMonth, daysBetween, MINUTE, monthBounds, today } from "@/lib/finance/core";
+import { calculate, isNsProductRule, lineCommissionBasis, productRuleFor, project, unitPricesAfterDiscount, type Regime, type RepResult, tierIndex } from "./engine";
 import { cleanRepName, matchRep, normalizeName } from "./names";
 import { autoMatchProducts, getCollections, getRepCandidates, getReceivables, getSalesLines, getUserNames, type OdooRep, type RepSaleLine } from "./odoo";
 import type { Category, CommissionSettings } from "./schema";
-import { loadSettings, readTargetSheet, type StoredSettings, type TargetSheet } from "./storage";
+import { listTargetMonths, loadSettings, readTargetSheet, type StoredSettings, type TargetSheet } from "./storage";
 import { loadAppSettings } from "@/lib/accounts/app-settings";
 
 export const FIRST_MONTH = "2026-01";
@@ -16,10 +16,22 @@ export function resolveMonth(raw: string | undefined): string {
   return raw;
 }
 
-export function availableMonths(): string[] {
-  const out: string[] = [];
-  for (let month = currentMonth(); month >= FIRST_MONTH; month = addMonths(month, -1)) out.push(month);
-  return out;
+export function hasConfiguredTargets(reps: TargetSheet["reps"]): boolean {
+  return reps.some((rep) =>
+    [rep.totalTarget, rep.slowTarget, rep.digitalTarget, ...rep.rangeTargets].some((target) => target != null && target > 0),
+  );
+}
+
+export function availableMonths(): Promise<string[]> {
+  return cached("commission-months-with-targets:v1", MINUTE, async () => {
+    const now = currentMonth();
+    const previousMonths = (await listTargetMonths()).filter((month) => month >= FIRST_MONTH && month < now);
+    const checked = await Promise.all(previousMonths.map(async (month) => ({
+      month,
+      hasTargets: hasConfiguredTargets((await readTargetSheet(month)).reps),
+    })));
+    return [now, ...checked.filter((item) => item.hasTargets).map((item) => item.month).sort((a, b) => b.localeCompare(a))];
+  });
 }
 
 export type MonthClock = { month: string; closed: boolean; elapsedDays: number; monthDays: number; remainingDays: number; asOf: string };
@@ -105,6 +117,7 @@ export async function loadMonthSetup(month: string) {
       templateId: saved?.templateId || auto?.templateId || 0,
       templateName: saved?.templateName || auto?.name || "",
       code: saved?.code ?? auto?.code ?? null,
+      sourceCategory: row.category,
       variantId: saved?.variantId ?? null,
       color: saved?.color ?? null,
       category: row.categoryKey,
@@ -185,19 +198,42 @@ export type CommissionsView = {
   unlinked: string[];
   totals: { sales: number; target: number; targetToDate: number; commission: number; collections: number; onTrack: number; flagged: number };
   detail: RepDetail | null;
+  rowData?: CommissionRowData[];
 };
 
-function bucketOf(settings: CommissionSettings, line: RepSaleLine, useOldSystemTiers = false): { bucket: string; rate: number } {
+export type CommissionRowData = {
+  day: string;
+  seller: string;
+  customer: string;
+  invoice: string;
+  product: string;
+  category: string | null;
+  color: string | null;
+  price: number | null;
+  priceAfterDiscount: number | null;
+  qty: number;
+  invoiceAmount: number;
+  commissionRate: number;
+  commission: number;
+  regime: Regime;
+  tierName: "lowRate" | "productThreshold" | "productAny" | "range" | "unpriced";
+  tierKey?: string;
+  tierPrice?: number;
+};
+
+function bucketOf(settings: CommissionSettings, line: RepSaleLine, regime: Regime): { bucket: string; rate: number } {
   const rule = productRuleFor(settings.products, line.productId, line.templateId);
   const unit = line.qty ? Math.abs(line.amount / line.qty) : Math.abs(line.amount);
-  const tiers = useOldSystemTiers ? settings.rules.oldSystemTiers : settings.tiers;
+  const tiers = regime === "old" ? settings.rules.oldSystemTiers : settings.tiers;
   const index = tierIndex(tiers, unit);
-  const rate = productCommissionRateFor(settings.products, line.productId, line.templateId, unit) ?? (index >= 0 ? tiers[index].rate : 0);
+  const basis = lineCommissionBasis(settings, line.productId, line.templateId, unit, regime);
+  const rate = basis.rate;
   if (rule?.category) return { bucket: rule.category, rate };
+  if (isNsProductRule(rule) && (basis.tierName === "productThreshold" || basis.tierName === "productAny")) return { bucket: "ns", rate };
   return index >= 0 ? { bucket: String.fromCharCode(65 + index), rate } : { bucket: "none", rate: 0 };
 }
 
-export async function getCommissionsView(user: AppUser, month: string, repKey: string | undefined): Promise<CommissionsView> {
+export async function getCommissionsView(user: AppUser, month: string, repKey: string | undefined, includeRowData = false): Promise<CommissionsView> {
   const clock = monthClock(month);
   const setup = await loadMonthSetup(month);
   const { settings } = setup.stored;
@@ -237,14 +273,41 @@ export async function getCommissionsView(user: AppUser, month: string, repKey: s
 
   // One seller at a time: the chosen one, else the first in the seller list; "all" = the team summary.
   const selected = repKey === ALL_REPS ? undefined : (summaries.find((rep) => rep.key === repKey) ?? summaries.find((rep) => rep.key === repOptions(summaries)[0]?.key));
-  const displayName = selected ? (await loadAppSettings()).sellerDisplayNames?.[normalizeName(selected.name)] : undefined;
+  const displayNames = includeRowData || selected ? (await loadAppSettings()).sellerDisplayNames ?? {} : {};
+  const displayName = selected ? displayNames[normalizeName(selected.name)] : undefined;
+  const rowData: CommissionRowData[] | undefined = includeRowData
+    ? summaries.flatMap((rep) => (rep.odooUserId ? (linesBy.get(rep.odooUserId) ?? []) : []).map((line) => {
+        const prices = unitPricesAfterDiscount(line.amount, line.qty, line.unitPrice, line.discount);
+        const basis = lineCommissionBasis(settings, line.productId, line.templateId, prices.afterDiscount, rep.result.regime);
+        const product = productRuleFor(settings.products, line.productId, line.templateId);
+        const category = product?.sourceCategory || product?.category || null;
+        return {
+          day: line.day,
+          seller: displayNames[normalizeName(rep.name)] ?? rep.name,
+          customer: line.partnerName,
+          invoice: line.moveName,
+          product: line.productName,
+          category,
+          color: line.color,
+          price: prices.beforeDiscount,
+          priceAfterDiscount: prices.afterDiscount,
+          qty: line.qty,
+          invoiceAmount: line.invoiceAmount,
+          commissionRate: basis.rate,
+          commission: (line.amount * basis.rate) / 100,
+          regime: rep.result.regime,
+          tierName: basis.tierName,
+          tierKey: basis.tierKey,
+          tierPrice: basis.price,
+        };
+      }))
+    : undefined;
   let detail: RepDetail | null = null;
   if (selected) {
     const own = selected.odooUserId ? (linesBy.get(selected.odooUserId) ?? []) : [];
-    const useOldSystemTiers = selected.result.regime === "old" && settings.rules.oldSystemMode === "tiers";
     const products = new Map<string, ProductRow>();
     for (const line of own) {
-      const { bucket, rate } = bucketOf(settings, line, useOldSystemTiers);
+      const { bucket, rate } = bucketOf(settings, line, selected.result.regime);
       const keyOf = `${line.productId}|${bucket}`;
       const row = products.get(keyOf) ?? { key: keyOf, productName: line.productName, code: line.code, color: line.color, uom: line.uom, qty: 0, amount: 0, avgPrice: null, bucket, rate, commission: 0, invoices: [] };
       row.qty += line.qty;
@@ -256,7 +319,7 @@ export async function getCommissionsView(user: AppUser, month: string, repKey: s
     const invoiceMap = new Map<number, InvoiceRow>();
     const customerMap = new Map<string, CustomerRow & { moves: Set<number> }>();
     for (const line of own) {
-      const { rate } = bucketOf(settings, line, useOldSystemTiers);
+      const { rate } = bucketOf(settings, line, selected.result.regime);
       const commission = (line.amount * rate) / 100;
       const invoice = invoiceMap.get(line.moveId) ?? { moveId: line.moveId, name: line.moveName, day: line.day, customer: line.partnerName, refund: line.refund, qty: 0, amount: 0, commission: 0, lines: 0 };
       invoice.qty += line.qty;
@@ -308,7 +371,7 @@ export async function getCommissionsView(user: AppUser, month: string, repKey: s
   return {
     fetchedAt: new Date().toISOString(),
     clock,
-    months: availableMonths(),
+    months: await availableMonths(),
     settings,
     source: setup.stored.source,
     inheritedFrom: setup.stored.inheritedFrom,
@@ -325,6 +388,7 @@ export async function getCommissionsView(user: AppUser, month: string, repKey: s
       flagged: summaries.filter((rep) => rep.result.belowMinimum || rep.minimumRisk).length,
     },
     detail,
+    ...(rowData ? { rowData } : {}),
   };
 }
 

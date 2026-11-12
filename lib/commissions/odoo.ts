@@ -154,6 +154,7 @@ export type RepSaleLine = SaleLine & {
   repId: number;
   moveId: number;
   moveName: string;
+  invoiceAmount: number;
   refund: boolean;
   partnerId: number | null;
   partnerName: string;
@@ -161,10 +162,12 @@ export type RepSaleLine = SaleLine & {
   code: string | null;
   color: string | null;
   uom: string | null;
+  unitPrice: number | null;
+  discount: number | null;
 };
 
-type MoveRow = { id: number; name: string; move_type: string; invoice_date: string | false; sales_rep_id: Many2one; partner_id: Many2one };
-type LineRow = { id: number; move_id: Many2one; product_id: Many2one; quantity: number; balance: number };
+type MoveRow = { id: number; name: string; move_type: string; invoice_date: string | false; sales_rep_id: Many2one; partner_id: Many2one; amount_total_signed: number };
+type LineRow = { id: number; move_id: Many2one; product_id: Many2one; quantity: number; balance: number; price_unit: number | false; discount: number | false };
 type ReceivableLineRow = { id: number; move_id: Many2one; balance: number };
 type ReconciliationRow = { id: number; debit_move_id: Many2one; credit_move_id: Many2one; amount: number; max_date: string | false };
 type MoveLineDateRow = { id: number; date: string | false };
@@ -184,14 +187,14 @@ export function getSalesLines(month: string, repIds: number[]): Promise<RepSaleL
         ["sales_rep_id", "in", repIds],
         ["partner_id", "not in", icList(catalog)],
       ],
-      ["id", "name", "move_type", "invoice_date", "sales_rep_id", "partner_id"],
+      ["id", "name", "move_type", "invoice_date", "sales_rep_id", "partner_id", "amount_total_signed"],
     );
     const moveById = new Map(moves.map((move) => [move.id, move]));
     const invoiceIds = new Set(moves.filter((move) => move.move_type === "out_invoice").map((move) => move.id));
     const [lines, receivableLines] = await Promise.all([
       Promise.all(
         chunk(moves.map((move) => move.id), 800).map((ids) =>
-          searchReadAll<LineRow>("account.move.line", [["move_id", "in", ids], ["display_type", "=", "product"]], ["id", "move_id", "product_id", "quantity", "balance"]),
+          searchReadAll<LineRow>("account.move.line", [["move_id", "in", ids], ["display_type", "=", "product"]], ["id", "move_id", "product_id", "quantity", "balance", "price_unit", "discount"]),
         ),
       ).then((parts) => parts.flat()),
       Promise.all(
@@ -269,6 +272,7 @@ export function getSalesLines(month: string, repIds: number[]): Promise<RepSaleL
         repId: m2oId(move.sales_rep_id)!,
         moveId: move.id,
         moveName: move.name,
+        invoiceAmount: (refund ? -1 : 1) * Math.abs(Number(move.amount_total_signed) || 0),
         refund,
         partnerId: m2oId(move.partner_id),
         partnerName: m2oName(move.partner_id) ?? "",
@@ -278,6 +282,8 @@ export function getSalesLines(month: string, repIds: number[]): Promise<RepSaleL
         code: product?.code ?? null,
         color: product?.color ?? null,
         uom: product?.uom ?? null,
+        unitPrice: typeof line.price_unit === "number" && Number.isFinite(line.price_unit) ? Math.abs(line.price_unit) : null,
+        discount: typeof line.discount === "number" && Number.isFinite(line.discount) ? line.discount : null,
         qty: (refund ? -1 : 1) * Math.abs(Number(line.quantity) || 0),
         amount,
         cashAmount: !refund ? amount * (paidInvoiceSharesById.get(move.id) ?? 0) : 0,

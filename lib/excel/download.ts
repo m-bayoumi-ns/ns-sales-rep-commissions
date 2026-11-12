@@ -28,7 +28,7 @@ export async function downloadExcel(fileName: string, sheetName: string, columns
     cell.border = { bottom: { style: "medium", color: { argb: "FFC49A6C" } } };
   });
 
-  const percentColumns = new Set(["achievement", "slow", "digital", "rangeA", "rangeB", "rangeC", "cash", "collectionRatio", "collectionApplied"]);
+  const percentColumns = new Set(["achievement", "slow", "digital", "rangeA", "rangeB", "rangeC", "cash", "collectionRatio", "collectionApplied", "commissionRate"]);
   for (let rowNumber = headerRow + 1; rowNumber <= worksheet.rowCount; rowNumber += 1) {
     const row = worksheet.getRow(rowNumber);
     row.height = 24;

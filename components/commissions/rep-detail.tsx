@@ -225,8 +225,8 @@ function BuildUp({ view, detail, locale }: { view: CommissionsView; detail: Deta
   const t = useTranslations("cm.build");
   const r = detail.rep.result;
   const { rules } = view.settings;
-  const replaced = r.regime === "low" || (r.regime === "old" && rules.oldSystemMode !== "base");
-  const items = r.adjustments.filter((item) => item.key !== "lowRate" && item.key !== "oldRate" && item.key !== "oldTiers" && item.key !== "collectionShare");
+  const replaced = r.regime === "low";
+  const items = r.adjustments.filter((item) => item.key !== "lowRate" && item.key !== "oldTiers" && item.key !== "collectionShare");
   const collectionShare = r.adjustments.find((item) => item.key === "collectionShare");
   return (
     <Section title={t("title")} description={t("description")}>
@@ -248,7 +248,7 @@ function BuildUp({ view, detail, locale }: { view: CommissionsView; detail: Deta
           <li className="flex items-center justify-between gap-3 bg-warning-soft p-3 text-warning">
             <span className="flex items-center gap-2 text-sm font-medium">
               <AlertTriangleIcon aria-hidden className="size-4" />
-              {r.regime === "low" ? t("lowRate", { rate: rules.lowRate }) : rules.oldSystemMode === "tiers" ? t("oldTiers") : t("oldRate", { rate: rules.oldRate })}
+              {r.regime === "low" ? t("lowRate", { rate: rules.lowRate }) : t("oldTiers")}
             </span>
             <span dir="ltr" className="font-semibold tabular-nums">
               {formatCurrency(r.beforeCollection, locale)}
@@ -268,8 +268,7 @@ function BuildUp({ view, detail, locale }: { view: CommissionsView; detail: Deta
           </span>
         </li>
       </ol>
-      {r.regime === "old" && rules.oldSystemMode === "base" ? <Note>{t("oldNote", { low: rules.lowAchievementPct, old: rules.oldSystemUntilPct })}</Note> : null}
-      {r.regime === "old" && rules.oldSystemMode === "tiers" ? <Note>{t("oldTiersNote")}</Note> : null}
+      {r.regime === "old" ? <Note>{t("oldTiersNote")}</Note> : null}
     </Section>
   );
 }
@@ -286,7 +285,6 @@ function AdjustmentRow({ item, rules, locale, replaced }: { item: Adjustment; ru
     salesLadder: t("salesLadder"),
     collectionShare: t("collectionShare"),
     lowRate: "",
-    oldRate: "",
     oldTiers: "",
   }[item.key];
   const status =
@@ -325,7 +323,11 @@ function NextSteps({ view, detail, locale }: { view: CommissionsView; detail: De
   const target = r.totalTargetToDate;
   if (target) {
     if (r.regime === "low") tips.push({ key: "low", tone: "warn", text: t("toOld", { amount: money((target * rules.lowAchievementPct) / 100 - r.sales), pct: rules.lowAchievementPct }) });
-    if (r.regime === "low" || r.regime === "old") tips.push({ key: "full", tone: "todo", text: t("toFull", { amount: money((target * rules.oldSystemUntilPct) / 100 - r.sales), pct: rules.oldSystemUntilPct }) });
+    if (r.regime === "low" || r.regime === "old") {
+      const fullThreshold = (target * rules.oldSystemUntilPct) / 100;
+      const fullGap = Math.max(0, Math.floor((fullThreshold - r.sales) * 100) / 100 + 0.01);
+      tips.push({ key: "full", tone: "todo", text: t("toFull", { amount: money(fullGap), pct: rules.oldSystemUntilPct }) });
+    }
     if (r.sales < target) tips.push({ key: "target", tone: "todo", text: t("toTarget", { amount: money(target - r.sales), pct: rules.allTargetsBonusPct }) });
   } else tips.push({ key: "noTarget", tone: "warn", text: t("noTarget") });
   const uom = t("qtyUnit");

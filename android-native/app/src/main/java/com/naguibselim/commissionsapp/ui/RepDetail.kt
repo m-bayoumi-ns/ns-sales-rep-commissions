@@ -299,12 +299,12 @@ private fun BalanceHeaderCard(
                 if (r.regime != "full") {
                     val regimeNote = when (r.regime) {
                         "old" -> tr(
-                            "النظام القديم — حقق ${Format.integer(settings.rules.oldSystemUntilPct)}% من الهدف لتفعيل الحوافز",
-                            "Old system — reach ${Format.integer(settings.rules.oldSystemUntilPct)}% of target to unlock bonuses"
+                            "النظام القديم — تجاوز ${Format.integer(settings.rules.oldSystemUntilPct)}% للدخول إلى النظام الكامل",
+                            "Old system — exceed ${Format.integer(settings.rules.oldSystemUntilPct)}% to enter the full system"
                         )
                         "low" -> tr(
-                            "أقل من ${Format.integer(settings.rules.lowAchievementPct)}% من الهدف — ${Format.rate(settings.rules.lowRate)} من المبيعات فقط",
-                            "Below ${Format.integer(settings.rules.lowAchievementPct)}% of target — ${Format.rate(settings.rules.lowRate)} of sales only"
+                            "أقل من ${Format.integer(settings.rules.lowAchievementPct)}% — ${Format.rate(settings.rules.lowRate)} على الأصناف الأخرى مع استمرار Product Category",
+                            "Below ${Format.integer(settings.rules.lowAchievementPct)}% — ${Format.rate(settings.rules.lowRate)} on other products; Product Category commissions remain"
                         )
                         else -> tr("لم يُحدد هدف هذا الشهر", "No target set this month")
                     }
@@ -806,22 +806,23 @@ private fun buildEarnMoreTips(
                     tone = "warn",
                     text = trLang(
                         isAr,
-                        "حقق مبيعات إضافية $gap لتتجاوز ${Format.integer(rules.lowAchievementPct)}% من الهدف وتخرج من نسبة 0.1%.",
-                        "Sell $gap more to pass ${Format.integer(rules.lowAchievementPct)}% of target and leave the 0.1% rate."
+                        "حقق مبيعات إضافية $gap لتصل إلى ${Format.integer(rules.lowAchievementPct)}% من الهدف وتخرج من نظام أقل من 50%.",
+                        "Sell $gap more to reach ${Format.integer(rules.lowAchievementPct)}% of target and leave the below-50% system."
                     )
                 )
             )
         }
         if (r.regime == "low" || r.regime == "old") {
-            val gap = money((target * rules.oldSystemUntilPct) / 100.0 - r.sales)
+            val threshold = (target * rules.oldSystemUntilPct) / 100.0
+            val gap = money(maxOf(0.01, threshold - r.sales + 0.01))
             tips.add(
                 EarnTip(
                     key = "full",
                     tone = "warn",
                     text = trLang(
                         isAr,
-                        "حقق مبيعات إضافية $gap لتصل إلى ${Format.integer(rules.oldSystemUntilPct)}% من الهدف وتفعّل الحوافز.",
-                        "Sell $gap more to reach ${Format.integer(rules.oldSystemUntilPct)}% of target and unlock bonuses."
+                        "حقق مبيعات إضافية $gap لتتجاوز ${Format.integer(rules.oldSystemUntilPct)}% من الهدف وتدخل النظام الكامل.",
+                        "Sell $gap more to exceed ${Format.integer(rules.oldSystemUntilPct)}% of target and enter the full system."
                     )
                 )
             )
@@ -1840,8 +1841,8 @@ private fun StatementSection(
     val r = detail.rep.result
     val rules = settings.rules
 
-    val replaced = r.regime == "low" || (r.regime == "old" && rules.oldSystemMode != "base")
-    val useOldSystemTiers = r.regime == "old" && rules.oldSystemMode == "tiers"
+    val replaced = r.regime == "low"
+    val useOldSystemTiers = r.regime == "old"
     val activeTiers = if (useOldSystemTiers) rules.oldSystemTiers else settings.tiers
 
     val lines = buildList {
@@ -1868,11 +1869,21 @@ private fun StatementSection(
         }
         add(
             StatementBucketLine(
+                key = "ns",
+                label = "NS",
+                sub = tr("متوسط نسبة المنتجات", "weighted product rate"),
+                amount = r.ns.amount,
+                rate = Format.rate(r.ns.rate),
+                commission = r.ns.commission
+            )
+        )
+        add(
+            StatementBucketLine(
                 key = "slow",
                 label = tr("الراكد", "Slow-moving"),
                 sub = tr("نسبة الفئة", "category rate"),
                 amount = r.slowCategory.amount,
-                rate = Format.rate(settings.slowRate),
+                rate = Format.rate(r.slowCategory.rate),
                 commission = r.slowCategory.commission
             )
         )
@@ -1882,7 +1893,7 @@ private fun StatementSection(
                 label = tr("الديجيتال", "Digital"),
                 sub = tr("نسبة الفئة", "category rate"),
                 amount = r.digitalCategory.amount,
-                rate = Format.rate(settings.digitalRate),
+                rate = Format.rate(r.digitalCategory.rate),
                 commission = r.digitalCategory.commission
             )
         )
@@ -1894,14 +1905,14 @@ private fun StatementSection(
     }
 
     val adjustments = r.adjustments.filter {
-        it.key != "lowRate" && it.key != "oldRate" && it.key != "oldTiers" && it.key != "collectionShare"
+        it.key != "lowRate" && it.key != "oldTiers" && it.key != "collectionShare"
     }
     val collectionShare = r.adjustments.find { it.key == "collectionShare" }
 
     val regimeShortLabel = when (r.regime) {
         "full" -> tr("النظام الكامل", "Full system")
         "old" -> tr("النظام القديم", "Old system")
-        "low" -> tr("0.1% من المبيعات", "0.1% of sales")
+        "low" -> tr("نسبة منخفضة + Product Category", "Low rate + Product Category")
         else -> tr("بدون هدف", "No target")
     }
 
@@ -1960,11 +1971,9 @@ private fun StatementSection(
             DashedHorizontalLine(color = c.border)
 
             // Buckets list
-            val dimAlpha = if (r.regime == "low" && replaced) 0.5f else 1f
             Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .alpha(dimAlpha),
+                    .fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 lines.forEach { line ->
@@ -1973,6 +1982,7 @@ private fun StatementSection(
                     Column(modifier = Modifier.fillMaxWidth()) {
                         Row(
                             modifier = Modifier
+                                .alpha(if (r.regime == "low" && line.key != "slow" && line.key != "digital") 0.5f else 1f)
                                 .fillMaxWidth()
                                 .clip(RoundedCornerShape(8.dp))
                                 .then(
@@ -2088,17 +2098,11 @@ private fun StatementSection(
                         isAr = isAr
                     )
                 }
-                if (replaced && !(r.regime == "old" && rules.oldSystemMode == "tiers")) {
-                    val replaceText = when {
-                        r.regime == "low" -> tr(
-                            "أقل من 50%: ${Format.rate(rules.lowRate)} من إجمالي المبيعات بدلًا مما سبق",
-                            "Below 50%: ${Format.rate(rules.lowRate)} of total sales replaces the above"
-                        )
-                        else -> tr(
-                            "النظام القديم: ${Format.rate(rules.oldRate)} من إجمالي المبيعات",
-                            "Old system: ${Format.rate(rules.oldRate)} of total sales"
-                        )
-                    }
+                if (r.regime == "low") {
+                    val replaceText = tr(
+                        "أقل من 50%: ${Format.rate(rules.lowRate)} على المبيعات العادية، مع استمرار عمولة أصناف Product Category.",
+                        "Below 50%: ${Format.rate(rules.lowRate)} on other products; Product Category commissions still apply."
+                    )
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -2148,20 +2152,11 @@ private fun StatementSection(
                 )
             }
 
-            if (r.regime == "old" && rules.oldSystemMode == "base") {
+            if (r.regime == "old") {
                 Text(
                     text = tr(
-                        "النظام القديم (${Format.integer(rules.lowAchievementPct)}%–${Format.integer(rules.oldSystemUntilPct)}% من الهدف): تُصرف عمولة البنود بدون حوافز أو خصومات.",
-                        "Old system (${Format.integer(rules.lowAchievementPct)}%–${Format.integer(rules.oldSystemUntilPct)}% of target): the line commission is paid without bonuses or deductions."
-                    ),
-                    fontSize = 12.sp,
-                    color = c.mutedForeground
-                )
-            } else if (r.regime == "old" && rules.oldSystemMode == "tiers") {
-                Text(
-                    text = tr(
-                        "تُحسب الأصناف العادية بشرائح النظام القديم، بينما تحتفظ أصناف الراكد والديجيتال بنسب فئاتها.",
-                        "Regular products use the old-system tiers; slow-moving and digital products keep their category rates."
+                        "تُحسب المنتجات العادية بشرائح النظام القديم، وتُصرف عمولة Product Category بشكل مستقل عن تحقيق التارجت.",
+                        "Other products use the old-system tiers; Product Category commission remains independent of target achievement."
                     ),
                     fontSize = 12.sp,
                     color = c.mutedForeground

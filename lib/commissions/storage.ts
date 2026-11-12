@@ -72,6 +72,14 @@ export async function listFiles(folder: string): Promise<string[]> {
   return (data ?? []).filter((item) => item.id != null && item.name !== ".emptyFolderPlaceholder").map((item) => item.name);
 }
 
+export async function listTargetMonths(): Promise<string[]> {
+  const files = await listFiles(TARGET_FOLDER);
+  return [...new Set(files.flatMap((file) => {
+    const match = /^target_(\d{4})_(0[1-9]|1[0-2])\.xlsx$/i.exec(file);
+    return match ? [`${match[1]}-${match[2]}`] : [];
+  }))];
+}
+
 /** Names of the sub-folders directly inside a folder. */
 export async function listFolders(folder: string): Promise<string[]> {
   if (isDemoMode()) {
@@ -299,7 +307,7 @@ function parseProductCommission(workbook: ExcelJS.Workbook): TargetSheet["produc
       const occurrence = occurrences.get(identity) ?? 0;
       occurrences.set(identity, occurrence + 1);
       const key = `pc-${createHash("sha256").update(`${identity}\u001f${occurrence}`).digest("hex").slice(0, 24)}`;
-      const valid = Boolean(productName && categoryKey && (anyPrice || (price != null && price >= 0)) && commission != null && commission >= 0 && commission <= 1000);
+      const valid = Boolean(productName && category && (anyPrice || (price != null && price >= 0)) && commission != null && commission >= 0 && commission <= 1000);
       rows.push({ key, row: rowIndex, category, categoryKey, productName, price, anyPrice, commission, priceText, commissionText, valid });
     }
 

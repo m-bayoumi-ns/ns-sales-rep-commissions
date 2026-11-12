@@ -416,7 +416,11 @@ function useTips(detail: RepDetail, settings: CommissionSettings): Tip[] {
   const uom = t("qtyUnit");
   if (target) {
     if (r.regime === "low") tips.push({ key: "low", tone: "warn", text: t("toOld", { amount: money((target * rules.lowAchievementPct) / 100 - r.sales), pct: rules.lowAchievementPct }) });
-    if (r.regime === "low" || r.regime === "old") tips.push({ key: "full", tone: "warn", text: t("toFull", { amount: money((target * rules.oldSystemUntilPct) / 100 - r.sales), pct: rules.oldSystemUntilPct }) });
+    if (r.regime === "low" || r.regime === "old") {
+      const fullThreshold = (target * rules.oldSystemUntilPct) / 100;
+      const fullGap = Math.max(0, Math.floor((fullThreshold - r.sales) * 100) / 100 + 0.01);
+      tips.push({ key: "full", tone: "warn", text: t("toFull", { amount: money(fullGap), pct: rules.oldSystemUntilPct }) });
+    }
     if (r.sales < target) hasUnmetTargets = true;
   } else tips.push({ key: "noTarget", tone: "warn", text: t("noTarget") });
   for (const key of ["slow", "digital"] as const) {
@@ -868,17 +872,18 @@ function Statement({ detail, settings }: { detail: RepDetail; settings: Commissi
   const locale = useLocale() as Locale;
   const r = detail.rep.result;
   const { rules } = settings;
-  const replaced = r.regime === "low" || (r.regime === "old" && rules.oldSystemMode !== "base");
-  const useOldSystemTiers = r.regime === "old" && rules.oldSystemMode === "tiers";
+  const replaced = r.regime === "low";
+  const useOldSystemTiers = r.regime === "old";
   const activeTiers = useOldSystemTiers ? rules.oldSystemTiers : settings.tiers;
   const activeBuckets = useOldSystemTiers ? r.oldTiers : r.tiers;
   const lines = [
     ...activeBuckets.map((bucket, index) => ({ key: bucket.key, label: t("range", { key: bucket.key }), sub: activeTiers[index].to == null ? t("priceFrom", { from: formatNumber(activeTiers[index].from) }) : t("priceBetween", { from: formatNumber(activeTiers[index].from), to: formatNumber(activeTiers[index].to) }), amount: bucket.amount, rate: formatRate(bucket.rate), commission: bucket.commission })),
+    { key: "ns", label: t("cat.ns"), sub: t("ownRates"), amount: r.ns.amount, rate: formatRate(r.ns.rate), commission: r.ns.commission },
     ...(["slow", "digital"] as const).map((key) => ({ key, label: t(`cat.${key}`), sub: t("ownRates"), amount: r.categories[key].amount, rate: formatRate(r.categories[key].rate), commission: r.categories[key].commission })),
   ].filter((line) => line.amount !== 0 || line.commission !== 0);
   const [openKey, setOpenKey] = useState<string | null>(null);
   const canOpen = (key: string) => rules.statementDetails[key as keyof typeof rules.statementDetails] !== false && detail.products.some((row) => row.bucket === key);
-  const adjustments = r.adjustments.filter((item) => item.key !== "lowRate" && item.key !== "oldRate" && item.key !== "oldTiers" && item.key !== "collectionShare");
+  const adjustments = r.adjustments.filter((item) => item.key !== "lowRate" && item.key !== "oldTiers" && item.key !== "collectionShare");
   const collectionShare = r.adjustments.find((item) => item.key === "collectionShare");
 
   return (
@@ -913,7 +918,7 @@ function Statement({ detail, settings }: { detail: RepDetail; settings: Commissi
             </>
           );
           return (
-            <li key={line.key} className={cn("flex flex-col text-sm", r.regime === "low" && replaced && "opacity-50")}>
+            <li key={line.key} className={cn("flex flex-col text-sm", r.regime === "low" && line.key !== "ns" && line.key !== "slow" && line.key !== "digital" && "opacity-50")}>
               {openable ? (
                 <button type="button" aria-expanded={open} onClick={() => setOpenKey(open ? null : line.key)} className="-mx-2 flex items-baseline gap-2 rounded-lg px-2 py-1 hover:bg-muted">
                   {body}
@@ -937,9 +942,9 @@ function Statement({ detail, settings }: { detail: RepDetail; settings: Commissi
         {adjustments.map((item) => (
           <StatementAdjustment key={item.key} item={item} rules={rules} replaced={replaced} />
         ))}
-        {replaced && !(r.regime === "old" && rules.oldSystemMode === "tiers") ? (
+        {r.regime === "low" ? (
           <li className="flex items-baseline gap-2 rounded-lg bg-warning-soft px-2 py-1.5 text-sm text-warning">
-            <span>{r.regime === "low" ? tb("lowRate", { rate: rules.lowRate }) : rules.oldSystemMode === "tiers" ? tb("oldTiers") : tb("oldRate", { rate: rules.oldRate })}</span>
+            <span>{tb("lowRate", { rate: rules.lowRate })}</span>
             <span aria-hidden className="mb-1 flex-1" />
             <span dir="ltr" className="font-semibold tabular-nums">{formatNumber(r.beforeCollection)}</span>
           </li>
@@ -952,8 +957,7 @@ function Statement({ detail, settings }: { detail: RepDetail; settings: Commissi
           {formatCurrency(r.total, locale)}
         </span>
       </div>
-      {r.regime === "old" && rules.oldSystemMode === "base" ? <p className="mt-3 text-xs text-muted-foreground">{tb("oldNote", { low: rules.lowAchievementPct, old: rules.oldSystemUntilPct })}</p> : null}
-      {r.regime === "old" && rules.oldSystemMode === "tiers" ? <p className="mt-3 text-xs text-muted-foreground">{tb("oldTiersNote")}</p> : null}
+      {r.regime === "old" ? <p className="mt-3 text-xs text-muted-foreground">{tb("oldTiersNote")}</p> : null}
     </div>
   );
 }
@@ -1019,7 +1023,6 @@ function StatementAdjustment({ item, rules, replaced }: { item: Adjustment; rule
     salesLadder: t("salesLadder"),
     collectionShare: t("collectionShare"),
     lowRate: "",
-    oldRate: "",
     oldTiers: "",
   }[item.key];
   const status =

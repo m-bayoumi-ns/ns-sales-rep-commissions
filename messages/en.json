@@ -124,13 +124,13 @@
     "regime": {
       "full": "Full system + bonuses",
       "old": "Old commission system",
-      "low": "Below 50% · 0.1% only",
+      "low": "Below 50% · Product Category + low rate",
       "noTarget": "No target set"
     },
     "regimeHelp": {
-      "full": "Achievement is at or above {old}% of target: the line commission applies with every bonus and deduction.",
-      "old": "Achievement is between {low}% and {old}% of target: the old commission system applies — no bonuses or deductions. Reach {old}% to unlock them.",
-      "low": "Achievement is below {low}% of target: the commission is {rate}% of total sales, with no bonuses.",
+      "full": "Achievement is above {old}% of target: current price tiers apply to other products; Product Category commissions remain.",
+      "old": "Achievement is from {low}% through {old}% of target: old-system price tiers apply to other products; Product Category commissions remain.",
+      "low": "Achievement is below {low}% of target: {rate}% applies to other products; Product Category commissions remain.",
       "noTarget": "No total target is set for this month: the line commission and the bonuses are shown, but target conditions cannot be checked."
     },
     "export": {
@@ -158,11 +158,40 @@
       "minimumRisk": "At risk",
       "regime": {
         "full": "Full",
-        "old": "Old system",
+        "old": "Old system ({low}%–{old}% achievement)",
         "low": "Below 50%",
         "noTarget": "No target"
       },
-      "range": "Range {key} %"
+      "range": "Range {key} %",
+      "rowData": {
+        "button": "Row Data",
+        "title": "Row Data · {month}",
+        "date": "Date",
+        "rep": "Sales rep",
+        "customer": "Customer",
+        "invoice": "Invoice",
+        "product": "Product",
+        "categories": {
+          "slow": "Slow-moving",
+          "digital": "Digital"
+        },
+        "color": "Colour",
+        "price": "Price",
+        "priceAfterDiscount": "Price after discount",
+        "qty": "Quantity",
+        "invoiceAmount": "Invoice amount",
+        "commissionRate": "Commission rate",
+        "commission": "Commission",
+        "system": "Commission system",
+        "categoryOrTier": "Category / tier",
+        "tier": {
+          "range": "Range {key}",
+          "productThreshold": "Product category · from {price}",
+          "productAny": "Product Category · any price",
+          "lowRate": "Low-achievement rate",
+          "unpriced": "No matching tier"
+        }
+      }
     },
     "detail": {
       "back": "Team summary (all sellers)",
@@ -191,11 +220,9 @@
       "description": "Line commission, then each condition: earned ones count, the others show how close the rep is.",
       "base": "Line commission (price ranges + products)",
       "total": "Commission",
-      "lowRate": "Below 50%: {rate}% of total sales replaces the above",
-      "oldRate": "Old system: {rate}% of total sales",
-      "oldNote": "Old system ({low}%–{old}% of target): the line commission is paid without bonuses or deductions.",
-      "oldTiers": "Old system: separate price-tier commission",
-      "oldTiersNote": "Regular products use the old-system tiers; slow-moving and digital products keep their category rates.",
+      "lowRate": "Below 50%: {rate}% on other products; Product Category commissions remain.",
+      "oldTiers": "Old system: price tiers for other products",
+      "oldTiersNote": "Other products use the old-system tiers; Product Category commissions remain independent of target achievement.",
       "allTargets": "All targets met: +{pct}% of the line commission",
       "slowDeduction": "Slow-moving under {min}% of target: −{pct}%",
       "cash": "Paid invoice sales ≥ {pct}% of sales",
@@ -215,8 +242,8 @@
     "next": {
       "title": "What would raise the commission",
       "description": "The gaps to the next bonus or system, from today's figures.",
-      "toOld": "Sell {amount} more to pass {pct}% of target and leave the 0.1% rate.",
-      "toFull": "Sell {amount} more to reach {pct}% of target and unlock bonuses.",
+      "toOld": "Sell {amount} more to reach {pct}% of target and leave the below-50% system.",
+      "toFull": "Sell {amount} more to exceed {pct}% of target and enter the full system.",
       "toTarget": "Meet all targets to earn a {pct}% commission increase.",
       "noTarget": "No total target is set for this rep this month.",
       "qtyUnit": "m",
@@ -391,11 +418,7 @@
     },
     "oldTiers": {
       "title": "Old-system commission ranges",
-      "description": "Used from {from}% to below {to}% of target. Unmatched product prices use these ranges; a matching Product commission rate still applies.",
-      "mode": "Old-system calculation",
-      "modeTiers": "Separate price ranges for regular products",
-      "modeBase": "Use the current line commission",
-      "modeRate": "Fixed percentage of total sales",
+      "description": "Used from {from}% through {to}% of target for products without an applicable Product Category commission. Product Category commissions remain independent of target achievement.",
       "add": "Add range",
       "remove": "Remove range",
       "range": "Range {key}",
@@ -411,9 +434,16 @@
       "title": "2 · Product categories",
       "description": "Product categories, prices and commission rates are read from the Product commission sheet in the monthly target file. Link each imported product to its Odoo product.",
       "sourceStatus": "Rows: {count} · linked: {linked}",
+      "categorySummary": "Unique products by source category:",
+      "unclassified": "Unclassified",
+      "noCategoryProducts": "No products",
       "sourceMissing": "The Product commission sheet was not found in this month's target file.",
       "product": "Product name",
       "category": "Category",
+      "searchFilter": "Search by product name or Odoo name/code…",
+      "categoryFilter": "Filter by category",
+      "allCategories": "All categories",
+      "noFilteredProducts": "No products match these filters.",
       "price": "Price",
       "commission": "Commission",
       "odooProduct": "Link to Odoo product",
@@ -423,8 +453,9 @@
       "notLinked": "Not linked",
       "unmatched": "No unique Odoo product match was found",
       "invalidRow": "Check the source row values",
+      "missingCategory": "Category is required.",
       "empty": "No rows found, or the required column headers are missing.",
-      "hint": "A specific price uses its commission only when the net unit sale price after discount matches exactly. Otherwise, the regular price tiers apply. Any price applies at every price. Unlinked products use the tiers until linked.",
+      "hint": "A specific price is the minimum net unit sale price after discount for the product commission to apply. At or above it, the product commission applies; below it, regular price tiers apply. Any price applies at every price. Unlinked products use the tiers until linked.",
       "cat": {
         "slow": "Slow-moving",
         "digital": "Digital"
@@ -454,15 +485,12 @@
       "lowHint": "Of the total target",
       "lowRate": "→ commission (% of sales)",
       "oldUntil": "Old system up to",
-      "oldHint": "From {from}% up to this value",
-      "oldMode": "Old system pays",
-      "oldModeBase": "Line commission, no bonuses or deductions",
-      "oldModeRate": "A fixed % of sales",
-      "oldRate": "Old system rate (% of sales)",
+      "oldHint": "From {from}% through this value",
       "minimum": "Minimum monthly sales (flag)",
       "minimumHint": "A note is flagged under this amount at month end",
       "unitOf": "{name} target measured in",
       "cat": {
+        "ns": "NS",
         "slow": "Slow-moving",
         "digital": "Digital"
       },
@@ -523,6 +551,18 @@
       "hint": "Sellers see it at once in the bell at the top of the page, even if the page is already open.",
       "sentAll": "all sellers notified",
       "sentSome": "{count, plural, one {# seller notified} other {# sellers notified}}"
+    },
+    "exportAccess": {
+      "title": "Excel export access",
+      "description": "Choose who can use the Excel and Row Data buttons on the commissions page.",
+      "label": "Who can export",
+      "hint": "This does not grant access to the commissions page; users must already be authorized to view it.",
+      "adminsOnly": "Administrators only",
+      "reportAccess": "Anyone with commissions-page access",
+      "save": "Save export access",
+      "saving": "Saving…",
+      "saved": "Export access saved.",
+      "error": "Could not save export access."
     }
   },
   "app2": {
@@ -532,13 +572,13 @@
     "earnedNow": "Your commission so far",
     "earnedFinal": "Your commission this month",
     "level": {
-      "full": "Full system active; line commission still depends on collections",
-      "old": "Old system — reach {old}% of target to unlock bonuses",
-      "low": "Below {low}% of target — {rate}% of sales only",
+      "full": "Full system — Product Category commissions remain independent of achievement",
+      "old": "Old-system tiers apply to other products; exceed {old}% to enter the full system",
+      "low": "Below {low}% — {rate}% on other products; Product Category commissions remain",
       "noTarget": "No target set this month",
       "fullShort": "Full system",
       "oldShort": "Old system",
-      "lowShort": "0.1% of sales",
+      "lowShort": "Low rate + Product Category",
       "noTargetShort": "No target"
     },
     "chip": {
@@ -569,6 +609,7 @@
     "footerClosed": "Final figures for a closed month.",
     "m": "m",
     "cat": {
+      "ns": "NS",
       "slow": "Slow-moving",
       "digital": "Digital"
     },
@@ -786,8 +827,6 @@
         "lowAchievementPct": "Low-achievement level %",
         "lowRate": "Low-achievement rate %",
         "oldSystemUntilPct": "Old system up to %",
-        "oldSystemMode": "Old system pays",
-        "oldRate": "Old system rate %",
         "oldSystemTiers": "Old-system commission tiers",
         "minimumSales": "Monthly minimum (EGP)"
       }
@@ -898,7 +937,7 @@
     "regimes": {
       "full": "full system + bonuses",
       "old": "old commission system",
-      "low": "below 50% · 0.1% only",
+      "low": "below 50% · Product Category + low rate",
       "noTarget": "no target set"
     },
     "adjustment": {
@@ -918,8 +957,7 @@
       "collection": "Collections bonus",
       "salesLadder": "Monthly sales bonus",
       "collectionShare": "Collections rate adjustment",
-      "lowRate": "Below-50% rate",
-      "oldRate": "Old system rate"
+      "lowRate": "Below-50% rate"
     },
     "welcome": {
       "title": "Notifications are on",

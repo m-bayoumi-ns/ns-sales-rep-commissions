@@ -12,6 +12,8 @@ export type AppSettings = {
   sellerDisplayNames?: Record<string, string>;
   /** Which Android app the website's download button serves (Settings → Android app download). */
   androidDownload?: AndroidVariant;
+  /** Who can see and use the commission Excel export buttons. */
+  excelExportAccess?: "admins_only" | "report_access";
 };
 
 export async function loadAppSettings(): Promise<AppSettings> {
@@ -27,6 +29,7 @@ export async function loadAppSettings(): Promise<AppSettings> {
     usernames: data?.usernames ?? {},
     sellerDisplayNames,
     androidDownload: ANDROID_VARIANTS.includes(data?.androidDownload as AndroidVariant) ? data!.androidDownload : DEFAULT_ANDROID_VARIANT,
+    excelExportAccess: data?.excelExportAccess === "report_access" ? "report_access" : "admins_only",
   };
 }
 

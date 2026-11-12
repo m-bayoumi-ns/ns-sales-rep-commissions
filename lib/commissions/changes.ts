@@ -32,8 +32,6 @@ const RULE_KEYS: (keyof Rules)[] = [
   "lowAchievementPct",
   "lowRate",
   "oldSystemUntilPct",
-  "oldSystemMode",
-  "oldRate",
   "minimumSales",
 ];
 

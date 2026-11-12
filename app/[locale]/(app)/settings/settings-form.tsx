@@ -1,23 +1,24 @@
 "use client";
 
-import { BellRingIcon, CheckCircle2Icon, CopyIcon, InfoIcon, Loader2Icon, PackageSearchIcon, PlusIcon, SaveIcon, Trash2Icon, TriangleAlertIcon } from "lucide-react";
+import { BellRingIcon, CheckCircle2Icon, CopyIcon, FileSpreadsheetIcon, InfoIcon, Loader2Icon, PackageSearchIcon, PlusIcon, SaveIcon, SearchIcon, Trash2Icon, TriangleAlertIcon } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import { rateChanges } from "@/lib/commissions/changes";
-import { matchRep } from "@/lib/commissions/names";
+import { matchRep, normalizeName } from "@/lib/commissions/names";
 import type { ProductSearchResult } from "@/lib/commissions/odoo";
 import { type CommissionSettings, type ProductRule, type RepSetting, type Rules } from "@/lib/commissions/schema";
 import type { SheetProductCommission } from "@/lib/commissions/storage";
 import type { RepEntry } from "@/lib/commissions/view";
 import { formatDateTime, formatMonth, formatNumber } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import { findProducts, saveCommissionSettings } from "./actions";
+import { findProducts, saveCommissionSettings, saveExcelExportAccess } from "./actions";
 
 type Props = {
   month: string;
+  excelExportAccess: "admins_only" | "report_access";
   initial: CommissionSettings;
   source: "saved" | "inherited" | "default";
   inheritedFrom: string | null;
@@ -102,7 +103,7 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
   );
 }
 
-export function SettingsForm({ month, initial, source, inheritedFrom, sheet, reps: monthReps, candidates, accounts }: Props) {
+export function SettingsForm({ month, excelExportAccess, initial, source, inheritedFrom, sheet, reps: monthReps, candidates, accounts }: Props) {
   const t = useTranslations("settings");
   const locale = useLocale() as Locale;
   const router = useRouter();
@@ -182,6 +183,7 @@ export function SettingsForm({ month, initial, source, inheritedFrom, sheet, rep
       <ProductsCard settings={settings} update={update} productCommission={sheet.productCommission} />
       <RulesCard rules={settings.rules} setRule={setRule} />
       <RepsCard settings={settings} update={update} sheet={sheet} monthName={monthName} candidates={candidates} monthReps={monthReps} />
+      <ExcelExportAccessCard initial={excelExportAccess} />
       <NotifyCard notify={notify} setNotify={setNotify} accounts={accounts} changes={changes.length} />
 
       <div className="fixed inset-x-0 bottom-0 z-30 border-t bg-card/95 backdrop-blur supports-backdrop-filter:bg-card/80">
@@ -207,6 +209,53 @@ export function SettingsForm({ month, initial, source, inheritedFrom, sheet, rep
 }
 
 type NotifyState = { mode: "none" | "all" | "users"; userIds: string[]; note: string };
+
+function ExcelExportAccessCard({ initial }: { initial: Props["excelExportAccess"] }) {
+  const t = useTranslations("settings.exportAccess");
+  const [value, setValue] = useState(initial);
+  const [status, setStatus] = useState<"saved" | "error" | null>(null);
+  const [saving, startSaving] = useTransition();
+
+  const save = () => startSaving(async () => {
+    try {
+      const result = await saveExcelExportAccess(value);
+      if (!result.ok) {
+        setStatus("error");
+        return;
+      }
+      setStatus("saved");
+    } catch (error) {
+      console.error("[settings] Excel export access save failed:", error);
+      setStatus("error");
+    }
+  });
+
+  return (
+    <Card title={t("title")} description={t("description")}>
+      <div className="flex flex-wrap items-end gap-3">
+        <Field label={t("label")} hint={t("hint")}>
+          <select
+            value={value}
+            onChange={(event) => {
+              const nextValue = event.target.value;
+              if (nextValue === "admins_only" || nextValue === "report_access") setValue(nextValue);
+              setStatus(null);
+            }}
+            className={inputClass}
+          >
+            <option value="admins_only">{t("adminsOnly")}</option>
+            <option value="report_access">{t("reportAccess")}</option>
+          </select>
+        </Field>
+        <Button type="button" onClick={save} disabled={saving || value === initial} variant="outline">
+          {saving ? <Loader2Icon aria-hidden className="animate-spin" /> : <FileSpreadsheetIcon aria-hidden />}
+          {saving ? t("saving") : t("save")}
+        </Button>
+        {status ? <span role={status === "error" ? "alert" : "status"} className={cn("text-sm", status === "error" ? "text-destructive" : "text-success")}>{t(status)}</span> : null}
+      </div>
+    </Card>
+  );
+}
 
 // ---------------------------------------------------------------- 5. notify sellers
 function NotifyCard({ notify, setNotify, accounts, changes }: { notify: NotifyState; setNotify: (change: (current: NotifyState) => NotifyState) => void; accounts: Props["accounts"]; changes: number }) {
@@ -333,32 +382,13 @@ function OldSystemTiersCard({
       title={t("title")}
       description={t("description", { from: rules.lowAchievementPct, to: rules.oldSystemUntilPct })}
       actions={
-        rules.oldSystemMode === "tiers" ? (
-          <Button type="button" variant="outline" onClick={addTier} disabled={rules.oldSystemTiers.length >= 6}>
-            <PlusIcon aria-hidden />
-            {t("add")}
-          </Button>
-        ) : null
+        <Button type="button" variant="outline" onClick={addTier} disabled={rules.oldSystemTiers.length >= 6}>
+          <PlusIcon aria-hidden />
+          {t("add")}
+        </Button>
       }
     >
-      <Field label={t("mode")}>
-        <select
-          value={rules.oldSystemMode}
-          onChange={(event) => setRule("oldSystemMode", event.target.value as Rules["oldSystemMode"])}
-          className={inputClass}
-        >
-          <option value="tiers">{t("modeTiers")}</option>
-          <option value="base">{t("modeBase")}</option>
-          <option value="rate">{t("modeRate")}</option>
-        </select>
-      </Field>
-      {rules.oldSystemMode === "rate" ? (
-        <Field label={t("rate")}>
-          <NumberInput label={t("rate")} value={rules.oldRate} onChange={(value) => setRule("oldRate", value ?? 0)} suffix="%" />
-        </Field>
-      ) : null}
-      {rules.oldSystemMode === "tiers" ? (
-        <>
+      <>
           <div className="grid gap-3 md:grid-cols-3">
             {rules.oldSystemTiers.map((tier, index) => (
               <div key={index} className="flex flex-col gap-3 rounded-lg border bg-muted/30 p-3">
@@ -392,8 +422,7 @@ function OldSystemTiersCard({
             </p>
           ) : null}
           <p className="text-xs text-muted-foreground">{t("hint")}</p>
-        </>
-      ) : null}
+      </>
     </Card>
   );
 }
@@ -403,7 +432,34 @@ function ProductsCard({ settings, update, productCommission }: { settings: Commi
   const t = useTranslations("settings.products");
   const setProduct = (key: string, patch: Partial<ProductRule>) =>
     update((current) => ({ ...current, products: current.products.map((product) => (product.key === key ? { ...product, ...patch } : product)) }));
+  const [query, setQuery] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("all");
   const linkedCount = productCommission.rows.filter((row) => settings.products.some((product) => product.key === row.key && product.templateId > 0)).length;
+  const categoryKeyFor = (row: SheetProductCommission) =>
+    row.categoryKey ? `known:${row.categoryKey}` : `source:${normalizeName(row.category) || "empty"}`;
+  const categoryProducts = new Map<string, { label: string; productNames: Set<string> }>();
+  for (const row of productCommission.rows) {
+    const productName = normalizeName(row.productName);
+    const sourceCategory = row.category.trim();
+    const key = categoryKeyFor(row);
+    const label = row.categoryKey ? t(`cat.${row.categoryKey}`) : sourceCategory || t("unclassified");
+    const category = categoryProducts.get(key) ?? { label, productNames: new Set<string>() };
+    if (productName) category.productNames.add(productName);
+    categoryProducts.set(key, category);
+  }
+  const categorySummary = [...categoryProducts.values()];
+  const categoryOptions = [...categoryProducts.entries()].map(([value, category]) => ({ value, label: category.label }));
+  const normalizedQuery = query.trim().toLocaleLowerCase();
+  const filteredRows = productCommission.rows.filter((row) => {
+    if (categoryFilter !== "all" && categoryKeyFor(row) !== categoryFilter) return false;
+    if (!normalizedQuery) return true;
+    const product = settings.products.find((item) => item.key === row.key);
+    return [row.productName, product?.templateName, product?.code]
+      .filter(Boolean)
+      .join(" ")
+      .toLocaleLowerCase()
+      .includes(normalizedQuery);
+  });
 
   return (
     <Card title={t("title")} description={t("description")}>
@@ -413,21 +469,53 @@ function ProductsCard({ settings, update, productCommission }: { settings: Commi
           ? t("sourceStatus", { count: productCommission.rows.length, linked: linkedCount })
           : t("sourceMissing")}
       </p>
+      {productCommission.found ? (
+        <p className="text-sm text-muted-foreground">
+          {t("categorySummary")}{" "}
+          {categorySummary.length
+            ? categorySummary.map((category, index) => (
+                <span key={category.label}>
+                  {index ? " · " : ""}
+                  {category.label}: {category.productNames.size}
+                </span>
+              ))
+            : t("noCategoryProducts")}
+        </p>
+      ) : null}
       {productCommission.rows.length ? (
-        <div className="overflow-x-auto rounded-lg border">
-          <table className="w-full min-w-[1050px] text-sm">
-            <thead>
-              <tr className="fin-head text-xs">
-                <th className="px-3 py-2 text-start font-semibold">{t("category")}</th>
-                <th className="px-3 py-2 text-start font-semibold">{t("product")}</th>
-                <th className="px-3 py-2 text-start font-semibold">{t("price")}</th>
-                <th className="px-3 py-2 text-start font-semibold">{t("commission")}</th>
-                <th className="px-3 py-2 text-start font-semibold">{t("odooProduct")}</th>
-                <th className="px-3 py-2 text-start font-semibold">{t("linkStatus")}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {productCommission.rows.map((row) => {
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-wrap items-end gap-3">
+            <label className="relative w-full max-w-sm">
+              <span className="sr-only">{t("searchFilter")}</span>
+              <SearchIcon aria-hidden className="pointer-events-none absolute start-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+              <input
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder={t("searchFilter")}
+                className="h-9 w-full rounded-lg border border-input bg-card ps-8 pe-3 text-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30"
+              />
+            </label>
+            <Field label={t("categoryFilter")}>
+              <select value={categoryFilter} onChange={(event) => setCategoryFilter(event.target.value)} className={inputClass}>
+                <option value="all">{t("allCategories")}</option>
+                {categoryOptions.map((category) => <option key={category.value} value={category.value}>{category.label}</option>)}
+              </select>
+            </Field>
+          </div>
+          <div className="overflow-x-auto rounded-lg border">
+            <table className="w-full min-w-[1050px] text-sm">
+              <thead>
+                <tr className="fin-head text-xs">
+                  <th className="px-3 py-2 text-start font-semibold">{t("category")}</th>
+                  <th className="px-3 py-2 text-start font-semibold">{t("product")}</th>
+                  <th className="px-3 py-2 text-start font-semibold">{t("price")}</th>
+                  <th className="px-3 py-2 text-start font-semibold">{t("commission")}</th>
+                  <th className="px-3 py-2 text-start font-semibold">{t("odooProduct")}</th>
+                  <th className="px-3 py-2 text-start font-semibold">{t("linkStatus")}</th>
+                </tr>
+              </thead>
+              <tbody>
+              {filteredRows.length ? filteredRows.map((row) => {
                 const product = settings.products.find((item) => item.key === row.key);
                 return (
                   <tr key={row.key} className="border-t align-top">
@@ -457,13 +545,22 @@ function ProductsCard({ settings, update, productCommission }: { settings: Commi
                       <span className={cn("text-xs font-medium", product?.templateId ? "text-success" : "text-warning")}>
                         {product?.templateId ? t("linked") : t("notLinked")}
                       </span>
-                      {!row.valid ? <span className="mt-1 block text-xs text-destructive">{t("invalidRow")}</span> : null}
+                      {!row.valid ? (
+                        <span className="mt-1 block text-xs text-destructive">
+                          {!row.category.trim()
+                            ? t("missingCategory")
+                            : t("invalidRow")}
+                        </span>
+                      ) : null}
                     </td>
                   </tr>
                 );
-              })}
-            </tbody>
-          </table>
+              }) : (
+                <tr><td colSpan={6} className="px-3 py-8 text-center text-sm text-muted-foreground">{t("noFilteredProducts")}</td></tr>
+              )}
+              </tbody>
+            </table>
+          </div>
         </div>
       ) : (
         <div className="flex flex-col items-center gap-2 rounded-lg border border-dashed py-8 text-center text-sm text-muted-foreground">
@@ -636,12 +733,12 @@ function RulesCard({ rules, setRule }: { rules: Rules; setRule: <K extends keyof
         <legend className="px-1 text-sm font-semibold">{t("detailsTitle")}</legend>
         <p className="text-xs text-muted-foreground">{t("detailsHint")}</p>
         <div className="flex flex-wrap gap-2">
-          {(["A", "B", "C", "slow", "digital"] as const).map((key) => {
+          {(["A", "B", "C", "ns", "slow", "digital"] as const).map((key) => {
             const on = rules.statementDetails[key];
             return (
               <label key={key} className={cn("flex cursor-pointer items-center gap-2 rounded-full border px-3 py-1.5 text-sm", on ? "border-primary bg-accent font-medium" : "text-muted-foreground")}>
                 <input type="checkbox" className="size-4 accent-[var(--primary)]" checked={on} onChange={(event) => setRule("statementDetails", { ...rules.statementDetails, [key]: event.target.checked })} />
-                {key === "slow" || key === "digital" ? t(`cat.${key}`) : t("rangeKey", { key })}
+                {key === "A" || key === "B" || key === "C" ? t("rangeKey", { key }) : t(`cat.${key}`)}
               </label>
             );
           })}

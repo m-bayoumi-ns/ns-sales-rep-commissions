@@ -232,7 +232,7 @@ fun AdminSettingsScreen(
                     }
                 }
 
-                // 2. Old System Mode & Tiers
+                // 2. Old-system tiers
                 NsGroupCard(
                     title = tr(
                         "2. النظام القديم (${Format.number(currentDraft.rules.lowAchievementPct)}%–${Format.number(currentDraft.rules.oldSystemUntilPct)}%)",
@@ -245,58 +245,35 @@ fun AdminSettingsScreen(
                             .padding(16.dp),
                         verticalArrangement = Arrangement.spacedBy(14.dp)
                     ) {
-                        SegmentedPills(
-                            options = listOf(
-                                "tiers" to tr("شرائح مستقلة", "Separate tiers"),
-                                "base" to tr("عمولة البنود", "Line commission"),
-                                "rate" to tr("نسبة ثابتة", "Fixed %")
-                            ),
-                            selected = currentDraft.rules.oldSystemMode,
-                            onSelect = { m ->
-                                draft = currentDraft.copy(rules = currentDraft.rules.copy(oldSystemMode = m))
-                            }
-                        )
-
-                        if (currentDraft.rules.oldSystemMode == "rate") {
-                            DecimalInputField(
-                                label = tr("نسبة النظام القديم %", "Old system rate %"),
-                                value = currentDraft.rules.oldRate,
-                                suffix = "%",
-                                onChange = { v ->
-                                    draft = currentDraft.copy(rules = currentDraft.rules.copy(oldRate = v ?: 0.0))
+                        currentDraft.rules.oldSystemTiers.forEachIndexed { idx, tier ->
+                            val key = ('A' + idx).toString()
+                            if (idx > 0) HorizontalDivider(color = c.border)
+                            TierEditorBlock(
+                                badge = key,
+                                title = tr("شريحة قديمة $key", "Old range $key"),
+                                tier = tier,
+                                canRemove = currentDraft.rules.oldSystemTiers.size > 1,
+                                onRemove = {
+                                    val next = currentDraft.rules.oldSystemTiers.filterIndexed { i, _ -> i != idx }
+                                    draft = currentDraft.copy(rules = currentDraft.rules.copy(oldSystemTiers = next))
+                                },
+                                onChange = { updated ->
+                                    val next = currentDraft.rules.oldSystemTiers.toMutableList().also { it[idx] = updated }
+                                    draft = currentDraft.copy(rules = currentDraft.rules.copy(oldSystemTiers = next))
                                 }
                             )
-                        } else if (currentDraft.rules.oldSystemMode == "tiers") {
-                            currentDraft.rules.oldSystemTiers.forEachIndexed { idx, tier ->
-                                val key = ('A' + idx).toString()
-                                if (idx > 0) HorizontalDivider(color = c.border)
-                                TierEditorBlock(
-                                    badge = key,
-                                    title = tr("شريحة قديمة $key", "Old range $key"),
-                                    tier = tier,
-                                    canRemove = currentDraft.rules.oldSystemTiers.size > 1,
-                                    onRemove = {
-                                        val next = currentDraft.rules.oldSystemTiers.filterIndexed { i, _ -> i != idx }
-                                        draft = currentDraft.copy(rules = currentDraft.rules.copy(oldSystemTiers = next))
-                                    },
-                                    onChange = { updated ->
-                                        val next = currentDraft.rules.oldSystemTiers.toMutableList().also { it[idx] = updated }
-                                        draft = currentDraft.copy(rules = currentDraft.rules.copy(oldSystemTiers = next))
-                                    }
-                                )
-                            }
-                            if (currentDraft.rules.oldSystemTiers.size < 6) {
-                                OutlinedButton(
-                                    onClick = {
-                                        val next = currentDraft.rules.oldSystemTiers + TierRule(0.0, null, 0.0)
-                                        draft = currentDraft.copy(rules = currentDraft.rules.copy(oldSystemTiers = next))
-                                    },
-                                    shape = RoundedCornerShape(10.dp)
-                                ) {
-                                    Icon(imageVector = Icons.Outlined.Add, contentDescription = null, modifier = Modifier.size(16.dp))
-                                    Spacer(modifier = Modifier.size(6.dp))
-                                    Text(text = tr("إضافة شريحة", "Add range"))
-                                }
+                        }
+                        if (currentDraft.rules.oldSystemTiers.size < 6) {
+                            OutlinedButton(
+                                onClick = {
+                                    val next = currentDraft.rules.oldSystemTiers + TierRule(0.0, null, 0.0)
+                                    draft = currentDraft.copy(rules = currentDraft.rules.copy(oldSystemTiers = next))
+                                },
+                                shape = RoundedCornerShape(10.dp)
+                            ) {
+                                Icon(imageVector = Icons.Outlined.Add, contentDescription = null, modifier = Modifier.size(16.dp))
+                                Spacer(modifier = Modifier.size(6.dp))
+                                Text(text = tr("إضافة شريحة", "Add range"))
                             }
                         }
                     }
@@ -573,9 +550,10 @@ fun AdminSettingsScreen(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            listOf("A", "B", "C", "slow", "digital").forEach { key ->
+                            listOf("A", "B", "C", "ns", "slow", "digital").forEach { key ->
                                 val active = r.statementDetails[key] != false
                                 val chipLabel = when (key) {
+                                    "ns" -> "NS"
                                     "slow" -> tr("الراكد", "Slow-moving")
                                     "digital" -> tr("الديجيتال", "Digital")
                                     else -> tr("الشريحة $key", "Range $key")

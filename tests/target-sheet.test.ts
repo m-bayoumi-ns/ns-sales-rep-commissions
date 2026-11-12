@@ -4,10 +4,27 @@ import { describe, expect, it, vi } from "vitest";
 vi.mock("server-only", () => ({}));
 
 import { parseTargetWorkbook } from "@/lib/commissions/storage";
-import { monthReps } from "@/lib/commissions/view";
+import { hasConfiguredTargets, monthReps } from "@/lib/commissions/view";
 import { defaultSettings } from "@/lib/commissions/schema";
 
 describe("target Excel sheet", () => {
+  it("only treats positive target values as a configured month target", () => {
+    expect(hasConfiguredTargets([{
+      name: "Rep",
+      totalTarget: null,
+      slowTarget: 0,
+      digitalTarget: null,
+      rangeTargets: [null, 0],
+    }])).toBe(false);
+    expect(hasConfiguredTargets([{
+      name: "Rep",
+      totalTarget: null,
+      slowTarget: null,
+      digitalTarget: null,
+      rangeTargets: [null, 125],
+    }])).toBe(true);
+  });
+
   it("reads the target template columns and values", () => {
     const workbook = new ExcelJS.Workbook();
     const sheet = workbook.addWorksheet("Targets");
@@ -18,6 +35,7 @@ describe("target Excel sheet", () => {
     commissionSheet.addRow(["Slow-moving", "Slow Fabric", 100, 0.05]);
     commissionSheet.getCell("D2").numFmt = "0.00%";
     commissionSheet.addRow(["Digital", "Digital Service", "Any price", 3]);
+    commissionSheet.addRow(["NS", "Rabbit", 130, 1]);
 
     const result = parseTargetWorkbook(workbook, "Wholesales_Target/target_2026_11.xlsx");
 
@@ -40,6 +58,7 @@ describe("target Excel sheet", () => {
     expect(result.productCommission.rows).toMatchObject([
       { categoryKey: "slow", productName: "Slow Fabric", price: 100, anyPrice: false, commission: 5, valid: true },
       { categoryKey: "digital", productName: "Digital Service", price: null, anyPrice: true, commission: 3, valid: true },
+      { category: "NS", categoryKey: null, productName: "Rabbit", price: 130, commission: 1, valid: true },
     ]);
   });
 

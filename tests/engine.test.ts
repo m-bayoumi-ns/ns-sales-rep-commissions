@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { calculate, ladderBonus, nextLadderStep, productRuleFor, tierIndex, type SaleLine } from "@/lib/commissions/engine";
+import { calculate, ladderBonus, lineCommissionBasis, nextLadderStep, productRuleFor, tierIndex, unitPricesAfterDiscount, type SaleLine } from "@/lib/commissions/engine";
 import { defaultSettings, settingsSchema } from "@/lib/commissions/schema";
 
 const settings = settingsSchema.parse({
@@ -29,8 +29,16 @@ describe("price tiers and products", () => {
   });
   it("uses the current price tiers as old-system tiers for settings saved before the feature", () => {
     const migrated = settingsSchema.parse({ month: "2026-11", tiers: settings.tiers, rules: {} });
-    expect(migrated.rules.oldSystemMode).toBe("tiers");
     expect(migrated.rules.oldSystemTiers).toEqual(settings.tiers);
+  });
+  it("ignores legacy old-system rate choices and keeps the configured tiers", () => {
+    const migrated = settingsSchema.parse({
+      ...settings,
+      rules: { ...settings.rules, oldSystemMode: "rate", oldRate: 99 },
+    });
+    expect(migrated.rules.oldSystemTiers).toEqual(settings.rules.oldSystemTiers);
+    expect(migrated.rules).not.toHaveProperty("oldSystemMode");
+    expect(migrated.rules).not.toHaveProperty("oldRate");
   });
   it("keeps product classification while ignoring legacy product rates and targets", () => {
     const migrated = settingsSchema.parse({
@@ -50,6 +58,21 @@ describe("price tiers and products", () => {
     expect(productRuleFor(settings.products, 201, 20)?.key).toBe("b");
     expect(productRuleFor(settings.products, 202, 20)).toBeNull();
     expect(productRuleFor(settings.products, 999, 10)?.key).toBe("a");
+  });
+  it("reports the applicable row commission or system tier for a line", () => {
+    const oldSettings = settingsSchema.parse({ ...settings, rules: { ...settings.rules, oldSystemTiers: settings.tiers } });
+    expect(lineCommissionBasis(settings, 1, 10, 100, "full")).toEqual({ rate: 2, tierName: "productAny" });
+    expect(lineCommissionBasis(settings, 1, 10, 100, "low")).toEqual({ rate: 2, tierName: "productAny" });
+    expect(lineCommissionBasis(settings, 1, 1, 150, "full")).toEqual({ rate: 1, tierName: "range", tierKey: "B" });
+    expect(lineCommissionBasis(oldSettings, 1, 1, 150, "old")).toEqual({ rate: 1, tierName: "range", tierKey: "B" });
+    expect(lineCommissionBasis(settings, 1, 1, 500, "low")).toEqual({ rate: settings.rules.lowRate, tierName: "lowRate" });
+  });
+  it("derives the before-discount unit price when Odoo has no price_unit", () => {
+    const derived = unitPricesAfterDiscount(335.98, 2, null, 10);
+    expect(derived.beforeDiscount).toBeCloseTo(186.6556);
+    expect(derived.afterDiscount).toBeCloseTo(167.99);
+    expect(unitPricesAfterDiscount(335.98, 2, null, null).beforeDiscount).toBeCloseTo(167.99);
+    expect(unitPricesAfterDiscount(335.98, 2, 200, 10).beforeDiscount).toBe(200);
   });
   it("ladder pays the highest matching step", () => {
     expect(ladderBonus(settings.rules.salesBonuses, 999_999)).toBe(0);
@@ -95,13 +118,14 @@ describe("calculate", () => {
     expect(result.categories.digital.commission).toBeCloseTo(30);
     expect(result.regime).toBe("noTarget");
   });
-  it("uses an exact sheet price before any-price, then falls back to tiers when neither matches", () => {
+  it("applies the highest met product price threshold and uses normal tiers below it", () => {
     const priceSettings = settingsSchema.parse({
       ...settings,
       products: [
-        { key: "slow-exact", sourceName: "Slow fabric", templateId: 10, templateName: "Slow fabric", category: "slow", price: 100, commission: 5 },
+        { key: "slow-threshold", sourceName: "Slow fabric", templateId: 10, templateName: "Slow fabric", category: "slow", price: 100, commission: 5 },
+        { key: "slow-higher-threshold", sourceName: "Slow fabric", templateId: 10, templateName: "Slow fabric", category: "slow", price: 150, commission: 7 },
         { key: "slow-any", sourceName: "Slow fabric", templateId: 10, templateName: "Slow fabric", category: "slow", anyPrice: true, commission: 2 },
-        { key: "digital-exact", sourceName: "Digital", templateId: 30, templateName: "Digital", category: "digital", price: 100, commission: 5 },
+        { key: "digital-threshold", sourceName: "Digital", templateId: 30, templateName: "Digital", category: "digital", price: 100, commission: 5 },
       ],
     });
     const result = calculate(
@@ -111,18 +135,47 @@ describe("calculate", () => {
         lines: [
           line({ templateId: 10, qty: 2, amount: 200 }),
           line({ templateId: 10, qty: 2, amount: 202 }),
+          line({ templateId: 10, qty: 2, amount: 198 }),
+          line({ templateId: 10, qty: 2, amount: 320 }),
           line({ templateId: 30, qty: 2, amount: 202 }),
+          line({ templateId: 30, qty: 2, amount: 198 }),
         ],
         collections: 0,
       },
       { monthClosed: true },
     );
 
-    expect(result.base).toBeCloseTo(16.06);
-    expect(result.categories.slow.amount).toBe(402);
-    expect(result.categories.slow.commission).toBeCloseTo(14.04);
-    expect(result.categories.digital.amount).toBe(202);
-    expect(result.categories.digital.commission).toBeCloseTo(2.02);
+    expect(result.base).toBeCloseTo(54.58);
+    expect(result.categories.slow.amount).toBe(920);
+    expect(result.categories.slow.commission).toBeCloseTo(43.49);
+    expect(result.categories.digital.amount).toBe(400);
+    expect(result.categories.digital.commission).toBeCloseTo(11.09);
+    expect(lineCommissionBasis(priceSettings, 1, 10, 160, "full")).toEqual({ rate: 7, tierName: "productThreshold", price: 150 });
+    expect(lineCommissionBasis(priceSettings, 1, 10, 99, "full")).toEqual({ rate: 0.5, tierName: "range", tierKey: "A" });
+  });
+  it("applies product commission thresholds for source categories outside target categories", () => {
+    const nsSettings = settingsSchema.parse({
+      ...settings,
+      products: [{
+        key: "ns-threshold",
+        sourceName: "Rabbit",
+        templateId: 10,
+        templateName: "Rabbit",
+        sourceCategory: "NS",
+        price: 130,
+        commission: 3,
+      }],
+    });
+
+    expect(lineCommissionBasis(nsSettings, 1, 10, 135, "full")).toEqual({ rate: 3, tierName: "productThreshold", price: 130 });
+    expect(lineCommissionBasis(nsSettings, 1, 10, 129, "full")).toEqual({ rate: 1, tierName: "range", tierKey: "B" });
+    const result = calculate(
+      nsSettings,
+      { totalTarget: null, slowTarget: null, digitalTarget: null },
+      { lines: [line({ templateId: 10, qty: 10, amount: 1_350 }), line({ templateId: 10, qty: 10, amount: 1_290 })], collections: 0 },
+      { monthClosed: true },
+    );
+    expect(result.base).toBeCloseTo(53.4);
   });
   it("below 50% pays 0.1% of sales only", () => {
     const result = calculate(settings, { ...targets, slowTarget: null }, { lines: [line({ qty: 1000, amount: 400_000, cashAmount: 400_000 })], collections: 900_000 }, { monthClosed: true });
@@ -131,6 +184,26 @@ describe("calculate", () => {
     expect(result.collectionFactor).toBe(225);
     expect(result.total).toBeCloseTo(900);
     expect(result.belowMinimum).toBe(true);
+  });
+  it("keeps Product Category commission at low achievement and applies the low rate only to other sales", () => {
+    const result = calculate(
+      settings,
+      { totalTarget: 1_000_000, slowTarget: 200_000, digitalTarget: null },
+      {
+        lines: [
+          line({ templateId: 10, qty: 100, amount: 50_000 }),
+          line({ qty: 1000, amount: 350_000 }),
+        ],
+        collections: 400_000,
+      },
+      { monthClosed: true },
+    );
+    expect(result.regime).toBe("low");
+    expect(result.categories.slow.achievement).toBe(25);
+    expect(result.categories.slow.commission).toBe(1_000);
+    expect(result.adjustments.find((item) => item.key === "lowRate")?.amount).toBe(1_350);
+    expect(result.adjustments.find((item) => item.key === "slowDeduction")?.amount).toBeCloseTo(-787.5);
+    expect(result.beforeCollection).toBeCloseTo(562.5);
   });
   it("applies collections to the commission component only, then adds bonuses and deductions", () => {
     const data = { lines: [line({ qty: 1000, amount: 100_000 })], collections: 50_000 };
@@ -195,19 +268,108 @@ describe("calculate", () => {
     expect(closed.totalTargetToDate).toBe(1_000_000);
     expect(closed.achievement).toBe(25);
   });
-  it("between 50% and 70% uses the old system (line commission only)", () => {
-    const legacy = settingsSchema.parse({ ...settings, rules: { ...settings.rules, oldSystemMode: "base" } });
-    const result = calculate(legacy, { ...targets, slowTarget: null }, { lines: [line({ qty: 1000, amount: 600_000, cashAmount: 600_000 })], collections: 900_000 }, { monthClosed: false });
+  it("uses old price tiers for ordinary products while Product Category commission remains independent", () => {
+    const oldSettings = settingsSchema.parse({
+      ...settings,
+      products: [
+        ...settings.products,
+        { key: "ns-any", sourceName: "NS item", templateId: 30, templateName: "NS item", sourceCategory: "NS", anyPrice: true, commission: 4 },
+      ],
+      rules: {
+        ...settings.rules,
+        slowMinPct: 60,
+        slowDeductionPct: 15,
+        oldSystemTiers: [
+          { from: 0, to: 200, rate: 0.2 },
+          { from: 200, to: null, rate: 0.4 },
+        ],
+      },
+    });
+    const result = calculate(
+      oldSettings,
+      { totalTarget: 1_000_000, slowTarget: 200_000, digitalTarget: null },
+      {
+        lines: [
+          line({ amount: 450_000, qty: 1000 }),
+          line({ templateId: 10, amount: 50_000, qty: 50 }),
+          line({ templateId: 30, amount: 100_000, qty: 100 }),
+        ],
+        collections: 600_000,
+      },
+      { monthClosed: true },
+    );
     expect(result.regime).toBe("old");
-    expect(result.collectionFactor).toBe(150);
-    expect(result.total).toBeCloseTo(result.base * 1.5);
+    expect(result.categories.slow.achievement).toBe(25);
+    expect(result.categories.slow.commission).toBe(1_000);
+    expect(result.oldTiers[1]).toMatchObject({ amount: 450_000, commission: 1_800 });
+    expect(result.ns).toMatchObject({ amount: 100_000, commission: 4_000 });
+    expect(result.oldTiers[1].rate).toBeCloseTo(0.4);
+    expect(result.adjustments.find((item) => item.key === "oldTiers")?.amount).toBe(6_800);
+    expect(result.adjustments.find((item) => item.key === "slowDeduction")?.amount).toBeCloseTo(-1_012.5);
+    expect(result.beforeCollection).toBeCloseTo(5_787.5);
+  });
+  it("reports NS sales and commission separately from regular price ranges", () => {
+    const nsSettings = settingsSchema.parse({
+      ...settings,
+      products: [{ key: "ns", sourceName: "NS item", templateId: 30, templateName: "NS item", sourceCategory: " NS ", anyPrice: true, commission: 4 }],
+      rules: {
+        ...settings.rules,
+        oldSystemTiers: [{ from: 0, to: 200, rate: 0.2 }, { from: 200, to: null, rate: 0.4 }],
+      },
+    });
+    const data = {
+      lines: [line({ amount: 20_000, qty: 100 }), line({ templateId: 30, amount: 10_000, qty: 50 })],
+      collections: 30_000,
+    };
+    const low = calculate(nsSettings, { totalTarget: 1_000_000, slowTarget: null, digitalTarget: null }, data, { monthClosed: true });
+    const old = calculate(nsSettings, { totalTarget: 50_000, slowTarget: null, digitalTarget: null }, data, { monthClosed: true });
+    const full = calculate(nsSettings, { totalTarget: 20_000, slowTarget: null, digitalTarget: null }, data, { monthClosed: true });
+
+    expect(low.regime).toBe("low");
+    expect(low.ns).toMatchObject({ amount: 10_000, commission: 400 });
+    expect(low.tiers[2]).toMatchObject({ amount: 20_000, commission: 300 });
+    expect(old.regime).toBe("old");
+    expect(old.ns).toMatchObject({ amount: 10_000, commission: 400 });
+    expect(old.oldTiers[1]).toMatchObject({ amount: 20_000, commission: 80 });
+    expect(full.regime).toBe("full");
+    expect(full.ns).toMatchObject({ amount: 10_000, commission: 400 });
+    expect(full.tiers[2]).toMatchObject({ amount: 20_000, commission: 300 });
+  });
+  it("sends NS sales below their configured price floor to the active price ranges", () => {
+    const nsSettings = settingsSchema.parse({
+      ...settings,
+      products: [{ key: "ns", sourceName: "NS item", templateId: 30, templateName: "NS item", sourceCategory: "NS", price: 150, commission: 4 }],
+      rules: {
+        ...settings.rules,
+        oldSystemTiers: [{ from: 0, to: 200, rate: 0.2 }, { from: 200, to: null, rate: 0.4 }],
+      },
+    });
+    const data = { lines: [line({ templateId: 30, qty: 10, amount: 1_000 })], collections: 1_000 };
+    const low = calculate(nsSettings, { totalTarget: 3_000, slowTarget: null, digitalTarget: null }, data, { monthClosed: true });
+    const old = calculate(nsSettings, { totalTarget: 2_000, slowTarget: null, digitalTarget: null }, data, { monthClosed: true });
+    const full = calculate(nsSettings, { totalTarget: 500, slowTarget: null, digitalTarget: null }, data, { monthClosed: true });
+
+    for (const result of [low, old, full]) expect(result.ns).toMatchObject({ amount: 0, commission: 0 });
+    expect(low.regime).toBe("low");
+    expect(low.tiers[1].amount).toBe(1_000);
+    expect(low.adjustments.find((item) => item.key === "lowRate")?.amount).toBe(1);
+    expect(old.regime).toBe("old");
+    expect(old.oldTiers[0]).toMatchObject({ amount: 1_000, commission: 2 });
+    expect(full.regime).toBe("full");
+    expect(full.tiers[1]).toMatchObject({ amount: 1_000, commission: 10 });
+  });
+  it("keeps exactly 70% in the old system and switches to full above 70%", () => {
+    const targets = { totalTarget: 1_000_000, slowTarget: null, digitalTarget: null };
+    const at70 = calculate(settings, targets, { lines: [line({ qty: 1000, amount: 700_000 })], collections: 700_000 }, { monthClosed: true });
+    const above70 = calculate(settings, targets, { lines: [line({ qty: 1000, amount: 700_001 })], collections: 700_001 }, { monthClosed: true });
+    expect(at70.regime).toBe("old");
+    expect(above70.regime).toBe("full");
   });
   it("uses separate old-system price tiers for regular products and keeps category rates", () => {
     const oldSettings = settingsSchema.parse({
       ...settings,
       rules: {
         ...settings.rules,
-        oldSystemMode: "tiers",
         oldSystemTiers: [
           { from: 0, to: 200, rate: 0.2 },
           { from: 200, to: null, rate: 0.4 },
@@ -254,7 +416,7 @@ describe("calculate", () => {
     const result = calculate(settings, { ...targets, slowTarget: 100_000 }, { lines, collections: 0 }, { monthClosed: false });
     const deduction = result.adjustments.find((item) => item.key === "slowDeduction")!;
     expect(deduction.met).toBe(true);
-    expect(deduction.amount).toBeCloseTo(-0.15 * result.base);
+    expect(deduction.amount).toBeCloseTo(-0.15 * (result.base - result.categories.slow.commission));
   });
   it("applies the slow-moving deduction even when the total sales target is below 50%", () => {
     const lines = [line({ qty: 1000, amount: 400_000 }), line({ templateId: 10, qty: 100, amount: 5_000 })];
@@ -263,7 +425,7 @@ describe("calculate", () => {
     expect(result.regime).toBe("low");
     expect(deduction.met).toBe(true);
     expect(deduction.applies).toBe(true);
-    expect(deduction.amount).toBeCloseTo(-0.15 * result.base);
+    expect(deduction.amount).toBeCloseTo(-0.15 * (result.base - result.categories.slow.commission));
   });
   it("compares slow-moving sales value against the rep's explicit target", () => {
     const lines = [line({ templateId: 10, qty: 100, amount: 5_000 })];

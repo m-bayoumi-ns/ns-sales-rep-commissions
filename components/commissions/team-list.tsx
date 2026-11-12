@@ -103,7 +103,7 @@ export function TeamList({ view, locale, canExport, displayNames = {} }: { view:
           );
         })}
       </ul>
-      {canExport ? <div className="flex justify-end"><RepsExport reps={view.reps} month={clock.month} /></div> : null}
+      {canExport ? <div className="flex justify-end"><RepsExport reps={view.reps} rowData={view.rowData ?? []} month={clock.month} lowAchievementPct={view.settings.rules.lowAchievementPct} oldSystemUntilPct={view.settings.rules.oldSystemUntilPct} /></div> : null}
     </div>
   );
 }

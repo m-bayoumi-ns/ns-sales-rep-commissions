@@ -11,6 +11,7 @@ import { availableMonths, loadMonthSetup, resolveMonth } from "@/lib/commissions
 import { isOdooConfigured } from "@/lib/env";
 import { addMonths, currentMonth } from "@/lib/finance/core";
 import { listSellerAccounts } from "@/lib/accounts/server";
+import { loadAppSettings } from "@/lib/accounts/app-settings";
 import { SettingsForm } from "./settings-form";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -38,21 +39,24 @@ async function SettingsContent({ searchParams }: { searchParams: PageProps<"/[lo
   const next = addMonths(currentMonth(), 1);
   const wanted = Array.isArray(raw) ? raw[0] : raw;
   const month = wanted === next ? next : resolveMonth(wanted);
-  const [setup, accounts] = await Promise.all([
+  const [setup, accounts, appSettings, months] = await Promise.all([
     loadMonthSetup(month),
     listSellerAccounts().catch((error) => {
       console.error("[settings] seller accounts unavailable:", error);
       return [];
     }),
+    loadAppSettings(),
+    availableMonths(),
   ]);
 
   return (
     <div className="flex flex-col gap-5">
       <PageHeading title={t("title")} eyebrow={t("eyebrow")} subtitle={t("description")} />
-      <MonthBar months={[next, ...availableMonths()]} month={month} live={false} showStatus={false} />
+      <MonthBar months={[next, ...months]} month={month} live={false} showStatus={false} />
       <SettingsForm
         key={`${month}:${setup.stored.settings.updatedAt ?? setup.stored.source}`}
         month={month}
+        excelExportAccess={appSettings.excelExportAccess ?? "admins_only"}
         initial={setup.stored.settings}
         source={setup.stored.source}
         inheritedFrom={setup.stored.inheritedFrom}

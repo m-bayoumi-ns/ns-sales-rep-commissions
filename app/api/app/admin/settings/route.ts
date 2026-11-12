@@ -56,12 +56,13 @@ export async function GET(request: NextRequest) {
   const month = wanted === next ? next : resolveMonth(wanted);
 
   try {
-    const [setup, accounts] = await Promise.all([
+    const [setup, accounts, months] = await Promise.all([
       loadMonthSetup(month),
       listSellerAccounts().catch((error) => {
         console.error("[app admin settings] seller accounts unavailable:", error);
         return [];
       }),
+      availableMonths(),
     ]);
 
     const settings: CommissionSettings = {
@@ -79,7 +80,7 @@ export async function GET(request: NextRequest) {
 
     return json({
       month,
-      months: [next, ...availableMonths()],
+      months: [next, ...months],
       settings,
       source: setup.stored.source,
       inheritedFrom: setup.stored.inheritedFrom,

@@ -33,6 +33,7 @@ export const productRuleSchema = z.object({
   templateId: z.number().int().nonnegative().default(0),
   templateName: z.string().max(300),
   code: z.string().max(64).nullable().default(null),
+  sourceCategory: z.string().max(120).nullable().default(null),
   /** null = every colour of the product. */
   variantId: z.number().int().positive().nullable().default(null),
   color: z.string().max(120).nullable().default(null),
@@ -82,11 +83,8 @@ export const rulesSchema = z.object({
   lowRate: pct.default(0.1),
   /** From lowAchievementPct up to this % → the old commission system. */
   oldSystemUntilPct: pct.default(70),
-  /** Old system: separate unit-price tiers, the existing line commission, or a fixed rate of sales. */
-  oldSystemMode: z.enum(["tiers", "base", "rate"]).default("tiers"),
-  /** Used by the old system when a product has no matching Product commission row. */
+  /** Used by the old system for products without an applicable Product commission. */
   oldSystemTiers: z.array(tierSchema).min(1).max(6),
-  oldRate: pct.default(0),
   /** A note is flagged when month-end sales are below this amount. */
   minimumSales: nonNeg.default(478_000),
   /** Flat bonuses by monthly sales; the highest matching step is paid. */
@@ -96,10 +94,10 @@ export const rulesSchema = z.object({
     { from: 2_250_000, to: 5_500_000, amount: 2500 },
     { from: 5_000_000, to: null, amount: 5000 },
   ]),
-  /** Statement: which buckets (price ranges A/B/C, slow, digital) can be opened to list the products sold in them. */
+  /** Statement: which buckets (price ranges A/B/C, NS, slow, digital) can be opened to list the products sold in them. */
   statementDetails: z
-    .object({ A: z.boolean().default(true), B: z.boolean().default(true), C: z.boolean().default(true), slow: z.boolean().default(true), digital: z.boolean().default(true) })
-    .default({ A: true, B: true, C: true, slow: true, digital: true }),
+    .object({ A: z.boolean().default(true), B: z.boolean().default(true), C: z.boolean().default(true), ns: z.boolean().default(true), slow: z.boolean().default(true), digital: z.boolean().default(true) })
+    .default({ A: true, B: true, C: true, ns: true, slow: true, digital: true }),
   /** How the price-range targets are measured: quantity (meters / units) or sales value (EGP). */
   rangeUnit: z.enum(TARGET_UNITS).default("amount"),
   categoryUnits: z
@@ -131,7 +129,6 @@ export const settingsSchema = z.preprocess((value) => {
     ...value,
     rules: {
       ...currentRules,
-      oldSystemMode: currentRules.oldSystemMode ?? "tiers",
       oldSystemTiers: currentRules.oldSystemTiers ?? input.tiers,
     },
   };

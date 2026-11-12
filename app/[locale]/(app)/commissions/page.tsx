@@ -72,9 +72,12 @@ async function Commissions({ searchParams }: { searchParams: PageProps<"/[locale
   const repKey = first(raw.rep);
   const requestedSection = first(raw.section);
   const initialTab: AppSection = requestedSection === "sales" || requestedSection === "collections" || requestedSection === "statement" ? requestedSection : "summary";
+  const admin = isAdmin(user);
+  const appSettings = await loadAppSettings();
+  const canExport = admin || appSettings.excelExportAccess === "report_access";
   let view;
   try {
-    view = await getCommissionsView(user, month, repKey);
+    view = await getCommissionsView(user, month, repKey, canExport && repKey === ALL_REPS);
   } catch (error) {
     unstable_rethrow(error);
     if (error instanceof Error && error.name === "AbortError") throw error;
@@ -83,7 +86,6 @@ async function Commissions({ searchParams }: { searchParams: PageProps<"/[locale
   }
   after(() => logActivity({ action: "view_page", userId: user.id, email: user.email, details: { page: "sales-commissions", month, rep: repKey ?? null } }));
 
-  const admin = isAdmin(user);
   const monthName = formatMonth(month, locale);
   const notices: { key: string; tone: "info" | "warn"; icon: React.ReactNode; text: string; action?: React.ReactNode }[] = [];
   const settingsLink = admin ? (
@@ -98,7 +100,6 @@ async function Commissions({ searchParams }: { searchParams: PageProps<"/[locale
   if (view.unlinked.length && admin) notices.push({ key: "unlinked", tone: "warn", icon: <UnlinkIcon aria-hidden className="size-4" />, text: t("notices.unlinked", { names: view.unlinked.join("، ") }), action: settingsLink });
 
   const showDetail = view.detail != null;
-  const appSettings = await loadAppSettings();
   const options = repOptions(view.reps, appSettings.sellerDisplayNames);
   return (
     <ScrollReveal className="flex flex-col gap-5">
@@ -126,7 +127,7 @@ async function Commissions({ searchParams }: { searchParams: PageProps<"/[locale
       ) : showDetail ? (
         <RepApp key={initialTab} detail={view.detail!} settings={view.settings} clock={view.clock} months={view.months} teamLink={view.reps.length > 1} initialTab={initialTab} />
       ) : (
-        <TeamList view={view} locale={locale} canExport={admin} displayNames={appSettings.sellerDisplayNames} />
+        <TeamList view={view} locale={locale} canExport={canExport} displayNames={appSettings.sellerDisplayNames} />
       )}
     </ScrollReveal>
   );

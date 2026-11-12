@@ -4,13 +4,14 @@ import type { Category, CommissionSettings, ProductRule, Rules, TargetUnit, Tier
  * The commission calculation — pure (no Odoo, no storage), so it is unit-tested and runs the same
  * on every page. Amounts are net of discounts and of refunds (credit notes count negative).
  *
- * 1. Linked products use their Product commission rate at an exact or any-price match; otherwise
- *    they use the applicable price-range rate. Their category is still used for target tracking.
+ * 1. Linked products use their Product commission rate at or above its price threshold, or at any
+ *    price when configured that way. This rate is independent of the seller's achievement regime; below
+ *    a threshold, the other-product commission system applies.
  * 2. In an open month, target achievement is compared with the prorated target for elapsed calendar days; in a closed
  *    month, it is compared with the full target. This decides the system:
- *      • below 50 %            → 0.1 % of total sales, nothing else;
- *      • 50 % up to 70 %       → the old system (by default: the line commission, no bonuses or deductions);
- *      • 70 % and above        → the line commission with every bonus and deduction below.
+ *      • below 50 %            → Product commissions plus lowRate % of other sales;
+ *      • 50 % up to 70 %       → the old system's price tiers for products without a Product commission;
+ *      • above 70 %            → the current price tiers for other products.
  * 3. Percentage adjustments of the line commission: + 20 % when every target is met, − 15 % when the
  * slow-moving achievement is under 60 %. Then flat bonuses: the share of invoices issued and paid this month
  * ≥ 60 % of sales, collections > 120 % of sales, and the monthly sales ladder (highest matching step).
@@ -39,7 +40,7 @@ export type RepData = {
 export type Regime = "noTarget" | "low" | "old" | "full";
 
 export type Adjustment = {
-  key: "allTargets" | "slowDeduction" | "cash" | "collection" | "salesLadder" | "lowRate" | "oldRate" | "oldTiers" | "collectionShare";
+  key: "allTargets" | "slowDeduction" | "cash" | "collection" | "salesLadder" | "lowRate" | "oldTiers" | "collectionShare";
   /** Condition met (the bonus is earned / the deduction applies). */
   met: boolean;
   /** Counts toward the total under the current system. */
@@ -75,6 +76,8 @@ export type RepResult = {
   tiers: RangeResult[];
   /** Regular-product commission by the old system's configured price ranges. */
   oldTiers: BucketResult[];
+  /** NS sales eligible for Product Commission, separate from regular price ranges. */
+  ns: BucketResult;
   /** Lines in no range (unit price outside every range) — they earn nothing. */
   unpriced: BucketResult;
   categories: Record<Category, BucketResult & { target: number | null; targetToDate: number | null; unit: TargetUnit; achieved: number; achievement: number | null }>;
@@ -109,12 +112,64 @@ export function productRuleFor(products: ProductRule[], productId: number, templ
   return rules.find((rule) => rule.category != null) ?? rules[0] ?? null;
 }
 
-/** Exact-price commission first, then any-price commission, or null to use the normal price tiers. */
+export function isNsProductRule(rule: ProductRule | null): boolean {
+  return rule?.sourceCategory?.trim().toUpperCase() === "NS";
+}
+
+function productCommissionRuleFor(products: ProductRule[], productId: number, templateId: number, unitPrice: number): ProductRule | null {
+  const rules = productRulesFor(products, productId, templateId).filter((rule) =>
+    (rule.category != null || Boolean(rule.sourceCategory?.trim())) && rule.commission != null,
+  );
+  const priceRules = rules.filter((rule) => !rule.anyPrice && rule.price != null);
+  const thresholdRule = priceRules.reduce<ProductRule | null>((best, rule) => {
+    if (rule.price == null || unitPrice < rule.price) return best;
+    return best?.price != null && best.price >= rule.price ? best : rule;
+  }, null);
+  if (thresholdRule) return thresholdRule;
+  // A numeric price is a floor; below it, use regular tiers instead of any-price rules.
+  if (priceRules.length) return null;
+  return rules.find((rule) => rule.anyPrice) ?? null;
+}
+
+/** Uses the highest qualifying product-price threshold, or price tiers below it. */
 export function productCommissionRateFor(products: ProductRule[], productId: number, templateId: number, unitPrice: number): number | null {
-  const rules = productRulesFor(products, productId, templateId).filter((rule) => rule.category != null && rule.commission != null);
-  return rules.find((rule) => !rule.anyPrice && rule.price != null && rule.price === unitPrice)?.commission
-    ?? rules.find((rule) => rule.anyPrice)?.commission
-    ?? null;
+  return productCommissionRuleFor(products, productId, templateId, unitPrice)?.commission ?? null;
+}
+
+export type LineCommissionBasis = { rate: number; tierName: "lowRate" | "productThreshold" | "productAny" | "range" | "unpriced"; tierKey?: string; price?: number };
+
+export function unitPricesAfterDiscount(
+  amount: number,
+  qty: number,
+  priceUnit: number | null,
+  discount: number | null,
+): { beforeDiscount: number; afterDiscount: number } {
+  const afterDiscount = qty ? Math.abs(amount / qty) : Math.abs(amount);
+  if (priceUnit != null && Number.isFinite(priceUnit) && (priceUnit !== 0 || afterDiscount === 0)) {
+    return { beforeDiscount: Math.abs(priceUnit), afterDiscount };
+  }
+  const discountFactor = discount != null && Number.isFinite(discount) && discount >= 0 && discount < 100
+    ? 1 - discount / 100
+    : 1;
+  return { beforeDiscount: afterDiscount / discountFactor, afterDiscount };
+}
+
+/** Rate and source selected for one sales line under the rep's active commission system. */
+export function lineCommissionBasis(settings: CommissionSettings, productId: number, templateId: number, unitPrice: number, regime: Regime): LineCommissionBasis {
+  const { rules } = settings;
+  const productRule = productCommissionRuleFor(settings.products, productId, templateId, unitPrice);
+  if (productRule?.commission != null) {
+    return productRule.anyPrice
+      ? { rate: productRule.commission, tierName: "productAny" }
+      : { rate: productRule.commission, tierName: "productThreshold", price: productRule.price ?? undefined };
+  }
+
+  if (regime === "low") return { rate: rules.lowRate, tierName: "lowRate" };
+  const tiers = regime === "old" ? rules.oldSystemTiers : settings.tiers;
+  const index = tierIndex(tiers, unitPrice);
+  return index < 0
+    ? { rate: 0, tierName: "unpriced" }
+    : { rate: tiers[index].rate, tierName: "range", tierKey: String.fromCharCode(65 + index) };
 }
 
 /** Highest flat bonus whose [from, to] range holds the sales (to = null → no upper limit). */
@@ -135,13 +190,20 @@ export function calculate(settings: CommissionSettings, targets: RepTargets, dat
   const tierBuckets: BucketResult[] = tiers.map((tier, index) => ({ key: String.fromCharCode(65 + index), qty: 0, amount: 0, commission: 0, rate: tier.rate }));
   const oldTierBuckets: BucketResult[] = rules.oldSystemTiers.map((tier, index) => ({ key: String.fromCharCode(65 + index), qty: 0, amount: 0, commission: 0, rate: tier.rate }));
   const unpriced: BucketResult = { key: "none", qty: 0, amount: 0, commission: 0, rate: null };
+  const nsBucket: BucketResult = { key: "ns", qty: 0, amount: 0, commission: 0, rate: null };
   const cat = (key: Category) => ({ key, qty: 0, amount: 0, commission: 0, rate: null });
   const categoryBuckets: Record<Category, BucketResult> = { slow: cat("slow"), digital: cat("digital") };
   const oldCategoryCommission: Record<Category, number> = { slow: 0, digital: 0 };
+  const lowCategoryCommission: Record<Category, number> = { slow: 0, digital: 0 };
 
   let sales = 0;
   let qty = 0;
   let cashSales = 0;
+  let productCommissionBase = 0;
+  let productCommissionSales = 0;
+  let oldOtherCommission = 0;
+  let oldNsCommission = 0;
+  let lowNsCommission = 0;
   for (const line of data.lines) {
     sales += line.amount;
     qty += line.qty;
@@ -152,30 +214,47 @@ export function calculate(settings: CommissionSettings, targets: RepTargets, dat
     let bucket: BucketResult;
     const specialRate = productCommissionRateFor(products, line.productId, line.templateId, unitPrice);
     const rate = specialRate ?? (index >= 0 ? tiers[index].rate : 0);
+    if (specialRate != null) {
+      productCommissionBase += (line.amount * specialRate) / 100;
+      productCommissionSales += line.amount;
+    }
     if (rule?.category) {
       bucket = categoryBuckets[rule.category];
       bucket.qty += line.qty;
       bucket.amount += line.amount;
       bucket.commission += (line.amount * rate) / 100;
       const oldIndex = tierIndex(rules.oldSystemTiers, unitPrice);
-      const oldRate = specialRate ?? (oldIndex >= 0 ? rules.oldSystemTiers[oldIndex].rate : 0);
-      oldCategoryCommission[rule.category] += (line.amount * oldRate) / 100;
+      const oldTierRate = specialRate ?? (oldIndex >= 0 ? rules.oldSystemTiers[oldIndex].rate : 0);
+      oldCategoryCommission[rule.category] += (line.amount * oldTierRate) / 100;
+      lowCategoryCommission[rule.category] += (line.amount * (specialRate ?? rules.lowRate)) / 100;
+    } else if (isNsProductRule(rule) && specialRate != null) {
+      bucket = nsBucket;
+      bucket.qty += line.qty;
+      bucket.amount += line.amount;
+      bucket.commission += (line.amount * rate) / 100;
+      const oldIndex = tierIndex(rules.oldSystemTiers, unitPrice);
+      const oldTierRate = specialRate ?? (oldIndex >= 0 ? rules.oldSystemTiers[oldIndex].rate : 0);
+      oldOtherCommission += (line.amount * oldTierRate) / 100;
+      oldNsCommission += (line.amount * oldTierRate) / 100;
+      lowNsCommission += (line.amount * (specialRate ?? rules.lowRate)) / 100;
     } else {
       bucket = index >= 0 ? tierBuckets[index] : unpriced;
       bucket.qty += line.qty;
       bucket.amount += line.amount;
       bucket.commission += (line.amount * rate) / 100;
       const oldIndex = tierIndex(rules.oldSystemTiers, unitPrice);
+      const oldTierRate = specialRate ?? (oldIndex >= 0 ? rules.oldSystemTiers[oldIndex].rate : 0);
+      oldOtherCommission += (line.amount * oldTierRate) / 100;
       if (oldIndex >= 0) {
         const oldBucket = oldTierBuckets[oldIndex];
         oldBucket.qty += line.qty;
         oldBucket.amount += line.amount;
-        oldBucket.commission += (line.amount * rules.oldSystemTiers[oldIndex].rate) / 100;
+        oldBucket.commission += (line.amount * oldTierRate) / 100;
       }
     }
   }
-  const base = round2([...tierBuckets, ...Object.values(categoryBuckets)].reduce((sum, bucket) => sum + bucket.commission, 0));
-  const oldBase = round2([...oldTierBuckets].reduce((sum, bucket) => sum + bucket.commission, 0) + Object.values(oldCategoryCommission).reduce((sum, commission) => sum + commission, 0));
+  const base = round2([...tierBuckets, ...Object.values(categoryBuckets), nsBucket].reduce((sum, bucket) => sum + bucket.commission, 0));
+  const oldBase = round2(oldOtherCommission + Object.values(oldCategoryCommission).reduce((sum, commission) => sum + commission, 0));
 
   // Achievement per category and in total.
   const targetProgress = options.monthClosed ? 1 : Math.min(1, Math.max(0, options.targetProgress ?? 1));
@@ -200,26 +279,41 @@ export function calculate(settings: CommissionSettings, targets: RepTargets, dat
     const achieved = rules.rangeUnit === "qty" ? bucket.qty : bucket.amount;
     return { ...bucket, commission: round2(bucket.commission), target, targetToDate: currentTarget, unit: rules.rangeUnit, achieved, achievement: pctOf(achieved, currentTarget) };
   });
-  const oldTierResults = oldTierBuckets.map((bucket) => ({ ...bucket, commission: round2(bucket.commission) }));
+  const oldTierResults = oldTierBuckets.map((bucket) => ({
+    ...bucket,
+    commission: round2(bucket.commission),
+    rate: bucket.amount ? (100 * bucket.commission) / bucket.amount : bucket.rate,
+  }));
   const allTargetsMet =
     achievement != null &&
     achievement >= 100 &&
     (Object.values(categories) as RepResult["categories"][Category][]).every((item) => item.achievement == null || item.achievement >= 100) &&
     tierResults.every((item) => item.achievement == null || item.achievement >= 100);
 
-  const regime: Regime = achievement == null ? "noTarget" : achievement < rules.lowAchievementPct ? "low" : achievement < rules.oldSystemUntilPct ? "old" : "full";
+  const regime: Regime = achievement == null ? "noTarget" : achievement < rules.lowAchievementPct ? "low" : achievement <= rules.oldSystemUntilPct ? "old" : "full";
   const fullRules = regime === "full" || regime === "noTarget";
-  if (regime === "old" && rules.oldSystemMode === "tiers") {
+  if (regime === "low") {
+    for (const key of Object.keys(categories) as Category[]) {
+      const commission = round2(lowCategoryCommission[key]);
+      categories[key].commission = commission;
+      categories[key].rate = categories[key].amount ? (100 * commission) / categories[key].amount : null;
+    }
+    nsBucket.commission = round2(lowNsCommission);
+    nsBucket.rate = nsBucket.amount ? (100 * nsBucket.commission) / nsBucket.amount : null;
+  } else if (regime === "old") {
     for (const key of Object.keys(categories) as Category[]) {
       const commission = round2(oldCategoryCommission[key]);
       categories[key].commission = commission;
       categories[key].rate = categories[key].amount ? (100 * commission) / categories[key].amount : null;
     }
+    nsBucket.commission = round2(oldNsCommission);
+    nsBucket.rate = nsBucket.amount ? (100 * nsBucket.commission) / nsBucket.amount : null;
   } else {
     for (const key of Object.keys(categories) as Category[]) {
       const bucket = categories[key];
       bucket.rate = bucket.amount ? (100 * bucket.commission) / bucket.amount : null;
     }
+    nsBucket.rate = nsBucket.amount ? (100 * nsBucket.commission) / nsBucket.amount : null;
   }
 
   const cashShare = sales > 0 ? (100 * cashSales) / sales : 0;
@@ -237,7 +331,7 @@ export function calculate(settings: CommissionSettings, targets: RepTargets, dat
     key: "slowDeduction",
     met: slowAchievement != null && slowAchievement < rules.slowMinPct,
     applies: true,
-    value: -(base * rules.slowDeductionPct) / 100,
+    value: -((base - productCommissionBase) * rules.slowDeductionPct) / 100,
     current: slowAchievement,
     threshold: rules.slowMinPct,
   });
@@ -266,19 +360,16 @@ export function calculate(settings: CommissionSettings, targets: RepTargets, dat
 
   let commissionComponent: number;
   if (regime === "low") {
-    commissionComponent = round2(Math.max(0, (sales * rules.lowRate) / 100));
+    commissionComponent = round2(Math.max(0, productCommissionBase + ((sales - productCommissionSales) * rules.lowRate) / 100));
     adjustments.push({ key: "lowRate", met: true, applies: true, amount: commissionComponent, current: achievement, threshold: rules.lowAchievementPct });
-  } else if (regime === "old" && rules.oldSystemMode === "rate") {
-    commissionComponent = round2(Math.max(0, (sales * rules.oldRate) / 100));
-    adjustments.push({ key: "oldRate", met: true, applies: true, amount: commissionComponent, current: achievement, threshold: rules.oldSystemUntilPct });
-  } else if (regime === "old" && rules.oldSystemMode === "tiers") {
+  } else if (regime === "old") {
     commissionComponent = oldBase;
     adjustments.push({ key: "oldTiers", met: true, applies: true, amount: commissionComponent, current: achievement, threshold: rules.oldSystemUntilPct });
   } else {
     commissionComponent = base;
   }
   const bonusesAndDeductions = adjustments.reduce(
-    (sum, item) => sum + (item.key === "lowRate" || item.key === "oldRate" || item.key === "oldTiers" ? 0 : item.amount),
+    (sum, item) => sum + (item.key === "lowRate" || item.key === "oldTiers" ? 0 : item.amount),
     0,
   );
   const beforeCollection = round2(Math.max(0, commissionComponent + bonusesAndDeductions));
@@ -303,6 +394,7 @@ export function calculate(settings: CommissionSettings, targets: RepTargets, dat
     base,
     tiers: tierResults,
     oldTiers: oldTierResults,
+    ns: { ...nsBucket, commission: round2(nsBucket.commission) },
     unpriced: { ...unpriced, commission: 0 },
     categories,
     totalTarget,

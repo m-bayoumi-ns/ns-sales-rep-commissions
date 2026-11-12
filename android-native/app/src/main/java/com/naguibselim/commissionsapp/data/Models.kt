@@ -66,9 +66,7 @@ data class RulesModel(
     val lowAchievementPct: Double,
     val lowRate: Double,
     val oldSystemUntilPct: Double,
-    val oldSystemMode: String, // "tiers" | "base" | "rate"
     val oldSystemTiers: List<TierRule>,
-    val oldRate: Double,
     val minimumSales: Double,
     val salesBonuses: List<BonusStepModel>,
     val statementDetails: Map<String, Boolean>,
@@ -137,6 +135,7 @@ data class RepResultModel(
     val base: Double,
     val tiers: List<RangeResultModel>,
     val oldTiers: List<BucketResultModel>,
+    val ns: BucketResultModel,
     val unpriced: BucketResultModel,
     val slowCategory: RangeResultModel,
     val digitalCategory: RangeResultModel,
@@ -476,6 +475,7 @@ object JsonParsers {
             "A" to detailsObj.optBoolean("A", true),
             "B" to detailsObj.optBoolean("B", true),
             "C" to detailsObj.optBoolean("C", true),
+            "ns" to detailsObj.optBoolean("ns", true),
             "slow" to detailsObj.optBoolean("slow", true),
             "digital" to detailsObj.optBoolean("digital", true)
         )
@@ -493,9 +493,7 @@ object JsonParsers {
             lowAchievementPct = rulesObj.optDouble("lowAchievementPct", 50.0),
             lowRate = rulesObj.optDouble("lowRate", 0.1),
             oldSystemUntilPct = rulesObj.optDouble("oldSystemUntilPct", 70.0),
-            oldSystemMode = rulesObj.optString("oldSystemMode", "tiers"),
             oldSystemTiers = oldTiers.ifEmpty { tiers },
-            oldRate = rulesObj.optDouble("oldRate", 0.0),
             minimumSales = rulesObj.optDouble("minimumSales", 478000.0),
             salesBonuses = bonuses,
             statementDetails = statementDetails,
@@ -575,7 +573,6 @@ object JsonParsers {
             put("lowAchievementPct", r.lowAchievementPct)
             put("lowRate", r.lowRate)
             put("oldSystemUntilPct", r.oldSystemUntilPct)
-            put("oldSystemMode", r.oldSystemMode)
             val oldArr = JSONArray()
             r.oldSystemTiers.forEach { t ->
                 oldArr.put(JSONObject().apply {
@@ -585,7 +582,6 @@ object JsonParsers {
                 })
             }
             put("oldSystemTiers", oldArr)
-            put("oldRate", r.oldRate)
             put("minimumSales", r.minimumSales)
             val bonusArr = JSONArray()
             r.salesBonuses.forEach { b ->
@@ -600,6 +596,7 @@ object JsonParsers {
                 put("A", r.statementDetails["A"] ?: true)
                 put("B", r.statementDetails["B"] ?: true)
                 put("C", r.statementDetails["C"] ?: true)
+                put("ns", r.statementDetails["ns"] ?: true)
                 put("slow", r.statementDetails["slow"] ?: true)
                 put("digital", r.statementDetails["digital"] ?: true)
             })
@@ -685,6 +682,7 @@ object JsonParsers {
             base = obj.optDouble("base", 0.0),
             tiers = tiers,
             oldTiers = oldTiers,
+            ns = parseBucketResult(obj.optJSONObject("ns") ?: JSONObject()),
             unpriced = parseBucketResult(obj.optJSONObject("unpriced") ?: JSONObject()),
             slowCategory = parseRangeResult(cats.optJSONObject("slow") ?: JSONObject()),
             digitalCategory = parseRangeResult(cats.optJSONObject("digital") ?: JSONObject()),

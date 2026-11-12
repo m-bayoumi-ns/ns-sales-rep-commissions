@@ -49,7 +49,7 @@ export function Overview({ view, locale, canExport }: { view: CommissionsView; l
       <Section
         title={t("board.title")}
         description={t("board.description")}
-        actions={canExport ? <RepsExport reps={view.reps} month={view.clock.month} /> : undefined}
+        actions={canExport ? <RepsExport reps={view.reps} rowData={view.rowData ?? []} month={view.clock.month} lowAchievementPct={view.settings.rules.lowAchievementPct} oldSystemUntilPct={view.settings.rules.oldSystemUntilPct} /> : undefined}
       >
         {view.reps.length ? (
           <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
