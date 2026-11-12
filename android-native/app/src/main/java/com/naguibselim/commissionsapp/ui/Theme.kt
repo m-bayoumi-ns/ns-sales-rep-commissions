@@ -19,6 +19,7 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
@@ -116,10 +117,11 @@ val CairoFontFamily = FontFamily(
     Font(R.font.cairo, FontWeight.ExtraBold)
 )
 
+@OptIn(ExperimentalTextApi::class)
 private fun interFont(weight: FontWeight) = Font(
-    R.font.inter,
-    weight,
-    variationSettings = FontVariation.Settings(FontVariation.weight(weight.weight.toFloat()))
+    resId = R.font.inter,
+    weight = weight,
+    variationSettings = FontVariation.Settings(FontVariation.weight(weight.weight))
 )
 
 val InterFontFamily = FontFamily(
