@@ -1,16 +1,17 @@
 import "server-only";
+import { createHash } from "node:crypto";
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import ExcelJS from "exceljs";
 import { isDemoMode } from "@/lib/dev";
 import { cached, MINUTE, prevMonth } from "@/lib/finance/core";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
-import { type CommissionSettings, defaultSettings, settingsSchema } from "./schema";
+import { type Category, type CommissionSettings, defaultSettings, settingsSchema } from "./schema";
 
 /**
  * Supabase Storage (same project as ns-home), bucket "naguib-selim-db":
  *   ns-sales-rep-commissions/settings_YYYY_MM.json   commission settings, one file per month (read / written here)
- *   Wholesales_Target/target_YYYY_MM.xlsx            the month's targets: the "Sales Rep" column lists the reps (read only)
+ *   Wholesales_Target/target_YYYY_MM.xlsx            the month's targets and "Product commission" sheet (read only)
  * In local demo mode (lib/dev.ts) the same paths are read from / written to the ".data" folder instead.
  */
 export const BUCKET = process.env.COMMISSIONS_BUCKET || "naguib-selim-db";
@@ -172,6 +173,7 @@ export async function saveSettings(settings: CommissionSettings) {
   const { reps, ...commissionSettings } = settings;
   await upload(settingsPath(settings.month), JSON.stringify({
     ...commissionSettings,
+    products: commissionSettings.products.filter((product) => product.templateId > 0),
     reps: reps.map(({ name, odooUserId }) => ({ name, odooUserId })),
   }, null, 2));
   settingsCache.delete(settings.month);
@@ -179,7 +181,30 @@ export async function saveSettings(settings: CommissionSettings) {
 
 // ---------------------------------------------------------------- target sheet
 export type SheetRep = { name: string; totalTarget: number | null; slowTarget: number | null; digitalTarget: number | null; rangeTargets: (number | null)[] };
-export type TargetSheet = { found: boolean; path: string; reps: SheetRep[]; columns: { rep: string | null; total: string | null; slow: string | null; digital: string | null; ranges: (string | null)[] } };
+export type SheetProductCommission = {
+  key: string;
+  row: number;
+  category: string;
+  categoryKey: Category | null;
+  productName: string;
+  price: number | null;
+  anyPrice: boolean;
+  commission: number | null;
+  priceText: string;
+  commissionText: string;
+  valid: boolean;
+};
+export type TargetSheet = {
+  found: boolean;
+  path: string;
+  reps: SheetRep[];
+  columns: { rep: string | null; total: string | null; slow: string | null; digital: string | null; ranges: (string | null)[] };
+  productCommission: {
+    found: boolean;
+    columns: { category: string | null; productName: string | null; price: string | null; commission: string | null };
+    rows: SheetProductCommission[];
+  };
+};
 
 const text = (value: ExcelJS.CellValue): string => {
   if (value == null) return "";
@@ -195,17 +220,99 @@ const numberOf = (value: ExcelJS.CellValue): number | null => {
   const n = typeof raw === "number" ? raw : Number(String(raw ?? "").replace(/[,\s]/g, ""));
   return Number.isFinite(n) && String(raw ?? "").trim() !== "" ? n : null;
 };
+const percentageOf = (cell: ExcelJS.Cell): number | null => {
+  const value = numberOf(cell.value);
+  if (value != null) return cell.numFmt?.includes("%") ? value * 100 : value;
+  const textValue = text(cell.value).trim();
+  const percentText = textValue.match(/^(-?(?:\d+\.?\d*|\.\d+))\s*%$/);
+  return percentText ? Number(percentText[1]) : null;
+};
 
 const REP_HEADER = /sales\s*rep|مندوب|البائع/i;
 const SLOW_HEADER = /slow|راكد|بطيء|بطئ/i;
 const DIGITAL_HEADER = /digital|ديجيتال|ديجتال|ديجيتل/i;
 const TARGET_HEADER = /target|تارجت|المستهدف|الهدف|تارجيت/i;
+const PRODUCT_COMMISSION_SHEET = "product commission";
+const PRODUCT_CATEGORY_HEADER = /^categories?$/i;
+const PRODUCT_NAME_HEADER = /^product\s*name$/i;
+const PRICE_HEADER = /^price$/i;
+const COMMISSION_HEADER = /^commission$/i;
 
-/** Reads the month's target sheet: the reps of the "Sales Rep" column and, when present, their target columns. */
+function emptyTargetSheet(found: boolean, objectPath: string): TargetSheet {
+  return {
+    found,
+    path: objectPath,
+    reps: [],
+    columns: { rep: null, total: null, slow: null, digital: null, ranges: [null, null, null] },
+    productCommission: { found: false, columns: { category: null, productName: null, price: null, commission: null }, rows: [] },
+  };
+}
+
+function categoryOf(value: string): Category | null {
+  if (SLOW_HEADER.test(value)) return "slow";
+  if (DIGITAL_HEADER.test(value)) return "digital";
+  return null;
+}
+
+function parseProductCommission(workbook: ExcelJS.Workbook): TargetSheet["productCommission"] {
+  const sheet = workbook.worksheets.find((item) => item.name.replace(/\s+/g, " ").trim().toLowerCase() === PRODUCT_COMMISSION_SHEET);
+  if (!sheet) return emptyTargetSheet(false, "").productCommission;
+
+  for (let headerRow = 1; headerRow <= Math.min(15, sheet.rowCount); headerRow++) {
+    const headers = new Map<number, string>();
+    sheet.getRow(headerRow).eachCell((cell, col) => headers.set(col, text(cell.value).replace(/\s+/g, " ").trim()));
+    const categoryCol = [...headers].find(([, value]) => PRODUCT_CATEGORY_HEADER.test(value))?.[0] ?? null;
+    const productNameCol = [...headers].find(([, value]) => PRODUCT_NAME_HEADER.test(value))?.[0] ?? null;
+    const priceCol = [...headers].find(([, value]) => PRICE_HEADER.test(value))?.[0] ?? null;
+    const commissionCol = [...headers].find(([, value]) => COMMISSION_HEADER.test(value))?.[0] ?? null;
+    if (!categoryCol && !productNameCol && !priceCol && !commissionCol) continue;
+
+    const columns = {
+      category: categoryCol ? headers.get(categoryCol) ?? null : null,
+      productName: productNameCol ? headers.get(productNameCol) ?? null : null,
+      price: priceCol ? headers.get(priceCol) ?? null : null,
+      commission: commissionCol ? headers.get(commissionCol) ?? null : null,
+    };
+    const rows: SheetProductCommission[] = [];
+    const occurrences = new Map<string, number>();
+    if (!categoryCol || !productNameCol || !priceCol || !commissionCol) return { found: true, columns, rows };
+
+    for (let rowIndex = headerRow + 1; rowIndex <= sheet.rowCount; rowIndex++) {
+      const row = sheet.getRow(rowIndex);
+      const category = text(row.getCell(categoryCol).value).replace(/\s+/g, " ").trim();
+      const productName = text(row.getCell(productNameCol).value).replace(/\s+/g, " ").trim();
+      const priceCell = row.getCell(priceCol);
+      const commissionCell = row.getCell(commissionCol);
+      const priceText = text(priceCell.value).replace(/\s+/g, " ").trim();
+      const commissionText = text(commissionCell.value).trim();
+      if (!category && !productName && !priceText && !commissionText) continue;
+
+      const anyPrice = /^any\s+price$/i.test(priceText);
+      const price = anyPrice ? null : numberOf(priceCell.value);
+      const commission = percentageOf(commissionCell);
+      const categoryKey = categoryOf(category);
+      const identity = [
+        categoryKey ?? category.toLowerCase(),
+        productName.toLowerCase(),
+        anyPrice ? "any" : price == null ? `invalid:${priceText.toLowerCase()}` : String(price),
+      ].join("\u001f");
+      const occurrence = occurrences.get(identity) ?? 0;
+      occurrences.set(identity, occurrence + 1);
+      const key = `pc-${createHash("sha256").update(`${identity}\u001f${occurrence}`).digest("hex").slice(0, 24)}`;
+      const valid = Boolean(productName && categoryKey && (anyPrice || (price != null && price >= 0)) && commission != null && commission >= 0 && commission <= 1000);
+      rows.push({ key, row: rowIndex, category, categoryKey, productName, price, anyPrice, commission, priceText, commissionText, valid });
+    }
+
+    return { found: true, columns, rows };
+  }
+  return { found: true, columns: { category: null, productName: null, price: null, commission: null }, rows: [] };
+}
+
+/** Reads the month's target workbook and its product commission rows. */
 export function readTargetSheet(month: string): Promise<TargetSheet> {
-  return cached(`target-sheet:v2:${month}`, MINUTE, async () => {
+  return cached(`target-sheet:v3:${month}`, MINUTE, async () => {
     const objectPath = targetPath(month);
-    const empty: TargetSheet = { found: false, path: objectPath, reps: [], columns: { rep: null, total: null, slow: null, digital: null, ranges: [null, null, null] } };
+    const empty = emptyTargetSheet(false, objectPath);
     const buffer = await download(objectPath);
     if (!buffer) return empty;
     const workbook = new ExcelJS.Workbook();
@@ -215,7 +322,7 @@ export function readTargetSheet(month: string): Promise<TargetSheet> {
 }
 
 export function parseTargetWorkbook(workbook: ExcelJS.Workbook, objectPath: string): TargetSheet {
-  const empty: TargetSheet = { found: true, path: objectPath, reps: [], columns: { rep: null, total: null, slow: null, digital: null, ranges: [null, null, null] } };
+  const productCommission = parseProductCommission(workbook);
   for (const sheet of workbook.worksheets) {
     for (let rowIndex = 1; rowIndex <= Math.min(15, sheet.rowCount); rowIndex++) {
       const headers = new Map<number, string>();
@@ -257,8 +364,9 @@ export function parseTargetWorkbook(workbook: ExcelJS.Workbook, objectPath: stri
           digital: digitalCol ? headers.get(digitalCol)! : null,
           ranges: rangeCols.map((col) => col ? headers.get(col) ?? null : null),
         },
+        productCommission,
       };
     }
   }
-  return empty;
+  return { ...emptyTargetSheet(true, objectPath), productCommission };
 }

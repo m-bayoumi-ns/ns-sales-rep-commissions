@@ -151,6 +151,8 @@ function ChangeText({ change }: { change: RateChange }) {
       return <>{t("oldTier", { key: change.key })}: {arrow(change.from, change.to)}</>;
     case "categoryRate":
       return <>{t(`category.${change.key}`)}: {arrow(`${change.from}%`, `${change.to}%`)}</>;
+    case "productRate":
+      return <>{t("productRate", { price: change.price })}: {arrow(change.from == null ? "—" : `${change.from}%`, change.to == null ? "—" : `${change.to}%`)}</>;
     case "productAdded":
       return <>{t("added", { category: t(`category.${change.category}`) })}: <bdi className="text-foreground">{change.name}</bdi></>;
     case "productRemoved":

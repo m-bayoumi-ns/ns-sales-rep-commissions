@@ -1,9 +1,9 @@
 import "server-only";
 import type { AppUser } from "@/lib/auth/types";
 import { addMonths, currentMonth, daysBetween, monthBounds, today } from "@/lib/finance/core";
-import { calculate, productRuleFor, project, type RepResult, tierIndex } from "./engine";
+import { calculate, productCommissionRateFor, productRuleFor, project, type RepResult, tierIndex } from "./engine";
 import { cleanRepName, matchRep, normalizeName } from "./names";
-import { getCollections, getRepCandidates, getReceivables, getSalesLines, getUserNames, type OdooRep, type RepSaleLine } from "./odoo";
+import { autoMatchProducts, getCollections, getRepCandidates, getReceivables, getSalesLines, getUserNames, type OdooRep, type RepSaleLine } from "./odoo";
 import type { Category, CommissionSettings } from "./schema";
 import { loadSettings, readTargetSheet, type StoredSettings, type TargetSheet } from "./storage";
 import { loadAppSettings } from "@/lib/accounts/app-settings";
@@ -90,9 +90,34 @@ export function monthReps(stored: StoredSettings, sheet: TargetSheet, candidates
 
 export async function loadMonthSetup(month: string) {
   const [stored, sheet, candidates] = await Promise.all([loadSettings(month), readTargetSheet(month), getRepCandidates()]);
+  const savedProducts = new Map(stored.settings.products.map((product) => [product.key, product]));
+  const autoMatches = await autoMatchProducts(
+    sheet.productCommission.rows
+      .filter((row) => (savedProducts.get(row.key)?.templateId ?? 0) <= 0)
+      .map((row) => row.productName),
+  );
+  const products = sheet.productCommission.rows.map((row) => {
+    const saved = savedProducts.get(row.key);
+    const auto = (saved?.templateId ?? 0) > 0 ? null : autoMatches.get(normalizeName(row.productName));
+    return {
+      key: row.key,
+      sourceName: row.productName,
+      templateId: saved?.templateId || auto?.templateId || 0,
+      templateName: saved?.templateName || auto?.name || "",
+      code: saved?.code ?? auto?.code ?? null,
+      variantId: saved?.variantId ?? null,
+      color: saved?.color ?? null,
+      category: row.categoryKey,
+      price: row.price != null && row.price >= 0 ? row.price : null,
+      anyPrice: row.anyPrice,
+      commission: row.commission != null && row.commission >= 0 && row.commission <= 1000 ? row.commission : null,
+    };
+  });
+  const effectiveSettings: CommissionSettings = { ...stored.settings, products };
+  const effectiveStored: StoredSettings = { ...stored, settings: effectiveSettings };
   const manualIds = stored.settings.reps.map((rep) => rep.odooUserId).filter((id): id is number => id != null && !candidates.some((rep) => rep.id === id));
   const userNames = await getUserNames(manualIds);
-  return { stored, sheet, candidates, reps: monthReps(stored, sheet, candidates, userNames) };
+  return { stored: effectiveStored, sheet, candidates, reps: monthReps(stored, sheet, candidates, userNames) };
 }
 
 /** Which reps a user may see: managers see all; a sales_rep-limited account sees its own reps only. */
@@ -167,8 +192,9 @@ function bucketOf(settings: CommissionSettings, line: RepSaleLine, useOldSystemT
   const unit = line.qty ? Math.abs(line.amount / line.qty) : Math.abs(line.amount);
   const tiers = useOldSystemTiers ? settings.rules.oldSystemTiers : settings.tiers;
   const index = tierIndex(tiers, unit);
-  if (rule) return { bucket: rule.category, rate: settings.categoryRates[rule.category] };
-  return index >= 0 ? { bucket: String.fromCharCode(65 + index), rate: tiers[index].rate } : { bucket: "none", rate: 0 };
+  const rate = productCommissionRateFor(settings.products, line.productId, line.templateId, unit) ?? (index >= 0 ? tiers[index].rate : 0);
+  if (rule?.category) return { bucket: rule.category, rate };
+  return index >= 0 ? { bucket: String.fromCharCode(65 + index), rate } : { bucket: "none", rate: 0 };
 }
 
 export async function getCommissionsView(user: AppUser, month: string, repKey: string | undefined): Promise<CommissionsView> {

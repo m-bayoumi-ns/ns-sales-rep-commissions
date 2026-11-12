@@ -88,6 +88,7 @@ export async function GET(request: NextRequest) {
         path: setup.sheet.path,
         count: setup.sheet.reps.length,
         columns: setup.sheet.columns,
+        productCommission: setup.sheet.productCommission,
       },
       reps: setup.reps,
       candidates: setup.candidates.map(({ id, name }) => ({ id, name })),

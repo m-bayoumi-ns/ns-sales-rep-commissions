@@ -24,6 +24,21 @@ export function normalizeName(name: string): string {
     .trim();
 }
 
+/** A product is linked automatically only when its normalized name (or code) is unique. */
+export function matchProductName<T extends { id: number; name: string; code?: string | null }>(name: string, products: T[]): T | null {
+  const wanted = normalizeName(name);
+  if (!wanted) return null;
+  const matches = new Map(
+    products
+      .filter((product) => {
+        const displayName = product.name.replace(/^\[[^\]]+\]\s*/, "");
+        return normalizeName(displayName) === wanted || (product.code != null && normalizeName(product.code) === wanted);
+      })
+      .map((product) => [product.id, product]),
+  );
+  return matches.size === 1 ? matches.values().next().value ?? null : null;
+}
+
 const tokens = (name: string) => normalizeName(name).split(" ").filter(Boolean);
 
 /**

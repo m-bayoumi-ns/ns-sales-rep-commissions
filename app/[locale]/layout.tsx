@@ -1,7 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Cairo, Inter } from "next/font/google";
 import { notFound } from "next/navigation";
-import Script from "next/script";
 import { locale as rootLocale } from "next/root-params";
 import { NextIntlClientProvider } from "next-intl";
 import { getTranslations } from "next-intl/server";
@@ -65,12 +64,6 @@ export default async function LocaleLayout({ children }: LayoutProps<"/[locale]"
             {children}
             <GetAppBanner />
             <AppModeMarker />
-            {/* Marks pages opened inside the Android app before first paint (see .web-only / .app-only in globals.css). */}
-            <Script id="ns-app-mode" strategy="beforeInteractive">
-              {
-                "if(navigator.userAgent.indexOf('NSCommissionsApp')>-1||navigator.standalone===true||matchMedia('(display-mode: standalone)').matches)document.documentElement.setAttribute('data-app','')"
-              }
-            </Script>
           </Providers>
         </NextIntlClientProvider>
       </body>

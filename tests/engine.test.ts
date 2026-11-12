@@ -11,8 +11,8 @@ const settings = settingsSchema.parse({
   ],
   categoryRates: { slow: 2, digital: 3 },
   products: [
-    { key: "a", templateId: 10, templateName: "Slow fabric", category: "slow" },
-    { key: "b", templateId: 20, templateName: "Digital", variantId: 201, color: "1", category: "digital" },
+    { key: "a", sourceName: "Slow fabric", templateId: 10, templateName: "Slow fabric", category: "slow", anyPrice: true, commission: 2 },
+    { key: "b", sourceName: "Digital", templateId: 20, templateName: "Digital", variantId: 201, color: "1", category: "digital", anyPrice: true, commission: 3 },
   ],
 });
 
@@ -88,12 +88,41 @@ describe("calculate", () => {
       lines: [line({ qty: 10, amount: 500 }), line({ qty: 10, amount: 1500 }), line({ templateId: 10, qty: 5, amount: 1000 }), line({ productId: 201, templateId: 20, amount: 1000 })],
       collections: 0,
     }, { monthClosed: false });
-    // Product categories use their configured rates; unclassified lines use price tiers:
+    // Product rates come from the target rows; unclassified lines use price tiers:
     // 2.5 + 15 + 20 + 30.
     expect(result.base).toBeCloseTo(67.5);
     expect(result.categories.slow.qty).toBe(5);
     expect(result.categories.digital.commission).toBeCloseTo(30);
     expect(result.regime).toBe("noTarget");
+  });
+  it("uses an exact sheet price before any-price, then falls back to tiers when neither matches", () => {
+    const priceSettings = settingsSchema.parse({
+      ...settings,
+      products: [
+        { key: "slow-exact", sourceName: "Slow fabric", templateId: 10, templateName: "Slow fabric", category: "slow", price: 100, commission: 5 },
+        { key: "slow-any", sourceName: "Slow fabric", templateId: 10, templateName: "Slow fabric", category: "slow", anyPrice: true, commission: 2 },
+        { key: "digital-exact", sourceName: "Digital", templateId: 30, templateName: "Digital", category: "digital", price: 100, commission: 5 },
+      ],
+    });
+    const result = calculate(
+      priceSettings,
+      { totalTarget: null, slowTarget: null, digitalTarget: null },
+      {
+        lines: [
+          line({ templateId: 10, qty: 2, amount: 200 }),
+          line({ templateId: 10, qty: 2, amount: 202 }),
+          line({ templateId: 30, qty: 2, amount: 202 }),
+        ],
+        collections: 0,
+      },
+      { monthClosed: true },
+    );
+
+    expect(result.base).toBeCloseTo(16.06);
+    expect(result.categories.slow.amount).toBe(402);
+    expect(result.categories.slow.commission).toBeCloseTo(14.04);
+    expect(result.categories.digital.amount).toBe(202);
+    expect(result.categories.digital.commission).toBeCloseTo(2.02);
   });
   it("below 50% pays 0.1% of sales only", () => {
     const result = calculate(settings, { ...targets, slowTarget: null }, { lines: [line({ qty: 1000, amount: 400_000, cashAmount: 400_000 })], collections: 900_000 }, { monthClosed: true });

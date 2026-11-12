@@ -387,11 +387,11 @@
       "noLimit": "No limit",
       "rate": "Commission rate",
       "overlap": "Some ranges overlap: a price in two ranges uses the first one.",
-      "hint": "Leave a range's rate at 0 to switch it off. Products listed below use their category rate instead of the matching range rate."
+      "hint": "Leave a range's rate at 0 to switch it off. Products with no matching Product commission price use these price ranges."
     },
     "oldTiers": {
       "title": "Old-system commission ranges",
-      "description": "Used from {from}% to below {to}% of target. These rates apply to regular products only; slow-moving and digital products keep their configured category rates.",
+      "description": "Used from {from}% to below {to}% of target. Unmatched product prices use these ranges; a matching Product commission rate still applies.",
       "mode": "Old-system calculation",
       "modeTiers": "Separate price ranges for regular products",
       "modeBase": "Use the current line commission",
@@ -405,38 +405,30 @@
       "noLimit": "No limit",
       "rate": "Commission rate",
       "overlap": "Some old-system ranges overlap: a price in two ranges uses the first.",
-      "hint": "Regular products use these rates instead of the main price ranges; classified products keep their category rates."
+      "hint": "Products without a matching Product commission price use these rates in the old system."
     },
     "products": {
       "title": "2 · Product categories",
-      "description": "Set a commission rate for each category, then pick products (optionally one colour) to classify as slow-moving or digital.",
-      "add": {
-        "slow": "Slow-moving product",
-        "digital": "Digital product"
-      },
-      "all": "All ({count})",
-      "more": "Show {count} more",
-      "less": "Show fewer",
-      "tab": {
-        "slow": "Slow-moving ({count})",
-        "digital": "Digital ({count})"
-      },
-      "product": "Product",
-      "color": "Colour",
+      "description": "Product categories, prices and commission rates are read from the Product commission sheet in the monthly target file. Link each imported product to its Odoo product.",
+      "sourceStatus": "Rows: {count} · linked: {linked}",
+      "sourceMissing": "The Product commission sheet was not found in this month's target file.",
+      "product": "Product name",
       "category": "Category",
-      "rate": {
-        "slow": "Slow-moving commission rate",
-        "digital": "Digital commission rate"
-      },
-      "empty": "No products yet — use the + buttons to add them.",
-      "hint": "Classified products use their category rate instead of the price-range rate. A colour-specific classification wins over the same product for all colours. Enter each rep's slow-moving target in the table below.",
-      "allColors": "All colours",
-      "loadColors": "Choose a colour",
+      "price": "Price",
+      "commission": "Commission",
+      "odooProduct": "Link to Odoo product",
+      "linkStatus": "Link status",
+      "anyPrice": "Any price",
+      "linked": "Linked",
+      "notLinked": "Not linked",
+      "unmatched": "No unique Odoo product match was found",
+      "invalidRow": "Check the source row values",
+      "empty": "No rows found, or the required column headers are missing.",
+      "hint": "A specific price uses its commission only when the net unit sale price after discount matches exactly. Otherwise, the regular price tiers apply. Any price applies at every price. Unlinked products use the tiers until linked.",
       "cat": {
         "slow": "Slow-moving",
         "digital": "Digital"
       },
-      "remove": "Remove",
       "searchPlaceholder": "Search by name or code…",
       "colors": "{count, plural, =0 {no colours} one {# colour} other {# colours}}",
       "searching": "Searching…",
@@ -631,7 +623,7 @@
     "statementTitle": "Commission statement",
     "priceFrom": "price {from}+",
     "priceBetween": "price {from}–{to}",
-    "ownRates": "category rate",
+    "ownRates": "weighted product rate",
     "lineCommission": "Line commission",
     "beforeCollection": "Commission before collections",
     "collectionShare": "Line commission adjustment by collection rate",
@@ -776,8 +768,10 @@
       "oldTier": "Old-system range {key}",
       "category": {
         "slow": "Slow-moving rate",
-        "digital": "Digital rate"
+        "digital": "Digital rate",
+        "unclassified": "unclassified"
       },
+      "productRate": "Product commission at {price}",
       "added": "Added to {category}",
       "removed": "Removed from {category}",
       "ladder": "Sales bonuses",

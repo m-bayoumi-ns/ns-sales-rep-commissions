@@ -4,8 +4,8 @@ import type { Category, CommissionSettings, ProductRule, Rules, TargetUnit, Tier
  * The commission calculation — pure (no Odoo, no storage), so it is unit-tested and runs the same
  * on every page. Amounts are net of discounts and of refunds (credit notes count negative).
  *
- * 1. Classified products earn their category rate; all other lines earn the rate of the price range
- *    their unit price after discount falls in (A / B / C).
+ * 1. Linked products use their Product commission rate at an exact or any-price match; otherwise
+ *    they use the applicable price-range rate. Their category is still used for target tracking.
  * 2. In an open month, target achievement is compared with the prorated target for elapsed calendar days; in a closed
  *    month, it is compared with the full target. This decides the system:
  *      • below 50 %            → 0.1 % of total sales, nothing else;
@@ -97,9 +97,24 @@ export function tierIndex(tiers: Tier[], unitPrice: number): number {
   return tiers.findIndex((tier) => tier.rate > 0 || tier.from > 0 || tier.to != null ? unitPrice >= tier.from && (tier.to == null || unitPrice < tier.to) : false);
 }
 
-/** The product rule for a line: the colour-specific rule first, then the rule for every colour. */
+function productRulesFor(products: ProductRule[], productId: number, templateId: number): ProductRule[] {
+  const linked = products.filter((rule) => rule.templateId > 0 && rule.templateId === templateId);
+  const variants = linked.filter((rule) => rule.variantId === productId);
+  return variants.length ? variants : linked.filter((rule) => rule.variantId == null);
+}
+
+/** The product classification for a line: colour-specific rules take precedence. */
 export function productRuleFor(products: ProductRule[], productId: number, templateId: number): ProductRule | null {
-  return products.find((rule) => rule.variantId === productId) ?? products.find((rule) => rule.variantId == null && rule.templateId === templateId) ?? null;
+  const rules = productRulesFor(products, productId, templateId);
+  return rules.find((rule) => rule.category != null) ?? rules[0] ?? null;
+}
+
+/** Exact-price commission first, then any-price commission, or null to use the normal price tiers. */
+export function productCommissionRateFor(products: ProductRule[], productId: number, templateId: number, unitPrice: number): number | null {
+  const rules = productRulesFor(products, productId, templateId).filter((rule) => rule.category != null && rule.commission != null);
+  return rules.find((rule) => !rule.anyPrice && rule.price != null && rule.price === unitPrice)?.commission
+    ?? rules.find((rule) => rule.anyPrice)?.commission
+    ?? null;
 }
 
 /** Highest flat bonus whose [from, to] range holds the sales (to = null → no upper limit). */
@@ -122,6 +137,7 @@ export function calculate(settings: CommissionSettings, targets: RepTargets, dat
   const unpriced: BucketResult = { key: "none", qty: 0, amount: 0, commission: 0, rate: null };
   const cat = (key: Category) => ({ key, qty: 0, amount: 0, commission: 0, rate: null });
   const categoryBuckets: Record<Category, BucketResult> = { slow: cat("slow"), digital: cat("digital") };
+  const oldCategoryCommission: Record<Category, number> = { slow: 0, digital: 0 };
 
   let sales = 0;
   let qty = 0;
@@ -134,12 +150,16 @@ export function calculate(settings: CommissionSettings, targets: RepTargets, dat
     const unitPrice = line.qty ? Math.abs(line.amount / line.qty) : Math.abs(line.amount);
     const index = tierIndex(tiers, unitPrice);
     let bucket: BucketResult;
-    const rate = rule ? settings.categoryRates[rule.category] : index >= 0 ? tiers[index].rate : 0;
-    if (rule) {
+    const specialRate = productCommissionRateFor(products, line.productId, line.templateId, unitPrice);
+    const rate = specialRate ?? (index >= 0 ? tiers[index].rate : 0);
+    if (rule?.category) {
       bucket = categoryBuckets[rule.category];
       bucket.qty += line.qty;
       bucket.amount += line.amount;
       bucket.commission += (line.amount * rate) / 100;
+      const oldIndex = tierIndex(rules.oldSystemTiers, unitPrice);
+      const oldRate = specialRate ?? (oldIndex >= 0 ? rules.oldSystemTiers[oldIndex].rate : 0);
+      oldCategoryCommission[rule.category] += (line.amount * oldRate) / 100;
     } else {
       bucket = index >= 0 ? tierBuckets[index] : unpriced;
       bucket.qty += line.qty;
@@ -155,7 +175,7 @@ export function calculate(settings: CommissionSettings, targets: RepTargets, dat
     }
   }
   const base = round2([...tierBuckets, ...Object.values(categoryBuckets)].reduce((sum, bucket) => sum + bucket.commission, 0));
-  const oldBase = round2([...oldTierBuckets, ...Object.values(categoryBuckets)].reduce((sum, bucket) => sum + bucket.commission, 0));
+  const oldBase = round2([...oldTierBuckets].reduce((sum, bucket) => sum + bucket.commission, 0) + Object.values(oldCategoryCommission).reduce((sum, commission) => sum + commission, 0));
 
   // Achievement per category and in total.
   const targetProgress = options.monthClosed ? 1 : Math.min(1, Math.max(0, options.targetProgress ?? 1));
@@ -189,6 +209,18 @@ export function calculate(settings: CommissionSettings, targets: RepTargets, dat
 
   const regime: Regime = achievement == null ? "noTarget" : achievement < rules.lowAchievementPct ? "low" : achievement < rules.oldSystemUntilPct ? "old" : "full";
   const fullRules = regime === "full" || regime === "noTarget";
+  if (regime === "old" && rules.oldSystemMode === "tiers") {
+    for (const key of Object.keys(categories) as Category[]) {
+      const commission = round2(oldCategoryCommission[key]);
+      categories[key].commission = commission;
+      categories[key].rate = categories[key].amount ? (100 * commission) / categories[key].amount : null;
+    }
+  } else {
+    for (const key of Object.keys(categories) as Category[]) {
+      const bucket = categories[key];
+      bucket.rate = bucket.amount ? (100 * bucket.commission) / bucket.amount : null;
+    }
+  }
 
   const cashShare = sales > 0 ? (100 * cashSales) / sales : 0;
   const collectionRatio = pctOf(data.collections, sales);

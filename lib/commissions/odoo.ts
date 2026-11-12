@@ -1,9 +1,11 @@
 import "server-only";
+import { createHash } from "node:crypto";
 import { m2oId, m2oName, type Many2one, readGroup, searchRead, searchReadAll } from "@/lib/odoo/client";
 import { type Catalog, getCatalog } from "@/lib/finance/catalog";
 import { addMonths, cached, currentMonth, MINUTE, monthBounds, monthTtl } from "@/lib/finance/core";
 import { payMethodOf } from "@/lib/finance/methods";
 import type { SaleLine } from "./engine";
+import { matchProductName, normalizeName } from "./names";
 import { paidInvoiceShares } from "./settlement";
 
 /**
@@ -118,6 +120,33 @@ export async function searchProducts(query: string): Promise<ProductSearchResult
       .map((variant) => ({ id: variant.id, color: variant.color }))
       .sort((a, b) => (a.color ?? "").localeCompare(b.color ?? "", "en", { numeric: true })),
   }));
+}
+
+export type AutoProductMatch = { templateId: number; name: string; code: string | null };
+
+/** Exact normalized name/code matching for the product names imported from the target workbook. */
+export function autoMatchProducts(names: string[]): Promise<Map<string, AutoProductMatch>> {
+  const uniqueNames = [...new Set(names.map((name) => name.trim()).filter(Boolean))];
+  if (!uniqueNames.length) return Promise.resolve(new Map());
+  const cacheKey = createHash("sha256").update(uniqueNames.map(normalizeName).sort().join("\u001f")).digest("hex");
+  return cached(`product-commission-auto-match:v2:${cacheKey}`, 30 * MINUTE, async () => {
+    const matches = new Map<string, AutoProductMatch>();
+    for (const batch of chunk(uniqueNames, 5)) {
+      const results = await Promise.all(batch.map((name) => searchProducts(name)));
+      batch.forEach((name, index) => {
+        const found = results[index];
+        const match = matchProductName(
+          name,
+          found.map((product) => ({ id: product.templateId, name: product.name, code: product.code })),
+        );
+        if (match) {
+          const product = found.find((item) => item.templateId === match.id);
+          if (product) matches.set(normalizeName(name), { templateId: product.templateId, name: product.name, code: product.code });
+        }
+      });
+    }
+    return matches;
+  });
 }
 
 // ---------------------------------------------------------------- sales

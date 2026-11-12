@@ -28,9 +28,19 @@ describe("rate changes for notifications", () => {
     after.rules.oldSystemTiers[0].rate = 0.3;
     after.categoryRates.slow = 1;
     after.rules.cashBonus = 3000;
-    after.products.push({ key: "x", templateId: 5, templateName: "BLOOM", code: null, variantId: null, color: null, category: "slow" });
+    after.products.push({ ...before.products[0], key: "x", sourceName: "BLOOM", templateId: 5, templateName: "BLOOM", category: "slow" });
     const kinds = rateChanges(before, after).map((change) => change.kind);
     expect(kinds).toEqual(["tier", "oldTier", "categoryRate", "productAdded", "rule"]);
+  });
+  it("reports changes to an imported product commission rate", () => {
+    const before = settingsSchema.parse({
+      ...defaultSettings("2026-11"),
+      products: [{ key: "pc-1", sourceName: "BLOOM", templateId: 5, templateName: "BLOOM", category: "slow", price: 100, commission: 2 }],
+    });
+    const after = structuredClone(before);
+    after.products[0].commission = 3;
+
+    expect(rateChanges(before, after)).toContainEqual({ kind: "productRate", name: "BLOOM", price: "100", from: 2, to: 3 });
   });
 });
 

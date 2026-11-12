@@ -9,7 +9,8 @@ import type { Locale } from "@/i18n/routing";
 import { rateChanges } from "@/lib/commissions/changes";
 import { matchRep } from "@/lib/commissions/names";
 import type { ProductSearchResult } from "@/lib/commissions/odoo";
-import { CATEGORIES, type Category, type CommissionSettings, type ProductRule, type RepSetting, type Rules } from "@/lib/commissions/schema";
+import { type CommissionSettings, type ProductRule, type RepSetting, type Rules } from "@/lib/commissions/schema";
+import type { SheetProductCommission } from "@/lib/commissions/storage";
 import type { RepEntry } from "@/lib/commissions/view";
 import { formatDateTime, formatMonth, formatNumber } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -20,7 +21,17 @@ type Props = {
   initial: CommissionSettings;
   source: "saved" | "inherited" | "default";
   inheritedFrom: string | null;
-  sheet: { found: boolean; path: string; count: number; columns: { rep: string | null; total: string | null; slow: string | null; digital: string | null; ranges?: (string | null)[] } };
+  sheet: {
+    found: boolean;
+    path: string;
+    count: number;
+    columns: { rep: string | null; total: string | null; slow: string | null; digital: string | null; ranges?: (string | null)[] };
+    productCommission: {
+      found: boolean;
+      columns: { category: string | null; productName: string | null; price: string | null; commission: string | null };
+      rows: SheetProductCommission[];
+    };
+  };
   reps: RepEntry[];
   candidates: { id: number; name: string }[];
   /** Active seller accounts that can be notified. */
@@ -35,8 +46,6 @@ const toNum = (value: string): number | null => {
   const n = Number(text);
   return Number.isFinite(n) ? n : null;
 };
-const uid = () => Math.random().toString(36).slice(2, 10);
-
 /** Number field that keeps what is typed (commas allowed) and reports a number or null. */
 function NumberInput({ value, onChange, label, placeholder, suffix, className, readOnly = false }: { value: number | null; onChange: (value: number | null) => void; label: string; placeholder?: string; suffix?: string; className?: string; readOnly?: boolean }) {
   const [text, setText] = useState(value == null ? "" : String(value));
@@ -170,7 +179,7 @@ export function SettingsForm({ month, initial, source, inheritedFrom, sheet, rep
 
       <TiersCard settings={settings} update={update} />
       <OldSystemTiersCard settings={settings} setRule={setRule} />
-      <ProductsCard settings={settings} update={update} />
+      <ProductsCard settings={settings} update={update} productCommission={sheet.productCommission} />
       <RulesCard rules={settings.rules} setRule={setRule} />
       <RepsCard settings={settings} update={update} sheet={sheet} monthName={monthName} candidates={candidates} monthReps={monthReps} />
       <NotifyCard notify={notify} setNotify={setNotify} accounts={accounts} changes={changes.length} />
@@ -390,156 +399,80 @@ function OldSystemTiersCard({
 }
 
 // ---------------------------------------------------------------- 2. products
-function ProductsCard({ settings, update }: { settings: CommissionSettings; update: Updater }) {
+function ProductsCard({ settings, update, productCommission }: { settings: CommissionSettings; update: Updater; productCommission: Props["sheet"]["productCommission"] }) {
   const t = useTranslations("settings.products");
-  const [filter, setFilter] = useState<Category | "all">("all");
-  const [showAllProducts, setShowAllProducts] = useState(false);
-  const setCategoryRate = (category: Category, rate: number | null) =>
-    update((current) => ({ ...current, categoryRates: { ...current.categoryRates, [category]: rate ?? 0 } }));
-  const add = (category: Category) =>
-    update((current) => ({
-      ...current,
-      products: [...current.products, { key: uid(), templateId: 0, templateName: "", code: null, variantId: null, color: null, category }],
-    }));
   const setProduct = (key: string, patch: Partial<ProductRule>) =>
     update((current) => ({ ...current, products: current.products.map((product) => (product.key === key ? { ...product, ...patch } : product)) }));
-  const remove = (key: string) => update((current) => ({ ...current, products: current.products.filter((product) => product.key !== key) }));
-  const filteredProducts = settings.products.filter((product) => filter === "all" || product.category === filter);
-  const shown = showAllProducts ? filteredProducts : filteredProducts.slice(-3);
-  const hiddenProductCount = filteredProducts.length - shown.length;
-  const count = (category: Category) => settings.products.filter((product) => product.category === category).length;
+  const linkedCount = productCommission.rows.filter((row) => settings.products.some((product) => product.key === row.key && product.templateId > 0)).length;
 
   return (
-    <Card
-      title={t("title")}
-      description={t("description")}
-      actions={
-        <div className="flex flex-wrap gap-2">
-          {CATEGORIES.map((category) => (
-            <Button key={category} type="button" variant="outline" onClick={() => add(category)}>
-              <PlusIcon aria-hidden />
-              {t(`add.${category}`)}
-            </Button>
-          ))}
-        </div>
-      }
-    >
-      <div className="grid gap-3 sm:grid-cols-2">
-        {CATEGORIES.map((category) => (
-          <Field key={category} label={t(`rate.${category}`)}>
-            <NumberInput
-              label={t(`rate.${category}`)}
-              value={settings.categoryRates[category]}
-              onChange={(value) => setCategoryRate(category, value)}
-              suffix="%"
-            />
-          </Field>
-        ))}
-      </div>
-      <div className="flex flex-wrap gap-1.5" role="tablist">
-        {(["all", ...CATEGORIES] as const).map((key) => (
-          <button
-            key={key}
-            type="button"
-            role="tab"
-            aria-selected={filter === key}
-            onClick={() => {
-              setFilter(key);
-              setShowAllProducts(false);
-            }}
-            className={cn("rounded-full border px-3 py-1 text-xs font-medium", filter === key ? "border-primary bg-primary text-primary-foreground" : "hover:bg-muted")}
-          >
-            {key === "all" ? t("all", { count: settings.products.length }) : t(`tab.${key}`, { count: count(key) })}
-          </button>
-        ))}
-      </div>
-      {shown.length ? (
-        <div className="flex flex-col gap-2">
-          <div className="hidden grid-cols-[minmax(0,2.4fr)_minmax(0,1.1fr)_minmax(0,1fr)_auto] gap-2 px-1 text-xs font-medium text-muted-foreground lg:grid">
-            <span>{t("product")}</span>
-            <span>{t("color")}</span>
-            <span>{t("category")}</span>
-            <span className="w-9" />
-          </div>
-          {shown.map((product) => (
-            <ProductRow key={product.key} product={product} onChange={(patch) => setProduct(product.key, patch)} onRemove={() => remove(product.key)} />
-          ))}
-          {filteredProducts.length > 3 ? (
-            <button
-              type="button"
-              onClick={() => setShowAllProducts((current) => !current)}
-              className="self-center text-sm font-medium text-primary hover:underline"
-            >
-              {showAllProducts ? t("less") : t("more", { count: hiddenProductCount })}
-            </button>
-          ) : null}
+    <Card title={t("title")} description={t("description")}>
+      <p className={cn("flex items-center gap-2 text-sm", productCommission.found ? "text-muted-foreground" : "text-warning")}>
+        {productCommission.found ? <CheckCircle2Icon aria-hidden className="size-4 text-success" /> : <TriangleAlertIcon aria-hidden className="size-4" />}
+        {productCommission.found
+          ? t("sourceStatus", { count: productCommission.rows.length, linked: linkedCount })
+          : t("sourceMissing")}
+      </p>
+      {productCommission.rows.length ? (
+        <div className="overflow-x-auto rounded-lg border">
+          <table className="w-full min-w-[1050px] text-sm">
+            <thead>
+              <tr className="fin-head text-xs">
+                <th className="px-3 py-2 text-start font-semibold">{t("category")}</th>
+                <th className="px-3 py-2 text-start font-semibold">{t("product")}</th>
+                <th className="px-3 py-2 text-start font-semibold">{t("price")}</th>
+                <th className="px-3 py-2 text-start font-semibold">{t("commission")}</th>
+                <th className="px-3 py-2 text-start font-semibold">{t("odooProduct")}</th>
+                <th className="px-3 py-2 text-start font-semibold">{t("linkStatus")}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {productCommission.rows.map((row) => {
+                const product = settings.products.find((item) => item.key === row.key);
+                return (
+                  <tr key={row.key} className="border-t align-top">
+                    <td className="px-3 py-2">{row.categoryKey ? t(`cat.${row.categoryKey}`) : row.category || "—"}</td>
+                    <td className="px-3 py-2">
+                      <span className="flex items-center gap-2">
+                        {!product?.templateId ? (
+                          <span aria-label={t("unmatched")} title={t("unmatched")} className="flex size-5 shrink-0 items-center justify-center rounded-full bg-warning-soft text-xs font-bold text-warning">!</span>
+                        ) : null}
+                        <bdi>{row.productName || "—"}</bdi>
+                      </span>
+                    </td>
+                    <td className="px-3 py-2 tabular-nums" dir="ltr">
+                      {row.anyPrice ? t("anyPrice") : row.price != null ? formatNumber(row.price) : row.priceText || "—"}
+                    </td>
+                    <td className="px-3 py-2 tabular-nums" dir="ltr">
+                      {row.commission != null ? `${formatNumber(row.commission)}%` : row.commissionText || "—"}
+                    </td>
+                    <td className="px-3 py-2">
+                      <ProductPicker
+                        key={`${row.key}:${product?.templateId ?? 0}`}
+                        value={product?.templateId ? product.templateName : ""}
+                        onPick={(item) => setProduct(row.key, { templateId: item.templateId, templateName: item.name, code: item.code, variantId: null, color: null })}
+                      />
+                    </td>
+                    <td className="px-3 py-2">
+                      <span className={cn("text-xs font-medium", product?.templateId ? "text-success" : "text-warning")}>
+                        {product?.templateId ? t("linked") : t("notLinked")}
+                      </span>
+                      {!row.valid ? <span className="mt-1 block text-xs text-destructive">{t("invalidRow")}</span> : null}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
       ) : (
         <div className="flex flex-col items-center gap-2 rounded-lg border border-dashed py-8 text-center text-sm text-muted-foreground">
           <PackageSearchIcon aria-hidden className="size-6" />
-          {t("empty")}
+          {productCommission.found ? t("empty") : t("sourceMissing")}
         </div>
       )}
       <p className="text-xs text-muted-foreground">{t("hint")}</p>
     </Card>
-  );
-}
-
-function ProductRow({ product, onChange, onRemove }: { product: ProductRule; onChange: (patch: Partial<ProductRule>) => void; onRemove: () => void }) {
-  const t = useTranslations("settings.products");
-  const [variants, setVariants] = useState<{ id: number; color: string | null }[] | null>(null);
-  return (
-    <div className="grid grid-cols-2 items-start gap-2 rounded-lg border p-2 lg:grid-cols-[minmax(0,2.4fr)_minmax(0,1.1fr)_minmax(0,1fr)_auto] lg:border-0 lg:p-0">
-      <div className="col-span-2 lg:col-span-1">
-        <ProductPicker
-          key={product.templateId}
-          value={product.templateId ? product.templateName : ""}
-          onPick={(item) => {
-            setVariants(item.variants);
-            onChange({ templateId: item.templateId, templateName: item.name, code: item.code, variantId: null, color: null });
-          }}
-        />
-      </div>
-      <label className="flex flex-col gap-1">
-        <span className="text-[11px] text-muted-foreground lg:sr-only">{t("color")}</span>
-        <select
-          value={product.variantId ?? ""}
-          disabled={!product.templateId}
-          onChange={(event) => {
-            const id = event.target.value ? Number(event.target.value) : null;
-            const color = id ? (variants?.find((variant) => variant.id === id)?.color ?? product.color) : null;
-            onChange({ variantId: id, color });
-          }}
-          className={inputClass}
-        >
-          <option value="">{t("allColors")}</option>
-          {product.variantId && !variants?.some((variant) => variant.id === product.variantId) ? <option value={product.variantId}>{product.color ?? `#${product.variantId}`}</option> : null}
-          {(variants ?? []).map((variant) => (
-            <option key={variant.id} value={variant.id}>
-              {variant.color ?? `#${variant.id}`}
-            </option>
-          ))}
-        </select>
-        {product.templateId && !variants ? (
-          <button type="button" className="text-start text-[11px] text-primary hover:underline" onClick={async () => setVariants((await findProducts(product.code ?? product.templateName)).find((item) => item.templateId === product.templateId)?.variants ?? [])}>
-            {t("loadColors")}
-          </button>
-        ) : null}
-      </label>
-      <label className="flex flex-col gap-1">
-        <span className="text-[11px] text-muted-foreground lg:sr-only">{t("category")}</span>
-        <select value={product.category} onChange={(event) => onChange({ category: event.target.value as Category })} className={inputClass}>
-          {CATEGORIES.map((category) => (
-            <option key={category} value={category}>
-              {t(`cat.${category}`)}
-            </option>
-          ))}
-        </select>
-      </label>
-      <Button type="button" variant="ghost" size="icon" onClick={onRemove} aria-label={t("remove")} title={t("remove")} className="self-end text-destructive lg:self-start">
-        <Trash2Icon aria-hidden />
-      </Button>
-    </div>
   );
 }
 

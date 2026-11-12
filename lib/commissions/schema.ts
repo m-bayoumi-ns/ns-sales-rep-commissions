@@ -26,16 +26,21 @@ export const tierSchema = z.object({
   rate: pct.default(0),
 });
 
-/** A product (template, optionally one colour = one variant) classified for category targets. */
+/** A product row imported from Product commission and linked to an Odoo product. */
 export const productRuleSchema = z.object({
   key: z.string().min(1).max(64),
-  templateId: z.number().int().positive(),
+  sourceName: z.string().max(500).default(""),
+  templateId: z.number().int().nonnegative().default(0),
   templateName: z.string().max(300),
   code: z.string().max(64).nullable().default(null),
   /** null = every colour of the product. */
   variantId: z.number().int().positive().nullable().default(null),
   color: z.string().max(120).nullable().default(null),
-  category: z.enum(CATEGORIES),
+  category: z.enum(CATEGORIES).nullable().default(null),
+  /** null with anyPrice=false means the source Price cell was invalid or empty. */
+  price: optNum,
+  anyPrice: z.boolean().default(false),
+  commission: z.preprocess((value) => (value === "" || value === undefined || value === null ? null : value), z.union([z.null(), pct])).default(null),
 });
 
 export const bonusStepSchema = z.object({
@@ -79,7 +84,7 @@ export const rulesSchema = z.object({
   oldSystemUntilPct: pct.default(70),
   /** Old system: separate unit-price tiers, the existing line commission, or a fixed rate of sales. */
   oldSystemMode: z.enum(["tiers", "base", "rate"]).default("tiers"),
-  /** Used by the old system for regular products; classified products keep their category rates. */
+  /** Used by the old system when a product has no matching Product commission row. */
   oldSystemTiers: z.array(tierSchema).min(1).max(6),
   oldRate: pct.default(0),
   /** A note is flagged when month-end sales are below this amount. */
@@ -109,7 +114,7 @@ const settingsObjectSchema = z.object({
   month: z.string().regex(/^\d{4}-\d{2}$/),
   tiers: z.array(tierSchema).min(1).max(6),
   products: z.array(productRuleSchema).max(500).default([]),
-  /** Commission rates shared by all products classified in each category. */
+  /** Legacy category rates retained for existing settings files; product commission is read from Excel. */
   categoryRates: z.object({ slow: pct.default(0), digital: pct.default(0) }).default({ slow: 0, digital: 0 }),
   rules: rulesSchema,
   reps: z.array(repSettingSchema).max(300).default([]),
@@ -152,7 +157,7 @@ export function defaultSettings(month: string): CommissionSettings {
   });
 }
 
-/** True once at least one price range has a commission rate. */
+/** True once at least one price range or linked Product commission row has a rate. */
 export function hasRates(settings: CommissionSettings) {
-  return settings.tiers.some((tier) => tier.rate > 0) || settings.categoryRates.slow > 0 || settings.categoryRates.digital > 0;
+  return settings.tiers.some((tier) => tier.rate > 0) || settings.products.some((product) => product.commission != null && product.templateId > 0);
 }

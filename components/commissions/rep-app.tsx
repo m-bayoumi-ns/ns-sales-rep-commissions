@@ -874,7 +874,7 @@ function Statement({ detail, settings }: { detail: RepDetail; settings: Commissi
   const activeBuckets = useOldSystemTiers ? r.oldTiers : r.tiers;
   const lines = [
     ...activeBuckets.map((bucket, index) => ({ key: bucket.key, label: t("range", { key: bucket.key }), sub: activeTiers[index].to == null ? t("priceFrom", { from: formatNumber(activeTiers[index].from) }) : t("priceBetween", { from: formatNumber(activeTiers[index].from), to: formatNumber(activeTiers[index].to) }), amount: bucket.amount, rate: formatRate(bucket.rate), commission: bucket.commission })),
-    ...(["slow", "digital"] as const).map((key) => ({ key, label: t(`cat.${key}`), sub: t("ownRates"), amount: r.categories[key].amount, rate: formatRate(settings.categoryRates[key]), commission: r.categories[key].commission })),
+    ...(["slow", "digital"] as const).map((key) => ({ key, label: t(`cat.${key}`), sub: t("ownRates"), amount: r.categories[key].amount, rate: formatRate(r.categories[key].rate), commission: r.categories[key].commission })),
   ].filter((line) => line.amount !== 0 || line.commission !== 0);
   const [openKey, setOpenKey] = useState<string | null>(null);
   const canOpen = (key: string) => rules.statementDetails[key as keyof typeof rules.statementDetails] !== false && detail.products.some((row) => row.bucket === key);

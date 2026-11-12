@@ -8,6 +8,7 @@ export type RateChange =
   | { kind: "tier"; key: string; from: string; to: string }
   | { kind: "oldTier"; key: string; from: string; to: string }
   | { kind: "categoryRate"; key: "slow" | "digital"; from: number; to: number }
+  | { kind: "productRate"; name: string; price: string; from: number | null; to: number | null }
   | { kind: "productAdded" | "productRemoved"; name: string; category: string }
   | { kind: "productMoved"; name: string; from: string; to: string }
   | { kind: "rule"; key: keyof Rules; from: string; to: string }
@@ -16,8 +17,9 @@ export type RateChange =
 const tierText = (tier: CommissionSettings["tiers"][number]) => `${tier.from}–${tier.to ?? "∞"} @ ${tier.rate}%`;
 const oldTierText = (tier: Rules["oldSystemTiers"][number]) => `${tier.from}–${tier.to ?? "∞"} @ ${tier.rate}%`;
 const ladderText = (rules: Rules) => rules.salesBonuses.map((step) => `${step.from}–${step.to ?? "∞"}: ${step.amount}`).join(" · ") || "—";
-const productName = (product: CommissionSettings["products"][number]) => `${product.templateName}${product.color ? ` · ${product.color}` : ""}`;
-const productKey = (product: CommissionSettings["products"][number]) => `${product.templateId}:${product.variantId ?? "*"}`;
+const productName = (product: CommissionSettings["products"][number]) => `${product.templateName || product.sourceName}${product.color ? ` · ${product.color}` : ""}`;
+const productKey = (product: CommissionSettings["products"][number]) => product.key;
+const productPrice = (product: CommissionSettings["products"][number]) => product.anyPrice ? "any price" : product.price == null ? "—" : String(product.price);
 
 const RULE_KEYS: (keyof Rules)[] = [
   "allTargetsBonusPct",
@@ -60,10 +62,13 @@ export function rateChanges(before: CommissionSettings, after: CommissionSetting
   const newProducts = new Map(after.products.map((product) => [productKey(product), product]));
   for (const [key, product] of newProducts) {
     const old = oldProducts.get(key);
-    if (!old) changes.push({ kind: "productAdded", name: productName(product), category: product.category });
-    else if (old.category !== product.category) changes.push({ kind: "productMoved", name: productName(product), from: old.category, to: product.category });
+    if (!old) changes.push({ kind: "productAdded", name: productName(product), category: product.category ?? "unclassified" });
+    else {
+      if (old.category !== product.category) changes.push({ kind: "productMoved", name: productName(product), from: old.category ?? "unclassified", to: product.category ?? "unclassified" });
+      if (old.commission !== product.commission) changes.push({ kind: "productRate", name: productName(product), price: productPrice(product), from: old.commission, to: product.commission });
+    }
   }
-  for (const [key, product] of oldProducts) if (!newProducts.has(key)) changes.push({ kind: "productRemoved", name: productName(product), category: product.category });
+  for (const [key, product] of oldProducts) if (!newProducts.has(key)) changes.push({ kind: "productRemoved", name: productName(product), category: product.category ?? "unclassified" });
   for (const key of RULE_KEYS) {
     const from = String(before.rules[key]);
     const to = String(after.rules[key]);
