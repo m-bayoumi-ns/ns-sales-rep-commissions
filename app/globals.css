@@ -420,3 +420,33 @@ html[data-app] .mobile-menu-preferences { display: block !important; }
 @media (max-width: 767px) {
   html:not([data-app]) .mobile-menu-preferences { display: block; }
 }
+
+/* Web launch splash screen (first entry to web app only) */
+html[data-splash-done="1"] .ns-web-splash { display: none !important; }
+@keyframes ns-splash-logo {
+  0% { opacity: 0; transform: scale(0.9) translateY(8px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+@keyframes ns-splash-char {
+  0% { opacity: 0; transform: translateY(5px); filter: blur(2px); }
+  100% { opacity: 1; transform: translateY(0); filter: blur(0); }
+}
+@keyframes ns-splash-caret {
+  0%, 49% { opacity: 1; }
+  50%, 100% { opacity: 0.15; }
+}
+.ns-splash-logo-anim {
+  animation: ns-splash-logo 0.52s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.ns-splash-char-anim {
+  display: inline-block;
+  animation: ns-splash-char 0.18s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.ns-splash-caret-anim {
+  animation: ns-splash-caret 0.7s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .ns-splash-logo-anim,
+  .ns-splash-char-anim,
+  .ns-splash-caret-anim { animation: none !important; }
+}

@@ -5,6 +5,7 @@ import { locale as rootLocale } from "next/root-params";
 import { NextIntlClientProvider } from "next-intl";
 import { getTranslations } from "next-intl/server";
 import { AppModeMarker, GetAppBanner } from "@/components/layout/android-app";
+import { WebLaunchSplash } from "@/components/layout/web-launch-splash";
 import { Providers } from "@/components/providers";
 import { directionOf, isLocale, routing } from "@/i18n/routing";
 import "../globals.css";
@@ -59,11 +60,18 @@ export default async function LocaleLayout({ children }: LayoutProps<"/[locale]"
       suppressHydrationWarning
     >
       <body className="min-h-dvh">
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "try{if(location.pathname.indexOf('/get-app')!==-1||sessionStorage.getItem('ns_web_splash')==='1')document.documentElement.dataset.splashDone='1'}catch{}",
+          }}
+        />
         <NextIntlClientProvider>
           <Providers direction={dir}>
             {children}
             <GetAppBanner />
             <AppModeMarker />
+            <WebLaunchSplash />
           </Providers>
         </NextIntlClientProvider>
       </body>
