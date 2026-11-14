@@ -19,9 +19,9 @@ export default function manifest(): MetadataRoute.Manifest {
     background_color: "#4a2d16",
     theme_color: "#4a2d16",
     icons: [
-      { src: "/brand/icon-192.png", sizes: "192x192", type: "image/png" },
+      { src: "/brand/icon-192-v2.png", sizes: "192x192", type: "image/png" },
       { src: "/brand/splash-ns-512.png", sizes: "512x512", type: "image/png", purpose: "any" },
-      { src: "/brand/icon-maskable-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
+      { src: "/brand/icon-maskable-v2.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
     ],
     related_applications: [{ platform: "play", id: "com.naguibselim.commissions", url: "https://ns-scw.bayoumi.dev/ar/get-app" }],
     prefer_related_applications: false,
