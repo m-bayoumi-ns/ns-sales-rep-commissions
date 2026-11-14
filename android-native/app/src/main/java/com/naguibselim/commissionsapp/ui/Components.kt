@@ -512,7 +512,8 @@ fun LightbulbThemeToggle(
 ) {
     val c = LocalNsColors.current
     val bulbRotation by animateFloatAsState(
-        targetValue = if (c.isDark) 180f else 0f,
+        // Day: bulb hangs down (lit, like a pendant lamp). Night: flips up.
+        targetValue = if (c.isDark) 0f else 180f,
         animationSpec = spring(
             dampingRatio = Spring.DampingRatioMediumBouncy,
             stiffness = Spring.StiffnessLow

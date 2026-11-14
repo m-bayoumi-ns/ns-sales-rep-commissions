@@ -118,8 +118,10 @@ export function MonthBar({ months, month, live, keepRep, showStatus = true, show
             <LightbulbIcon
               aria-hidden
               className={cn(
-                "size-[18px] transition-transform duration-300",
-                isDark ? "-rotate-12 scale-95" : "rotate-0 scale-105"
+                // Same as the Android app: down in day mode, flips up at night, with a springy overshoot.
+                "size-[18px] transition-transform duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] motion-reduce:transition-none",
+                // Driven by the .dark class (set before paint), so a page opened at night starts up, no flip.
+                "rotate-180 scale-100 dark:rotate-0 dark:scale-[1.08]"
               )}
             />
           </button>
