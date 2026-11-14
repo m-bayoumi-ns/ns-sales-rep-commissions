@@ -20,7 +20,7 @@ export default function manifest(): MetadataRoute.Manifest {
     theme_color: "#4a2d16",
     icons: [
       { src: "/brand/icon-192-v2.png", sizes: "192x192", type: "image/png" },
-      { src: "/brand/splash-ns-512.png", sizes: "512x512", type: "image/png", purpose: "any" },
+      { src: "/brand/splash-clear-v3.png", sizes: "512x512", type: "image/png", purpose: "any" },
       { src: "/brand/icon-maskable-v2.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
     ],
     related_applications: [{ platform: "play", id: "com.naguibselim.commissions", url: "https://ns-scw.bayoumi.dev/ar/get-app" }],
