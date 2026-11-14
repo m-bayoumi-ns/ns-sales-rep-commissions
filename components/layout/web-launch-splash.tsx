@@ -106,7 +106,9 @@ export function WebLaunchSplash() {
       aria-hidden="true"
       className={cn(
         "ns-web-splash fixed inset-0 z-[120] flex flex-col items-center justify-center overflow-hidden select-none",
-        "bg-gradient-to-br from-[#5a3a1d] via-[#4a2d16] to-[#2e1d0f] text-white",
+        // Flat #4a2d16 = the manifest background_color Android shows while the app starts, so the
+        // hand-off from the phone's launch screen to this one is seamless (no colour jump).
+        "bg-[#4a2d16] text-white",
         "transition-all duration-[420ms] ease-out",
         phase === "leaving" ? "pointer-events-none scale-[1.02] opacity-0" : "opacity-100",
       )}
