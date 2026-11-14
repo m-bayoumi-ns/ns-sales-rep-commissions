@@ -35,7 +35,7 @@ export async function generateMetadata(): Promise<Metadata> {
     robots: { index: false, follow: false },
     // iPhone "Add to Home Screen": full-screen app with its own icon and name.
     appleWebApp: { capable: true, title: "NS Commissions", statusBarStyle: "default" },
-    icons: { apple: "/brand/apple-touch-icon.png", icon: "/brand/icon-192.png" },
+    icons: { apple: "/brand/apple-touch-icon.png", icon: "/brand/icon-192-v2.png" },
   };
 }
 
