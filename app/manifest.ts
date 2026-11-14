@@ -22,8 +22,10 @@ export default function manifest(): MetadataRoute.Manifest {
     // turned off, so the web splash (components/layout/web-launch-splash.tsx) continues it: same mark,
     // same size and spot, then the title types in underneath.
     icons: [
-      { src: "/brand/icon-192-v2.png", sizes: "192x192", type: "image/png", purpose: "any" },
-      { src: "/brand/splash-clear-v3.png", sizes: "512x512", type: "image/png", purpose: "any" },
+      // "any" icons are used as-is (home-screen shortcuts, older launchers), so they carry their own
+      // rounded corners: the same icon as the Android app (gradient + NS mark), never a sharp square.
+      { src: "/brand/app-icon-rounded-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
+      { src: "/brand/app-icon-rounded-512.png", sizes: "512x512", type: "image/png", purpose: "any" },
       { src: "/brand/icon-maskable-v2.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
     ],
     related_applications: [{ platform: "play", id: "com.naguibselim.commissions", url: "https://ns-scw.bayoumi.dev/ar/get-app" }],
