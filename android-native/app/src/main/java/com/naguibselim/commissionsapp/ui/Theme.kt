@@ -1,6 +1,8 @@
 package com.naguibselim.commissionsapp.ui
 
 import android.app.Activity
+import android.content.Context
+import android.os.Build
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
@@ -21,8 +23,11 @@ import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.AndroidFont
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontLoadingStrategy
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontVariation
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.LayoutDirection
@@ -109,47 +114,119 @@ val DarkNsColors = NsColors(
 val LocalNsColors = staticCompositionLocalOf { LightNsColors }
 val LocalIsArabic = staticCompositionLocalOf { true }
 
+// Fonts: exactly what the website uses (app/[locale]/layout.tsx + globals.css).
+//   - Latin letters, digits and punctuation: Inter (optical size 14, as Google Fonts serves it).
+//   - Arabic letters: Cairo, loaded on the web in weights 400–700 only (800 asks fall back to 700).
+//   - Figures are tabular ("tnum") everywhere, like `font-variant-numeric: tabular-nums`.
+// On the web the browser mixes the two per character; Android 10+ does the same with a custom
+// fallback chain (Inter first, Cairo for the Arabic it lacks), so a line like "أحمد · 12,500 EGP"
+// draws exactly as on the site. Older phones get one font per language (still the right weights).
+
+private fun interAxes(weight: Int) = "'opsz' 14, 'wght' $weight"
+private fun cairoWeight(weight: Int) = weight.coerceIn(400, 700)
+private fun cairoAxes(weight: Int) = "'slnt' 0, 'wght' ${cairoWeight(weight)}"
+
+@OptIn(ExperimentalTextApi::class)
+private class WebMatchedFont(override val weight: FontWeight) :
+    AndroidFont(FontLoadingStrategy.Blocking, Loader, FontVariation.Settings()) {
+    override val style: FontStyle = FontStyle.Normal
+
+    @Volatile private var cached: android.graphics.Typeface? = null
+
+    fun typeface(context: Context): android.graphics.Typeface? {
+        cached?.let { return it }
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return null
+        val w = weight.weight
+        val res = context.resources
+        val inter = android.graphics.fonts.Font.Builder(res, R.font.inter)
+            .setFontVariationSettings(interAxes(w))
+            .setWeight(w)
+            .build()
+        val cairo = android.graphics.fonts.Font.Builder(res, R.font.cairo)
+            .setFontVariationSettings(cairoAxes(w))
+            .setWeight(w)
+            .build()
+        return android.graphics.Typeface.CustomFallbackBuilder(
+            android.graphics.fonts.FontFamily.Builder(inter).build()
+        )
+            .addCustomFallback(android.graphics.fonts.FontFamily.Builder(cairo).build())
+            .setSystemFallback("sans-serif")
+            .setStyle(android.graphics.fonts.FontStyle(w, android.graphics.fonts.FontStyle.FONT_SLANT_UPRIGHT))
+            .build()
+            .also { cached = it }
+    }
+
+    private object Loader : AndroidFont.TypefaceLoader {
+        override fun loadBlocking(context: Context, font: AndroidFont): android.graphics.Typeface? =
+            (font as WebMatchedFont).typeface(context)
+
+        override suspend fun awaitLoad(context: Context, font: AndroidFont): android.graphics.Typeface? =
+            loadBlocking(context, font)
+    }
+}
+
+private val WEIGHTS = listOf(
+    FontWeight.Normal, FontWeight.Medium, FontWeight.SemiBold, FontWeight.Bold, FontWeight.ExtraBold
+)
+
+/** Inter + Cairo mixed per character, as on the website (Android 10+). */
+val WebFontFamily = FontFamily(WEIGHTS.map { WebMatchedFont(it) })
+
+@OptIn(ExperimentalTextApi::class)
 val CairoFontFamily = FontFamily(
-    Font(R.font.cairo, FontWeight.Normal),
-    Font(R.font.cairo, FontWeight.Medium),
-    Font(R.font.cairo, FontWeight.SemiBold),
-    Font(R.font.cairo, FontWeight.Bold),
-    Font(R.font.cairo, FontWeight.ExtraBold)
+    WEIGHTS.map { weight ->
+        Font(
+            resId = R.font.cairo,
+            weight = weight,
+            variationSettings = FontVariation.Settings(
+                FontVariation.weight(cairoWeight(weight.weight)),
+                FontVariation.Setting("slnt", 0f)
+            )
+        )
+    }
 )
 
 @OptIn(ExperimentalTextApi::class)
-private fun interFont(weight: FontWeight) = Font(
-    resId = R.font.inter,
-    weight = weight,
-    variationSettings = FontVariation.Settings(FontVariation.weight(weight.weight))
+val InterFontFamily = FontFamily(
+    WEIGHTS.map { weight ->
+        Font(
+            resId = R.font.inter,
+            weight = weight,
+            variationSettings = FontVariation.Settings(
+                FontVariation.weight(weight.weight),
+                FontVariation.Setting("opsz", 14f)
+            )
+        )
+    }
 )
 
-val InterFontFamily = FontFamily(
-    interFont(FontWeight.Normal),
-    interFont(FontWeight.Medium),
-    interFont(FontWeight.SemiBold),
-    interFont(FontWeight.Bold),
-    interFont(FontWeight.ExtraBold)
-)
+/** The family the app draws with: the web mix where supported, else one font per language. */
+fun appFontFamilyFor(isArabic: Boolean): FontFamily = when {
+    Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q -> WebFontFamily
+    isArabic -> CairoFontFamily
+    else -> InterFontFamily
+}
+
+private const val TABULAR = "tnum"
 
 val LocalAppFontFamily = staticCompositionLocalOf { CairoFontFamily }
 
 fun createNsTypography(fontFamily: FontFamily) = Typography(
-    displayLarge = TextStyle(fontFamily = fontFamily, fontSize = 57.sp, lineHeight = 64.sp),
-    displayMedium = TextStyle(fontFamily = fontFamily, fontSize = 45.sp, lineHeight = 52.sp),
-    displaySmall = TextStyle(fontFamily = fontFamily, fontSize = 36.sp, lineHeight = 44.sp),
-    headlineLarge = TextStyle(fontFamily = fontFamily, fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, lineHeight = 36.sp),
-    headlineMedium = TextStyle(fontFamily = fontFamily, fontSize = 22.sp, fontWeight = FontWeight.Bold, lineHeight = 28.sp),
-    headlineSmall = TextStyle(fontFamily = fontFamily, fontSize = 19.sp, fontWeight = FontWeight.Bold, lineHeight = 25.sp),
-    titleLarge = TextStyle(fontFamily = fontFamily, fontSize = 18.sp, fontWeight = FontWeight.Bold, lineHeight = 24.sp),
-    titleMedium = TextStyle(fontFamily = fontFamily, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, lineHeight = 21.sp),
-    titleSmall = TextStyle(fontFamily = fontFamily, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, lineHeight = 20.sp),
-    bodyLarge = TextStyle(fontFamily = fontFamily, fontSize = 15.sp, fontWeight = FontWeight.Normal, lineHeight = 22.sp),
-    bodyMedium = TextStyle(fontFamily = fontFamily, fontSize = 13.5.sp, fontWeight = FontWeight.Normal, lineHeight = 19.sp),
-    bodySmall = TextStyle(fontFamily = fontFamily, fontSize = 12.sp, fontWeight = FontWeight.Normal, lineHeight = 16.sp),
-    labelLarge = TextStyle(fontFamily = fontFamily, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, lineHeight = 18.sp),
-    labelMedium = TextStyle(fontFamily = fontFamily, fontSize = 11.5.sp, fontWeight = FontWeight.Medium, lineHeight = 15.sp),
-    labelSmall = TextStyle(fontFamily = fontFamily, fontSize = 10.sp, fontWeight = FontWeight.Medium, lineHeight = 14.sp)
+    displayLarge = TextStyle(fontFamily = fontFamily, fontFeatureSettings = TABULAR, fontSize = 57.sp, lineHeight = 64.sp),
+    displayMedium = TextStyle(fontFamily = fontFamily, fontFeatureSettings = TABULAR, fontSize = 45.sp, lineHeight = 52.sp),
+    displaySmall = TextStyle(fontFamily = fontFamily, fontFeatureSettings = TABULAR, fontSize = 36.sp, lineHeight = 44.sp),
+    headlineLarge = TextStyle(fontFamily = fontFamily, fontFeatureSettings = TABULAR, fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, lineHeight = 36.sp),
+    headlineMedium = TextStyle(fontFamily = fontFamily, fontFeatureSettings = TABULAR, fontSize = 22.sp, fontWeight = FontWeight.Bold, lineHeight = 28.sp),
+    headlineSmall = TextStyle(fontFamily = fontFamily, fontFeatureSettings = TABULAR, fontSize = 19.sp, fontWeight = FontWeight.Bold, lineHeight = 25.sp),
+    titleLarge = TextStyle(fontFamily = fontFamily, fontFeatureSettings = TABULAR, fontSize = 18.sp, fontWeight = FontWeight.Bold, lineHeight = 24.sp),
+    titleMedium = TextStyle(fontFamily = fontFamily, fontFeatureSettings = TABULAR, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, lineHeight = 21.sp),
+    titleSmall = TextStyle(fontFamily = fontFamily, fontFeatureSettings = TABULAR, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, lineHeight = 20.sp),
+    bodyLarge = TextStyle(fontFamily = fontFamily, fontFeatureSettings = TABULAR, fontSize = 15.sp, fontWeight = FontWeight.Normal, lineHeight = 22.sp),
+    bodyMedium = TextStyle(fontFamily = fontFamily, fontFeatureSettings = TABULAR, fontSize = 13.5.sp, fontWeight = FontWeight.Normal, lineHeight = 19.sp),
+    bodySmall = TextStyle(fontFamily = fontFamily, fontFeatureSettings = TABULAR, fontSize = 12.sp, fontWeight = FontWeight.Normal, lineHeight = 16.sp),
+    labelLarge = TextStyle(fontFamily = fontFamily, fontFeatureSettings = TABULAR, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, lineHeight = 18.sp),
+    labelMedium = TextStyle(fontFamily = fontFamily, fontFeatureSettings = TABULAR, fontSize = 11.5.sp, fontWeight = FontWeight.Medium, lineHeight = 15.sp),
+    labelSmall = TextStyle(fontFamily = fontFamily, fontFeatureSettings = TABULAR, fontSize = 10.sp, fontWeight = FontWeight.Medium, lineHeight = 14.sp)
 )
 
 @Composable
@@ -216,7 +293,7 @@ fun NsTheme(
         else -> sysDark
     }
     val isAr = language != "en"
-    val appFontFamily = if (isAr) CairoFontFamily else InterFontFamily
+    val appFontFamily = appFontFamilyFor(isAr)
     val targetColors = if (useDark) DarkNsColors else LightNsColors
     val colors = animateNsColors(targetColors)
     val direction = if (isAr) LayoutDirection.Rtl else LayoutDirection.Ltr
@@ -280,7 +357,7 @@ fun NsTheme(
             typography = createNsTypography(appFontFamily)
         ) {
             ProvideTextStyle(
-                value = TextStyle(fontFamily = appFontFamily),
+                value = TextStyle(fontFamily = appFontFamily, fontFeatureSettings = TABULAR),
                 content = content
             )
         }
