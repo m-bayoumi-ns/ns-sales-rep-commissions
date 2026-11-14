@@ -435,9 +435,12 @@ html[data-splash-done="1"] .ns-web-splash { display: none !important; }
   0%, 49% { opacity: 1; }
   50%, 100% { opacity: 0.15; }
 }
-.ns-splash-logo-anim {
+/* In the browser the mark eases in; in the installed app it must not move (it continues the phone's launch screen). */
+html:not([data-app]) .ns-splash-logo-anim {
   animation: ns-splash-logo 0.52s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
+/* While the splash is up, the page itself is splash-brown too (no light flash before it paints). */
+html:not([data-splash-done="1"]) { background-color: #4a2d16; }
 .ns-splash-char-anim {
   display: inline-block;
   animation: ns-splash-char 0.18s cubic-bezier(0.22, 1, 0.36, 1) both;
