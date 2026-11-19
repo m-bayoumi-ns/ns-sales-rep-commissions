@@ -13,6 +13,7 @@ import { TeamList } from "@/components/commissions/team-list";
 import { RepPicker } from "@/components/commissions/rep-picker";
 import { StateCard } from "@/components/finance/report-ui";
 import { NoAccess } from "@/components/layout/no-access";
+import { OdooOfflineScreen } from "@/components/layout/odoo-offline";
 import { ScrollReveal } from "@/components/motion/scroll-reveal";
 import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
@@ -24,6 +25,7 @@ import { ALL_REPS, getCommissionsView, repOptions, resolveCommissionMonth } from
 import { loadAppSettings } from "@/lib/accounts/app-settings";
 import { isOdooConfigured } from "@/lib/env";
 import { formatMonth } from "@/lib/format";
+import { OdooUnavailableError } from "@/lib/odoo/client";
 
 export const maxDuration = 60;
 
@@ -83,6 +85,9 @@ async function Commissions({ searchParams }: { searchParams: PageProps<"/[locale
     unstable_rethrow(error);
     if (error instanceof Error && error.name === "AbortError") throw error;
     console.error("[commissions] failed to load:", error);
+    if (error instanceof OdooUnavailableError) {
+      return <OdooOfflineScreen title={tc("offlineTitle")} body={tc("offlineBody")} badge={tc("offlineBadge")} />;
+    }
     return <StateCard tone="error" icon={<AlertTriangleIcon aria-hidden />} title={tc("errorTitle")} body={tc("errorBody")} />;
   }
   after(() => logActivity({ action: "view_page", userId: user.id, email: user.email, details: { page: "sales-commissions", month, rep: repKey ?? null } }));

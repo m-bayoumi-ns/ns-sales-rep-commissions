@@ -35,7 +35,7 @@
     "showPassword": "Show password",
     "submit": "Sign in",
     "submitting": "Signing in…",
-    "help": "Access is managed by your administrator. Need an account? Contact IT support.",
+    "help": "If you experience issues logging in or with your account, please contact the administrator directly on WhatsApp.",
     "errors": {
       "emailInvalid": "Enter your email or username.",
       "passwordRequired": "Enter your password.",
@@ -370,6 +370,9 @@
     "fetched": "Updated {date}",
     "notConnectedTitle": "The data connection is not set up",
     "notConnectedBody": "The server's data connection settings are missing. Contact IT support.",
+    "offlineBadge": "Odoo disconnected",
+    "offlineTitle": "The connection to Odoo is lost",
+    "offlineBody": "Data isn't updating from Odoo right now. The figures show the last update and will refresh once the connection is back.",
     "errorTitle": "The page could not be loaded",
     "errorBody": "The data could not be read in time. Reload the page in a minute; if it keeps failing, contact IT.",
     "loading": {

@@ -15,29 +15,45 @@ import { odooEnv } from "@/lib/env";
 const READ_ONLY_METHODS: ReadonlySet<string> = new Set(["search_read", "search_count", "read", "fields_get", "read_group"]);
 
 export class OdooError extends Error {}
+export class OdooUnavailableError extends OdooError {}
 
 type Domain = unknown[];
 
 let uidPromise: Promise<number> | null = null;
 let requestId = 0;
 
+async function fetchOdoo(url: string, init: RequestInit): Promise<Response> {
+  try {
+    return await fetch(url, init);
+  } catch (error) {
+    if (error instanceof TypeError || (error instanceof Error && (error.name === "AbortError" || error.name === "TimeoutError"))) {
+      const message = error instanceof Error ? error.message : String(error);
+      throw new OdooUnavailableError(`Odoo request failed: ${message}`);
+    }
+    throw error;
+  }
+}
+
 async function rpc<T>(service: "common" | "object", method: string, args: unknown[], timeoutMs = 55_000): Promise<T> {
   const { ODOO_URL } = odooEnv();
-  const response = await fetch(`${ODOO_URL}/jsonrpc`, {
+  const response = await fetchOdoo(`${ODOO_URL}/jsonrpc`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ jsonrpc: "2.0", method: "call", params: { service, method, args }, id: ++requestId }),
     signal: AbortSignal.timeout(timeoutMs),
     cache: "no-store",
   });
-  if (!response.ok) throw new OdooError(`Odoo HTTP ${response.status}`);
+  if (!response.ok) {
+    const ErrorType = response.status >= 500 ? OdooUnavailableError : OdooError;
+    throw new ErrorType(`Odoo HTTP ${response.status}`);
+  }
   // An empty or cut-off reply (proxy timeout, Odoo restarting) must not surface as a bare JSON error.
   const text = await response.text();
   let body: { result?: T; error?: { message?: string; data?: { message?: string } } };
   try {
     body = JSON.parse(text);
   } catch {
-    throw new OdooError(text.trim() ? "Odoo returned an invalid response" : "Odoo returned an empty response — try again in a moment");
+    throw new OdooUnavailableError(text.trim() ? "Odoo returned an invalid response" : "Odoo returned an empty response — try again in a moment");
   }
   if (body.error) throw new OdooError(body.error.data?.message || body.error.message || "Odoo error");
   return body.result as T;
