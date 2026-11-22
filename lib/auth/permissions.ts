@@ -2,11 +2,12 @@ import type { AppUser, BranchScope } from "./types";
 
 /**
  * Page slugs and other names that grant the page in `allowed_pages` (the same profiles table as
- * ns-home). "external:…" is the name an "External tools" tick in the main dashboard would write.
+ * ns-home). "external:…" is the name an "External tools" tick in the main dashboard writes — it saves
+ * "external:wholesaleSalesCommissions" for this site. Names are compared ignoring case.
  */
 export const PAGES = {
   "sales-commissions": {
-    legacyNames: ["Sales Commissions", "Sales Rep Commissions", "عمولات المندوبين", "عمولات المبيعات", "external:sales-commissions", "external:ns-sales-rep-commissions"],
+    legacyNames: ["Sales Commissions", "Sales Rep Commissions", "عمولات المندوبين", "عمولات المبيعات", "external:sales-commissions", "external:ns-sales-rep-commissions", "external:wholesaleSalesCommissions"],
   },
 } as const;
 
@@ -19,8 +20,10 @@ export type PageKey = keyof typeof PAGES;
 export function canAccessPage(user: AppUser, page: PageKey): boolean {
   if (!user.active) return false;
   if (user.permissionType === "super_admin") return true;
-  if (user.allowedPages.includes(`!external:${page}`)) return false;
-  return user.allowedPages.includes(page) || PAGES[page].legacyNames.some((name) => user.allowedPages.includes(name));
+  const granted = new Set(user.allowedPages.map((name) => name.trim().toLowerCase()));
+  const names = [page, ...PAGES[page].legacyNames].map((name) => name.toLowerCase());
+  if (names.some((name) => name.startsWith("external:") && granted.has(`!${name}`)) || granted.has(`!external:${page}`)) return false;
+  return names.some((name) => granted.has(name));
 }
 
 /**
