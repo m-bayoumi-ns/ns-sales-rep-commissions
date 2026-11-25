@@ -63,8 +63,11 @@ export function activeOverride(): ProjectNo | null {
 /** The project in use, without waiting (a stale answer is refreshed in the background). */
 export function activeProject(): ProjectNo {
   const override = activeOverride();
-  const no = override ?? shared.__nsSupabaseActive?.no ?? 1;
-  if (!override && Date.now() - (shared.__nsSupabaseActive?.at ?? 0) > TTL_MS) void refreshActiveProject();
+  const stored = shared.__nsSupabaseActive;
+  const no = override ?? stored?.no ?? 1;
+  // Only once the server has resolved it (instrumentation.ts / proxy), so never during the build's
+  // prerender; performance.now(), not Date.now(): reading the clock while rendering blocks prerendering.
+  if (!override && stored && performance.now() - stored.at > TTL_MS) void refreshActiveProject();
   return no === 2 && isProjectConfigured(2) ? 2 : 1;
 }
 
@@ -119,7 +122,7 @@ export function refreshActiveProject(): Promise<ProjectNo> {
         no = chooseActive(await Promise.all([readSwitch(1), readSwitch(2)]));
         if (previous && previous !== no) console.warn(`[supabase] switched: project ${previous} → ${no}`);
       }
-      shared.__nsSupabaseActive = { no, at: Date.now() };
+      shared.__nsSupabaseActive = { no, at: performance.now() };
       return no;
     } finally {
       shared.__nsSupabaseRefresh = null;
@@ -131,6 +134,7 @@ export function refreshActiveProject(): Promise<ProjectNo> {
 /** The project in use, asking again first when the shared answer is older than 30 s. */
 export async function getActiveProject(): Promise<ProjectNo> {
   if (activeOverride()) return activeOverride()!;
-  if (Date.now() - (shared.__nsSupabaseActive?.at ?? 0) > TTL_MS) return refreshActiveProject();
+  const stored = shared.__nsSupabaseActive;
+  if (!stored || performance.now() - stored.at > TTL_MS) return refreshActiveProject();
   return activeProject();
 }
