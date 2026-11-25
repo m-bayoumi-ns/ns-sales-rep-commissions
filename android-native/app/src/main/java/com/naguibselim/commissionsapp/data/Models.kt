@@ -447,7 +447,7 @@ object JsonParsers {
                 code = p.optStringNull("code"),
                 variantId = p.optIntNull("variantId"),
                 color = p.optStringNull("color"),
-                category = p.optString("category", "slow")
+                category = p.optStringNull("category")?.takeIf { it == "slow" || it == "digital" } ?: ""
             )
         }
         val catRates = obj.optJSONObject("categoryRates") ?: JSONObject()
@@ -551,7 +551,7 @@ object JsonParsers {
                 put("code", p.code ?: JSONObject.NULL)
                 put("variantId", p.variantId ?: JSONObject.NULL)
                 put("color", p.color ?: JSONObject.NULL)
-                put("category", p.category)
+                put("category", if (p.category == "slow" || p.category == "digital") p.category else JSONObject.NULL)
             })
         }
         obj.put("products", productsArr)

@@ -37,7 +37,8 @@ export const productRuleSchema = z.object({
   /** null = every colour of the product. */
   variantId: z.number().int().positive().nullable().default(null),
   color: z.string().max(120).nullable().default(null),
-  category: z.enum(CATEGORIES).nullable().default(null),
+  /** Anything else ("null" from the Android app, "", an old value) = unclassified, as the sheet decides on load. */
+  category: z.preprocess((value) => ((CATEGORIES as readonly unknown[]).includes(value) ? value : null), z.enum(CATEGORIES).nullable()).default(null),
   /** null with anyPrice=false means the source Price cell was invalid or empty. */
   price: optNum,
   anyPrice: z.boolean().default(false),

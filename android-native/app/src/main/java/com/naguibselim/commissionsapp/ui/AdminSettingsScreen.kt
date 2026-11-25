@@ -356,7 +356,7 @@ fun AdminSettingsScreen(
                                         )
                                         Text(
                                             text = buildString {
-                                                append(if (prod.category == "slow") tr("راكد", "Slow-moving") else tr("ديجيتال", "Digital"))
+                                                append(when (prod.category) { "slow" -> tr("راكد", "Slow-moving"); "digital" -> tr("ديجيتال", "Digital"); else -> tr("بدون تصنيف", "Unclassified") })
                                                 append(" · ")
                                                 append(prod.color ?: tr("كل الألوان", "All colors"))
                                             },
