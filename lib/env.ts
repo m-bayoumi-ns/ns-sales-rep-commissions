@@ -1,8 +1,13 @@
 import { z } from "zod";
+import { supabaseEnv } from "@/lib/supabase/active";
 
 /**
- * Environment variables, validated once. Public values may reach the browser;
+ * Environment variables, validated on use. Public values may reach the browser;
  * everything else must only be read in server code.
+ *
+ * Supabase 1 or 2: the Supabase variables are read for the project in use
+ * (lib/supabase/active.ts — chosen in ns-dashboard Settings → Supabase); project 2's
+ * are the same names with "_2".
  */
 const publicSchema = z.object({
   NEXT_PUBLIC_SUPABASE_URL: z.url(),
@@ -23,32 +28,32 @@ const odooSchema = z.object({
 
 export function publicEnv() {
   return publicSchema.parse({
-    NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
-    NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    NEXT_PUBLIC_SUPABASE_URL: supabaseEnv().NEXT_PUBLIC_SUPABASE_URL,
+    NEXT_PUBLIC_SUPABASE_ANON_KEY: supabaseEnv().NEXT_PUBLIC_SUPABASE_ANON_KEY,
   });
 }
 
 /** URL + service-role key: enough for activity logs and server-side table reads. */
 export function adminEnv() {
-  return adminSchema.parse(process.env);
+  return adminSchema.parse(supabaseEnv());
 }
 
 export function isAdminConfigured() {
-  return adminSchema.safeParse(process.env).success;
+  return adminSchema.safeParse(supabaseEnv()).success;
 }
 
 /** True once the Supabase URL and anon key are set (sign-in can work). */
 export function isSupabaseConfigured() {
   return publicSchema.safeParse({
-    NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
-    NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    NEXT_PUBLIC_SUPABASE_URL: supabaseEnv().NEXT_PUBLIC_SUPABASE_URL,
+    NEXT_PUBLIC_SUPABASE_ANON_KEY: supabaseEnv().NEXT_PUBLIC_SUPABASE_ANON_KEY,
   }).success;
 }
 
 export function odooEnv() {
-  return odooSchema.parse(process.env);
+  return odooSchema.parse(supabaseEnv());
 }
 
 export function isOdooConfigured() {
-  return odooSchema.safeParse(process.env).success;
+  return odooSchema.safeParse(supabaseEnv()).success;
 }

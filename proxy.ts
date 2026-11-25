@@ -3,6 +3,7 @@ import { type NextRequest, NextResponse } from "next/server";
 import createMiddleware from "next-intl/middleware";
 import { isLocale, routing } from "./i18n/routing";
 import { safeNextPath } from "./lib/auth/safe-next";
+import { getActiveProject, supabaseEnv } from "./lib/supabase/active";
 import { supabaseCookieOptions } from "./lib/supabase/cookie-options";
 
 const intl = createMiddleware(routing);
@@ -28,8 +29,11 @@ export default async function proxy(request: NextRequest) {
   // Open to everyone, signed in or not: the mobile app download page.
   const isOpenPage = rest[0] === "get-app";
 
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  // Supabase 1 or 2: the project in use (lib/supabase/active.ts)
+  await getActiveProject();
+  const supabaseVars = supabaseEnv();
+  const url = supabaseVars.NEXT_PUBLIC_SUPABASE_URL;
+  const anonKey = supabaseVars.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   // Local demo mode (lib/dev.ts): a demo admin is always signed in.
   let signedIn = process.env.NODE_ENV === "development" && process.env.NS_DEMO_DATA === "1";
